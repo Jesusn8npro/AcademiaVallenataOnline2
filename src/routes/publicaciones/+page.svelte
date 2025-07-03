@@ -5,7 +5,6 @@ import { supabase } from '$lib/supabase/clienteSupabase';
 import { usuario } from '$lib/UsuarioActivo/usuario';
 import FeedPublicaciones from '$lib/components/Comunidad/FeedPublicaciones.svelte';
 import RankingComunidad from '$lib/components/Banners/RankingComunidad.svelte';
-import MiniCursosComunidad from '$lib/components/Banners/MiniCursosComunidad.svelte';
 import PorcentajePerfil from '$lib/components/Banners/PorcentajePerfil.svelte';
 import BannerSlider from '$lib/components/Banners/BannerSlider.svelte';
 import { onMount } from 'svelte';
