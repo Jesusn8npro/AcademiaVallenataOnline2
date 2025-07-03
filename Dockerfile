@@ -13,15 +13,15 @@ RUN npm ci
 # Copiar código fuente
 COPY . .
 
-# Variables de entorno por defecto
+# Build de la aplicación (sin variables sensibles)
 ENV NODE_ENV=production
-ENV PORT=3000
-
-# Build de la aplicación
 RUN npm run build
 
 # Limpiar devDependencies para reducir tamaño
 RUN npm prune --production
+
+# Variables de runtime
+ENV PORT=3000
 
 # Exponer puerto
 EXPOSE 3000
