@@ -180,6 +180,48 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Información de tarjetas de prueba -->
+		<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+			<h3 class="font-bold text-yellow-800 mb-4">🧪 Tarjetas de Prueba OFICIALES ePayco Colombia</h3>
+			
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Tarjetas exitosas -->
+				<div class="bg-green-50 border border-green-200 rounded p-4">
+					<h4 class="font-semibold text-green-800 mb-2">✅ PAGOS EXITOSOS:</h4>
+					<div class="space-y-2 text-sm">
+						<div class="bg-white p-2 rounded border">
+							<strong>VISA:</strong> 4575623182290326<br>
+							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
+							<strong>Nombre:</strong> APPROVED
+						</div>
+						<div class="bg-white p-2 rounded border">
+							<strong>MASTERCARD:</strong> 5254133674403564<br>
+							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
+							<strong>Nombre:</strong> APPROVED
+						</div>
+					</div>
+				</div>
+				
+				<!-- Tarjetas rechazadas -->
+				<div class="bg-red-50 border border-red-200 rounded p-4">
+					<h4 class="font-semibold text-red-800 mb-2">❌ PAGOS RECHAZADOS:</h4>
+					<div class="space-y-2 text-sm">
+						<div class="bg-white p-2 rounded border">
+							<strong>VISA:</strong> 4151611527583283<br>
+							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
+							<strong>Nombre:</strong> DECLINED
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="mt-4 bg-white border border-yellow-300 rounded p-3">
+				<p class="text-sm text-yellow-800">
+					<strong>⚠️ IMPORTANTE:</strong> Usa EXACTAMENTE estos números. Son las únicas tarjetas que funcionan con ePayco Colombia en modo prueba.
+				</p>
+			</div>
+		</div>
 	</div>
 </div>
 
