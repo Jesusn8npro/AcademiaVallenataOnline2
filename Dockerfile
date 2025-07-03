@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
-RUN npm ci --only=production
+RUN npm install
 
 # Copiar el código fuente
 COPY . .
@@ -23,4 +23,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # Comando para iniciar la aplicación
-CMD ["node", "build"] 
+CMD ["node", "build/index.js"]
