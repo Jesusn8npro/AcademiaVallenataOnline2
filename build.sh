@@ -1,41 +1,20 @@
 #!/bin/bash
+set -e
 
-echo "🚀 Iniciando build de Academia Online..."
+echo "🔧 Starting build process..."
 
-# Verificar que Node.js esté instalado
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js no está instalado"
-    exit 1
-fi
+echo "📦 Installing dependencies..."
+npm ci
 
-echo "✅ Node.js versión: $(node --version)"
-echo "✅ NPM versión: $(npm --version)"
+echo "🔄 Syncing SvelteKit..."
+npx svelte-kit sync
 
-# Limpiar cache de npm
-echo "🧹 Limpiando cache..."
-npm cache clean --force
-
-# Instalar dependencias
-echo "📦 Instalando dependencias..."
-npm ci --production=false
-
-# Sincronizar SvelteKit
-echo "🔄 Sincronizando SvelteKit..."
-npm run prepare
-
-# Construir aplicación
-echo "🏗️ Construyendo aplicación..."
+echo "🏗️ Building application..."
 npm run build
 
-echo "✅ Build completado exitosamente!"
-echo "📁 Archivos de salida en: ./build/"
+echo "✅ Build completed successfully!"
 
-# Verificar que el build existe
-if [ -d "build" ]; then
-    echo "✅ Directorio build creado correctamente"
-    echo "📊 Tamaño del build:"
-    du -sh build/
-else
-    echo "❌ Error: No se pudo crear el directorio build"
-    exit 1
-fi 
+echo "📁 Checking build output..."
+ls -la build/
+
+echo "�� Ready to start!" 
