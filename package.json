@@ -10,11 +10,11 @@
 		"start": "node build"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.48.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/adapter-node": "^4.0.0",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
-		"@supabase/supabase-js": "^2.48.0",
 		"autoprefixer": "^10.4.20",
 		"date-fns": "^4.1.0",
 		"postcss": "^8.4.49",
@@ -24,5 +24,7 @@
 		"typescript": "^5.0.0",
 		"vite": "^6.0.0"
 	},
-	"devDependencies": {}
+	"devDependencies": {
+		"@tailwindcss/forms": "^0.5.10"
+	}
 }
