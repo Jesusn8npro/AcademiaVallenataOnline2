@@ -7,7 +7,7 @@
 		"dev": "vite dev",
 		"build": "svelte-kit sync && vite build",
 		"preview": "vite preview",
-		"start": "node build",
+		"start": "node build/index.js",
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
