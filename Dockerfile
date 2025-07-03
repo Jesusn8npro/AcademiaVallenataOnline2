@@ -1,33 +1,34 @@
-# Usar imagen oficial de Node.js
-FROM node:18-alpine
+# Use the Nixpacks base
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1741046653
 
-# Establecer directorio de trabajo
-WORKDIR /app
+# Set working directory
+WORKDIR /app/
 
-# Copiar archivos de package
+# Copy the nixpacks configuration
+COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix
+
+# Install system dependencies
+RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d
+
+# Copy package files
 COPY package*.json ./
 
-# Instalar TODAS las dependencias explícitamente
-RUN npm install --include=dev
+# Install ALL dependencies (including devDependencies) explicitly
+RUN --mount=type=cache,id=ggkpaDyXWK4-/root/npm,target=/root/.npm npm install --include=dev --no-optional
 
-# Copiar código fuente
-COPY . .
+# Copy the rest of the application
+COPY . /app/.
 
-# Configurar SvelteKit
+# Generate SvelteKit files and build
 RUN npx svelte-kit sync
+RUN --mount=type=cache,id=ggkpaDyXWK4-node_modules/cache,target=/app/node_modules/.cache npx vite build
 
-# Build de la aplicación
+# Set environment variables
 ENV NODE_ENV=production
-RUN npx vite build
-
-# Limpiar devDependencies después del build
-RUN npm prune --production
-
-# Variables de runtime
 ENV PORT=3000
 
-# Exponer puerto
+# Expose port
 EXPOSE 3000
 
-# Comando para iniciar la aplicación
-CMD ["node", "build/index.js"] 
+# Start the application
+CMD ["node", "build"] 
