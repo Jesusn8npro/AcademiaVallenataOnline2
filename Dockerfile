@@ -1,26 +1,26 @@
-# Usar imagen oficial de Node.js
+# Imagen base
 FROM node:18-alpine
 
-# Establecer directorio de trabajo
+# Directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de package
+# Copiar package.json y lock
 COPY package*.json ./
 
 # Instalar dependencias
 RUN npm install
 
-# Copiar el código fuente
+# Copiar el resto del código
 COPY . .
 
-# Construir la aplicación
+# Build de producción
 RUN npm run build
 
-# Exponer el puerto
+# Exponer puerto
 EXPOSE 3000
 
 # Variables de entorno
 ENV NODE_ENV=production
 
-# Comando para iniciar la aplicación
-CMD ["node", "build/server/index.js"]
+# Comando de arranque del server adaptado
+CMD ["node", ".svelte-kit/output/server/index.js"]

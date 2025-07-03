@@ -3,19 +3,20 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
-	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint .",
-		"build:prod": "npm run check && npm run lint && vite build",
-		"deploy:check": "npm run build:prod && npm run preview",
-		"start": "node build/index.js"
-	},
+"scripts": {
+  "dev": "svelte-kit dev",
+  "build": "svelte-kit sync && svelte-kit build",
+  "preview": "svelte-kit preview",
+  "prepare": "svelte-kit sync || echo ''",
+  "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+  "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+  "format": "prettier --write .",
+  "lint": "prettier --check . && eslint .",
+  "build:prod": "npm run check && npm run lint && npm run build",
+  "deploy:check": "npm run build:prod && npm run preview",
+  "start": "node .svelte-kit/output/server/index.js"
+}
+,
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
