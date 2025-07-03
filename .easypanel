@@ -1,3 +1,7 @@
 build:
   method: nixpacks
-port: 3000 
+  buildCommand: npm run build
+  startCommand: npm start
+port: 3000
+env:
+  NODE_ENV: production 
