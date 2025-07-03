@@ -1,0 +1,4 @@
+build:
+  method: docker
+  dockerfile: Dockerfile
+port: 3000 
