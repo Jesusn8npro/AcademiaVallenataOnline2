@@ -1,0 +1,976 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import { supabase } from '$lib/supabase/clienteSupabase';
+  import { usuario, limpiarUsuario } from '$lib/UsuarioActivo/usuario';
+  import { cerrarSesion as cerrarSesionSupabase } from '$lib/supabase/autenticacionSupabase';
+  import ModalDeInicioDeSesion from '$lib/components/Autenticacion/ModalDeInicioDeSesion.svelte';
+  import ModalBusqueda from '$lib/components/Busqueda/ModalBusqueda.svelte';
+  import MenuLateralResponsive from './MenuLateralResponsive.svelte';
+  
+  // Tipos para artículos del blog
+  interface ArticuloBlog {
+    id: number;
+    titulo: string;
+    resumen: string;
+    imagen_url: string;
+    creado_en: string;
+    slug: string;
+  }
+  
+  // Variables de estado
+  let mostrarModalBusqueda = false;
+  let mostrarModalMenu = false;
+  let mostrarMenuLateralResponsive = false;
+  let mostrarModalLogin = false;
+  let mostrarIdiomas = false;
+  let articulosBlog: ArticuloBlog[] = [];
+  let cargandoArticulos = false;
+  let esMovil = false;
+  let cerrandoSesion = false;
+  
+  // Usar el store global del usuario (manejado por el layout principal)
+  $: usuarioActual = $usuario;
+  
+  // Debug del store (solo en desarrollo)
+  $: {
+    if (import.meta.env.DEV && usuarioActual) {
+      console.log('🎯 Usuario activo:', usuarioActual?.nombre || usuarioActual?.correo_electronico, 'Rol:', usuarioActual?.rol);
+    }
+  }
+  
+  // Función para cerrar sesión
+  async function cerrarSesion() {
+    if (cerrandoSesion) return;
+    
+    cerrandoSesion = true;
+    try {
+      await cerrarSesionSupabase();
+      limpiarUsuario();
+      console.log('✅ Sesión cerrada correctamente');
+    } catch (error) {
+      console.error('❌ Error al cerrar sesión:', error);
+    } finally {
+      cerrandoSesion = false;
+    }
+  }
+  
+  // Función para cargar artículos del blog desde Supabase
+  async function cargarArticulosBlog() {
+    if (articulosBlog.length > 0) return; // Ya están cargados
+    
+    cargandoArticulos = true;
+    try {
+      const { data, error } = await supabase
+        .from('blog_articulos')
+        .select('id, titulo, resumen, imagen_url, creado_en, slug')
+        .eq('estado', 'publicado')
+        .order('creado_en', { ascending: false })
+        .limit(4);
+      
+      if (error) {
+        console.error('Error al cargar artículos:', error);
+        articulosBlog = [];
+      } else {
+        articulosBlog = data || [];
+      }
+    } catch (err) {
+      console.error('Error de conexión:', err);
+      articulosBlog = [];
+    } finally {
+      cargandoArticulos = false;
+    }
+  }
+  
+  // Función para formatear fecha
+  function formatearFecha(fechaISO: string): string {
+    const fecha = new Date(fechaISO);
+    return fecha.toLocaleDateString('es-ES', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  }
+  
+  // Cierra el menú si haces clic fuera
+  function manejarClicFuera(event: Event) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.selector-idioma')) {
+      mostrarIdiomas = false;
+    }
+  }
+  
+  // Funciones para el modal de búsqueda
+  function abrirModalBusqueda() {
+    mostrarModalBusqueda = true;
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function cerrarModales() {
+    mostrarModalBusqueda = false;
+    mostrarModalMenu = false;
+    mostrarMenuLateralResponsive = false;
+    mostrarModalLogin = false;
+    document.body.style.overflow = 'auto';
+  }
+  
+  // Funciones para el modal del menú lateral
+  function abrirModalMenu() {
+    console.log('🍔 Abriendo menú - esMovil:', esMovil, 'ancho:', window.innerWidth);
+    if (esMovil) {
+      console.log('📱 Abriendo menú lateral responsivo');
+      mostrarMenuLateralResponsive = true;
+    } else {
+      console.log('🖥️ Abriendo modal de escritorio');
+      mostrarModalMenu = true;
+      cargarArticulosBlog();
+    }
+    document.body.style.overflow = 'hidden';
+  }
+  
+  // Funciones para el modal de login
+  function abrirModalLogin() {
+    mostrarModalLogin = true;
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function cerrarModalLogin() {
+    mostrarModalLogin = false;
+    document.body.style.overflow = 'auto';
+  }
+  
+  function manejarTeclaEscape(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      cerrarModales();
+    }
+  }
+  
+  function manejarClicModal(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
+      cerrarModales();
+    }
+  }
+  
+  // Detectar si es móvil
+  function detectarMovil() {
+    esMovil = window.innerWidth <= 1000;
+  }
+  
+  onMount(() => {
+    console.log('🚀 MenuPublico2 montado - el usuario será manejado por el layout principal');
+    
+    document.addEventListener('mousedown', manejarClicFuera);
+    document.addEventListener('keydown', manejarTeclaEscape);
+    detectarMovil();
+    window.addEventListener('resize', detectarMovil);
+
+    return () => {
+      document.removeEventListener('mousedown', manejarClicFuera);
+      document.removeEventListener('keydown', manejarTeclaEscape);
+      window.removeEventListener('resize', detectarMovil);
+    };
+  });
+  
+  onDestroy(() => {
+    document.body.style.overflow = 'auto';
+  });
+</script>
+
+<!-- Barra superior negra -->
+<div class="barra-superior-negra">
+  <div class="contenedor-barra-superior">
+    <!-- Izquierda: Correo y teléfono -->
+    <div class="zona-izquierda">
+      <!-- Correo -->
+      <div class="item-contacto">
+        <span class="icono-circulo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24">
+            <path fill="#ff6600" d="M2 6.5A2.5 2.5 0 0 1 4.5 4h15A2.5 2.5 0 0 1 22 6.5v11A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5v-11ZM4.5 6a.5.5 0 0 0-.5.5v.27l8 5.21 8-5.21V6.5a.5.5 0 0 0-.5-.5h-15Zm15 2.98-7.5 4.89a.5.5 0 0 1-.54 0L4 8.98V17.5a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5V8.98Z"/>
+          </svg>
+        </span>
+        <span class="texto-contacto">contacto@academiavallenata.com</span>
+      </div>
+      <!-- Teléfono -->
+      <div class="item-contacto">
+        <span class="icono-circulo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24">
+            <path fill="#ff6600" d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.01l-2.2 2.2Z"/>
+          </svg>
+        </span>
+        <span class="texto-contacto">+57 3212587616</span>
+      </div>
+    </div>
+    
+    <!-- Derecha: Redes, idioma, login -->
+    <div class="zona-derecha">
+      <div class="redes-sociales">
+        <!-- Facebook -->
+        <a href="https://facebook.com/academiavallenata" class="icono-red" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path fill="#fff" d="M17 2.05H15c-2.76 0-5 2.24-5 5v2H7a1 1 0 0 0-1 1v3c0 .55.45 1 1 1h3v7a1 1 0 0 0 1 1h3c.55 0 1-.45 1-1v-7h2.29a1 1 0 0 0 .99-1.14l-.38-3A1 1 0 0 0 18.23 9H16V7c0-.55.45-1 1-1h1a1 1 0 0 0 1-1V3.05a1 1 0 0 0-1-1z"/>
+          </svg>
+        </a>
+        <!-- Instagram -->
+        <a href="https://instagram.com/academiavallenata" class="icono-red" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <rect width="18" height="18" x="3" y="3" rx="5" fill="none" stroke="#fff" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4" fill="none" stroke="#fff" stroke-width="2"/>
+            <circle cx="17" cy="7" r="1.5" fill="#fff"/>
+          </svg>
+        </a>
+        <!-- WhatsApp -->
+        <a href="https://wa.me/573212587616" class="icono-red" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path fill="#fff" d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.01l-2.2 2.2Z"/>
+          </svg>
+        </a>
+        <!-- YouTube -->
+        <a href="https://youtube.com/@academiavallenata" class="icono-red" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <rect width="20" height="14" x="2" y="5" rx="3" fill="none" stroke="#fff" stroke-width="2"/>
+            <path fill="#fff" d="M20 20l-3.5-3.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+      
+      <!-- Contenedor para idioma y login -->
+      <div class="contenedor-idioma-login">
+        <div class="selector-idioma" tabIndex="0">
+          <button class="boton-idioma" aria-haspopup="listbox" aria-expanded={mostrarIdiomas} on:click={() => mostrarIdiomas = !mostrarIdiomas}>
+            Español
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style="margin-left: 0.5rem;">
+              <path d="M7 10l5 5 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          {#if mostrarIdiomas}
+            <ul class="lista-idiomas" role="listbox">
+              <li role="option" aria-selected="true">Español</li>
+              <li role="option" aria-selected="false">Inglés</li>
+              <li role="option" aria-selected="false">Portugués</li>
+              <li role="option" aria-selected="false">Francés</li>
+            </ul>
+          {/if}
+        </div>
+
+        <button class="boton-login" aria-label="Iniciar sesión" on:click={abrirModalLogin}>
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4" fill="#fff"/>
+            <path d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Barra principal de navegación -->
+<div class="barra-principal-navegacion">
+  <div class="contenedor-barra-principal">
+    <!-- Logo -->
+    <div class="logo-navegacion">
+      <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Logo Academia Vallenata" />
+    </div>
+    
+    <!-- Menú de enlaces -->
+    <nav class="menu-enlaces">
+      <a href="/" class="enlace-nav">
+        <span class="enlace-texto">Inicio</span>
+        <div class="enlace-underline"></div>
+      </a>
+      <a href="/cursos" class="enlace-nav">
+        <span class="enlace-texto">Cursos</span>
+        <div class="enlace-underline"></div>
+      </a>
+      <a href="/tutoriales" class="enlace-nav">
+        <span class="enlace-texto">Tutoriales</span>
+        <div class="enlace-underline"></div>
+      </a>
+      <a href="/blog" class="enlace-nav">
+        <span class="enlace-texto">Blog</span>
+        <div class="enlace-underline"></div>
+      </a>
+      <a href="/eventos" class="enlace-nav">
+        <span class="enlace-texto">Eventos</span>
+        <div class="enlace-underline"></div>
+      </a>
+      <a href="/comunidad" class="enlace-nav">
+        <span class="enlace-texto">Comunidad</span>
+        <div class="enlace-underline"></div>
+      </a>
+    </nav>
+    
+    <!-- Botones de acción -->
+    <div class="botones-accion">
+      <!-- Buscador -->
+      <button class="boton-busqueda" aria-label="Buscar" on:click={abrirModalBusqueda}>
+        <div class="boton-icono-wrapper">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="boton-ripple"></div>
+      </button>
+
+      <!-- Menú hamburguesa -->
+      <button class="menu-hamburguesa" aria-label="Abrir menú" on:click={abrirModalMenu}>
+        <div class="boton-icono-wrapper">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <rect y="4" width="24" height="2" rx="1" fill="currentColor"/>
+            <rect y="11" width="24" height="2" rx="1" fill="currentColor"/>
+            <rect y="18" width="24" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="boton-ripple"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de búsqueda -->
+{#if mostrarModalBusqueda}
+  <ModalBusqueda abierto={mostrarModalBusqueda} onCerrar={cerrarModales} />
+{/if}
+
+<!-- Menú lateral responsivo -->
+{#if mostrarMenuLateralResponsive}
+  <MenuLateralResponsive 
+    abierto={mostrarMenuLateralResponsive}
+    usuario={usuarioActual} 
+    onCerrar={() => mostrarMenuLateralResponsive = false}
+    cerrarSesion={cerrarSesion}
+    cerrandoSesion={cerrandoSesion}
+    abrirModalLogin={abrirModalLogin}
+  />
+{/if}
+
+<!-- Modal de menú lateral (desktop) -->
+{#if mostrarModalMenu}
+  <div 
+    class="modal-menu-overlay" 
+    on:click={manejarClicModal}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Modal de menú"
+    tabindex="-1"
+  >
+    <div class="modal-menu-panel">
+      <!-- Botón cerrar -->
+      <button class="boton-cerrar-menu" on:click={cerrarModales} aria-label="Cerrar menú">
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="#ff6600" stroke-width="2" stroke-linecap="round" d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      
+      <!-- Encabezado del menú -->
+      <div class="encabezado-menu">
+        <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Academia Vallenata" class="logo-menu" />
+        <p class="descripcion-menu">
+          La mejor academia para aprender acordeón vallenato online. Aprende con los mejores maestros desde la comodidad de tu hogar.
+        </p>
+      </div>
+      
+      <!-- Redes sociales -->
+      <div class="redes-menu">
+        <a href="https://facebook.com/academiavallenata" class="icono-red-menu" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <path fill="#ff6600" d="M17 2.05H15c-2.76 0-5 2.24-5 5v2H7a1 1 0 0 0-1 1v3c0 .55.45 1 1 1h3v7a1 1 0 0 0 1 1h3c.55 0 1-.45 1-1v-7h2.29a1 1 0 0 0 .99-1.14l-.38-3A1 1 0 0 0 18.23 9H16V7c0-.55.45-1 1-1h1a1 1 0 0 0 1-1V3.05a1 1 0 0 0-1-1z"/>
+          </svg>
+        </a>
+        <a href="https://instagram.com/academiavallenata" class="icono-red-menu" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <rect width="18" height="18" x="3" y="3" rx="5" fill="none" stroke="#ff6600" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4" fill="none" stroke="#ff6600" stroke-width="2"/>
+            <circle cx="17" cy="7" r="1.5" fill="#ff6600"/>
+          </svg>
+        </a>
+        <a href="https://youtube.com/@academiavallenata" class="icono-red-menu" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <rect width="20" height="14" x="2" y="5" rx="3" fill="none" stroke="#ff6600" stroke-width="2"/>
+            <path fill="#ff6600" d="M10 9.5v5l5-2.5-5-2.5Z"/>
+          </svg>
+        </a>
+        <a href="https://wa.me/573212587616" class="icono-red-menu" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <path fill="#ff6600" d="M12 2a10 10 0 0 0-8.94 14.37L2 22l5.78-1.52A10 10 0 1 0 12 2Z"/>
+          </svg>
+        </a>
+      </div>
+      
+      <!-- Artículos recientes -->
+      <div class="articulos-recientes">
+        <h3>Artículos Recientes</h3>
+        
+        {#if cargandoArticulos}
+          <p>Cargando...</p>
+        {/if}
+        
+        {#if articulosBlog.length > 0}
+          {#each articulosBlog as articulo}
+            <article class="articulo-item">
+              <img src={articulo.imagen_url} alt="Artículo" class="imagen-articulo" />
+              <div class="contenido-articulo">
+                <span class="fecha-articulo">{formatearFecha(articulo.creado_en)}</span>
+                <h4 class="titulo-articulo">{articulo.titulo}</h4>
+              </div>
+            </article>
+          {/each}
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de login -->
+{#if mostrarModalLogin}
+  <ModalDeInicioDeSesion abierto={mostrarModalLogin} onCerrar={cerrarModalLogin} />
+{/if}
+
+<style>
+/* Barra superior negra */
+.barra-superior-negra {
+  background: #181818;
+  padding: 0px 10rem;
+  z-index: 1000;
+}
+
+.contenedor-barra-superior {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.zona-izquierda, .zona-derecha {
+  display: flex;
+  align-items: center;
+}
+
+.item-contacto {
+  display: flex;
+  align-items: center;
+  margin-right: 2.2rem;
+}
+
+.item-contacto:last-child {
+  margin-right: 0;
+}
+
+.icono-circulo {
+  width: 35px;
+  height: 35px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.7rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.texto-contacto {
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.redes-sociales {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-right: 1.2rem;
+}
+
+.icono-red {
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.icono-red:hover {
+  transform: translateY(-2px);
+}
+
+.contenedor-idioma-login {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.selector-idioma {
+  position: relative;
+}
+
+.boton-idioma {
+  background: #19d1c3;
+  color: #fff;
+  border: none;
+  padding: 15px 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(25,209,195,0.08);
+  transition: background 0.18s;
+}
+
+.boton-login {
+  background: #df0909;
+  color: #fff;
+  border: none;
+  padding: 16px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(25,209,195,0.08);
+  transition: background 0.18s;
+}
+
+.lista-idiomas {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #fff;
+  color: #222;
+  min-width: 160px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  border-radius: 7px;
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+  z-index: 2000;
+}
+
+.lista-idiomas li {
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 1rem;
+}
+
+.lista-idiomas li:hover {
+  background: #19d1c3;
+  color: #fff;
+}
+
+/* Barra principal de navegación */
+.barra-principal-navegacion {
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  box-shadow: 0 4px 20px 0 rgba(0,0,0,0.08), 0 1px 3px 0 rgba(0,0,0,0.05);
+  border-bottom: 3px solid #ff6600;
+  padding: 8px 10rem;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.barra-principal-navegacion::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,102,0,0.3) 50%, transparent 100%);
+}
+
+.contenedor-barra-principal {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.logo-navegacion {
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.logo-navegacion:hover {
+  transform: scale(1.02);
+}
+
+.logo-navegacion img {
+  width: 100%;
+  max-width: 135px;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+  transition: filter 0.3s ease;
+}
+
+.logo-navegacion:hover img {
+  filter: drop-shadow(0 4px 12px rgba(255,102,0,0.2));
+}
+
+.menu-enlaces {
+  display: flex;
+  align-items: center;
+  gap: 1.8rem;
+  flex: 1 1 auto;
+  justify-content: center;
+  padding: 0 2rem;
+}
+
+.enlace-nav {
+  position: relative;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-decoration: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  letter-spacing: 0.025em;
+}
+
+.enlace-texto {
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.enlace-underline {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6600, #ff8c42);
+  border-radius: 2px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enlace-nav:hover {
+  background: linear-gradient(135deg, rgba(255,102,0,0.08) 0%, rgba(255,140,66,0.05) 100%);
+  color: #ff6600;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255,102,0,0.15);
+}
+
+.enlace-nav:hover .enlace-underline {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.enlace-nav:hover .enlace-texto {
+  transform: translateY(-1px);
+}
+
+.enlace-nav:active {
+  transform: translateY(0);
+}
+
+.botones-accion {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.boton-busqueda, .menu-hamburguesa {
+  position: relative;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  color: #fff;
+}
+
+.boton-busqueda {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.boton-busqueda:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(255,102,0,0.4), 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #e55a00 0%, #ff6600 100%);
+}
+
+.boton-busqueda:active {
+  transform: translateY(0) scale(1.02);
+}
+
+.menu-hamburguesa {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-left: 1rem;
+  box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.menu-hamburguesa:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255,102,0,0.4), 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #e55a00 0%, #ff6600 100%);
+}
+
+.menu-hamburguesa:active {
+  transform: translateY(0);
+}
+
+.boton-icono-wrapper {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.boton-busqueda:hover .boton-icono-wrapper,
+.menu-hamburguesa:hover .boton-icono-wrapper {
+  transform: scale(1.1);
+}
+
+.boton-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.boton-busqueda:active .boton-ripple,
+.menu-hamburguesa:active .boton-ripple {
+  width: 100px;
+  height: 100px;
+  opacity: 0;
+}
+
+/* Modal de menú */
+.modal-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.50);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  z-index: 3000;
+}
+
+.modal-menu-panel {
+  width: 400px;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  animation: deslizarDesdeDerechaq 0.3s ease-out;
+}
+
+@keyframes deslizarDesdeDerechaq {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.boton-cerrar-menu {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.boton-cerrar-menu:hover {
+  background: rgba(255, 102, 0, 0.1);
+}
+
+.encabezado-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem 2rem 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.logo-menu {
+  width: 120px;
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+.descripcion-menu {
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #666;
+  margin: 0;
+  max-width: 280px;
+}
+
+.redes-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.icono-red-menu {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 102, 0, 0.1);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.icono-red-menu:hover {
+  background: #ff6600;
+  transform: translateY(-2px);
+}
+
+.icono-red-menu:hover svg path,
+.icono-red-menu:hover svg rect,
+.icono-red-menu:hover svg circle {
+  fill: #fff;
+  stroke: #fff;
+}
+
+.articulos-recientes {
+  padding: 2rem;
+  flex: 1;
+}
+
+.articulos-recientes h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #333;
+  border-bottom: 2px solid #ff6600;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.articulo-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.articulo-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.imagen-articulo {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.contenido-articulo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fecha-articulo {
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+}
+
+.titulo-articulo {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+  transition: color 0.2s;
+}
+
+.articulo-item:hover .titulo-articulo {
+  color: #ff6600;
+}
+
+/* Diseño responsivo */
+@media (max-width: 1600px) {
+  .barra-superior-negra {
+    padding: 0px 50px;
+  }
+  .barra-principal-navegacion {
+    padding: 6px 50px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .zona-izquierda {
+    display: none !important;
+  }
+
+  .barra-superior-negra {
+    padding: 0px 15px;
+  }
+
+  .contenedor-barra-superior {
+    width: 100%;
+    position: relative;
+  }
+
+  .zona-derecha {
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+  }
+
+  .botones-accion {
+    gap: 0.3rem;
+  }
+
+  .menu-hamburguesa {
+    margin-left: 0;
+  }
+
+  .contenedor-barra-principal {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .menu-enlaces {
+    display: none !important;
+  }
+}
+</style>

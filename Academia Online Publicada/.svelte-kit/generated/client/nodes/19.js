@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/simulador-de-acordeon/+page.svelte";
