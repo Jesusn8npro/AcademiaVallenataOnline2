@@ -5,7 +5,7 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: { 
 		adapter: adapter({
-			// Configuración específica para producción en Docker
+			// Configuración específica para producción en contenedores
 			out: 'build',
 			precompress: false,
 			envPrefix: ''
