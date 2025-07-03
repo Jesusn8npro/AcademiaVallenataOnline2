@@ -133,19 +133,19 @@ export const POST: RequestHandler = async ({ request }) => {
 			} else {
 				// Es un pago de curso/tutorial tradicional
 				console.log('🎓 Inscribiendo usuario a curso/tutorial...');
-				
-				const inscripcion = await inscribirUsuarioDespuesDePago(
-					pago.usuario_id,
-					pago.curso_id,
-					pago.tutorial_id,
-					pago.id
-				);
+			
+			const inscripcion = await inscribirUsuarioDespuesDePago(
+				pago.usuario_id,
+				pago.curso_id,
+				pago.tutorial_id,
+				pago.id
+			);
 
-				if (inscripcion.success) {
-					console.log('✅ Usuario inscrito correctamente');
-				} else {
-					console.error('❌ Error inscribiendo usuario:', inscripcion.error);
-					// No retornamos error aquí porque el pago ya fue procesado
+			if (inscripcion.success) {
+				console.log('✅ Usuario inscrito correctamente');
+			} else {
+				console.error('❌ Error inscribiendo usuario:', inscripcion.error);
+				// No retornamos error aquí porque el pago ya fue procesado
 				}
 			}
 		}
