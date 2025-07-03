@@ -1,23 +1,19 @@
-# Dockerfile simple que funciona
-FROM node:18-alpine
+FROM node:18
 
-# Crear directorio de trabajo
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copiar package.json
-COPY package*.json ./
-
-# Instalar todas las dependencias (necesarias para build)
-RUN npm install
-
-# Copiar código fuente
+# Copia los archivos del proyecto
 COPY . .
 
-# Build de la aplicación
+# Instala dependencias
+RUN npm install
+
+# Compila el proyecto
 RUN npm run build
 
-# Exponer puerto
-EXPOSE 3000
+# Puerto para preview de Vite
+EXPOSE 4173
 
-# Comando de inicio
-CMD ["npm", "run", "start"] 
+# Comando para correr el servidor
+CMD ["npm", "run", "preview"]
