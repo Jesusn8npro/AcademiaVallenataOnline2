@@ -80,6 +80,16 @@
 			</button>
 		</div>
 
+		<!-- Enlace a diagnóstico -->
+		<div class="text-center mb-6">
+			<a 
+				href="/diagnostico-epayco"
+				class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium inline-block"
+			>
+				🔍 Diagnóstico Completo ePayco
+			</a>
+		</div>
+
 		<!-- Resultados de verificación -->
 		{#if testResults.pagos.length > 0 || testResults.suscripciones.length > 0}
 		<div class="bg-white rounded-lg shadow-lg p-6 mb-8">
