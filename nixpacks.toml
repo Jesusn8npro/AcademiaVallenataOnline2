@@ -1,15 +1,11 @@
 [phases.setup]
-nixPkgs = ['nodejs_18', 'npm']
+nixPkgs = ['nodejs_18']
 
 [phases.install]
-cmds = ['npm ci']
+cmds = ['npm install']
 
 [phases.build]
 cmds = ['npm run build']
 
 [start]
-cmd = 'node build/index.js'
-
-[variables]
-NODE_ENV = 'production'
-PORT = '3000' 
+cmd = 'node build/index.js' 
