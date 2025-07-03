@@ -7,10 +7,10 @@ WORKDIR /app
 # Copiar package.json
 COPY package*.json ./
 
-# Instalar dependencias
+# Instalar todas las dependencias (necesarias para build)
 RUN npm install
 
-# Copiar todo el código
+# Copiar código fuente
 COPY . .
 
 # Build de la aplicación
@@ -19,5 +19,5 @@ RUN npm run build
 # Exponer puerto
 EXPOSE 3000
 
-# Comando para iniciar
-CMD ["node", "build"] 
+# Comando de inicio
+CMD ["npm", "run", "start"] 
