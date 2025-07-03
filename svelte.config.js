@@ -1,10 +1,15 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const config = {
 	preprocess: vitePreprocess(),
 	kit: { 
-		adapter: adapter(),
+		adapter: adapter({
+			// Configuración específica para producción en Docker
+			out: 'build',
+			precompress: false,
+			envPrefix: ''
+		}),
 		alias: {
 			'$lib': 'src/lib'
 		},

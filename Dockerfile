@@ -1,34 +1,48 @@
-# Use the Nixpacks base
-FROM ghcr.io/railwayapp/nixpacks:ubuntu-1741046653
+# Usar una imagen base de Node.js LTS
+FROM node:18-alpine AS builder
 
-# Set working directory
-WORKDIR /app/
+# Establecer el directorio de trabajo
+WORKDIR /app
 
-# Copy the nixpacks configuration
-COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix
-
-# Install system dependencies
-RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d
-
-# Copy package files
+# Copiar archivos de package
 COPY package*.json ./
 
-# Install ALL dependencies (including devDependencies) explicitly
-RUN --mount=type=cache,id=ggkpaDyXWK4-/root/npm,target=/root/.npm npm install --include=dev --no-optional
+# Instalar dependencias
+RUN npm ci --only=production --silent
 
-# Copy the rest of the application
-COPY . /app/.
+# Copiar el código fuente
+COPY . .
 
-# Generate SvelteKit files and build
-RUN npx svelte-kit sync
-RUN --mount=type=cache,id=ggkpaDyXWK4-node_modules/cache,target=/app/node_modules/.cache npx vite build
+# Construir la aplicación
+RUN npm run build
 
-# Set environment variables
+# Etapa de producción
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+# Instalar dumb-init para manejo correcto de señales
+RUN apk add --no-cache dumb-init
+
+# Crear usuario no-root para seguridad
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 sveltekit
+
+# Copiar los archivos necesarios desde el builder
+COPY --from=builder --chown=sveltekit:nodejs /app/build build/
+COPY --from=builder --chown=sveltekit:nodejs /app/node_modules node_modules/
+COPY --from=builder --chown=sveltekit:nodejs /app/package.json .
+COPY --from=builder --chown=sveltekit:nodejs /app/static static/
+
+# Cambiar al usuario no-root
+USER sveltekit
+
+# Exponer el puerto
+EXPOSE 3000
+
+# Variables de entorno para producción
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Expose port
-EXPOSE 3000
-
-# Start the application
-CMD ["node", "build"] 
+# Comando para ejecutar la aplicación
+CMD ["dumb-init", "node", "build"] 
