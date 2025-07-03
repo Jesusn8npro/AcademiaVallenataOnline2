@@ -183,7 +183,7 @@
 
 		<!-- Información de tarjetas de prueba -->
 		<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-			<h3 class="font-bold text-yellow-800 mb-4">🧪 Tarjetas de Prueba OFICIALES ePayco Colombia</h3>
+			<h3 class="font-bold text-yellow-800 mb-4">🧪 Tarjetas de Prueba OFICIALES Bold (ex-ePayco)</h3>
 			
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<!-- Tarjetas exitosas -->
@@ -191,35 +191,44 @@
 					<h4 class="font-semibold text-green-800 mb-2">✅ PAGOS EXITOSOS:</h4>
 					<div class="space-y-2 text-sm">
 						<div class="bg-white p-2 rounded border">
-							<strong>VISA:</strong> 4575623182290326<br>
+							<strong>VISA OFICIAL:</strong> 4111111111111111<br>
 							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
 							<strong>Nombre:</strong> APPROVED
 						</div>
 						<div class="bg-white p-2 rounded border">
-							<strong>MASTERCARD:</strong> 5254133674403564<br>
+							<strong>MASTERCARD OFICIAL:</strong> 5100010000000015<br>
 							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
 							<strong>Nombre:</strong> APPROVED
 						</div>
 					</div>
 				</div>
-				
+
 				<!-- Tarjetas rechazadas -->
 				<div class="bg-red-50 border border-red-200 rounded p-4">
-					<h4 class="font-semibold text-red-800 mb-2">❌ PAGOS RECHAZADOS:</h4>
+					<h4 class="font-semibold text-red-800 mb-2">❌ PARA PROBAR RECHAZOS:</h4>
 					<div class="space-y-2 text-sm">
 						<div class="bg-white p-2 rounded border">
-							<strong>VISA:</strong> 4151611527583283<br>
+							<strong>RECHAZADA:</strong> 4970110000000062<br>
 							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
 							<strong>Nombre:</strong> DECLINED
+						</div>
+						<div class="bg-white p-2 rounded border">
+							<strong>FALLIDA:</strong> 5204730000008404<br>
+							<strong>CVV:</strong> 123 | <strong>Fecha:</strong> 12/29<br>
+							<strong>Nombre:</strong> FAILED
 						</div>
 					</div>
 				</div>
 			</div>
-			
-			<div class="mt-4 bg-white border border-yellow-300 rounded p-3">
-				<p class="text-sm text-yellow-800">
-					<strong>⚠️ IMPORTANTE:</strong> Usa EXACTAMENTE estos números. Son las únicas tarjetas que funcionan con ePayco Colombia en modo prueba.
-				</p>
+
+			<div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+				<h4 class="font-semibold text-blue-800 mb-2">⚠️ IMPORTANTE:</h4>
+				<ul class="text-sm text-blue-700 space-y-1">
+					<li>• Estas son las tarjetas OFICIALES de Bold (ex-ePayco)</li>
+					<li>• DEBES estar en modo TEST (verificar variable VITE_EPAYCO_TEST_MODE=true)</li>
+					<li>• Solo funcionan en el sandbox de ePayco/Bold</li>
+					<li>• No usar tarjetas reales en modo prueba</li>
+				</ul>
 			</div>
 		</div>
 	</div>
