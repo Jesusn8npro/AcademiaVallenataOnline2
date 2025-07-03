@@ -46,6 +46,65 @@ export const GET: RequestHandler = async () => {
 		const { data: schemaData, error: schemaError } = await supabase
 			.rpc('get_table_schema', { table_name: 'pagos_epayco' });
 		
+		// Obtener últimos 10 pagos con información de membresía
+		const { data: pagos, error: errorPagos } = await supabase
+			.from('pagos_epayco')
+			.select(`
+				*,
+				membresias (
+					nombre,
+					precio_mensual,
+					precio_anual
+				)
+			`)
+			.order('created_at', { ascending: false })
+			.limit(10);
+
+		if (errorPagos) {
+			console.error('Error obteniendo pagos:', errorPagos);
+		}
+
+		// Obtener últimas 10 suscripciones con información de membresía y usuario
+		const { data: suscripciones, error: errorSuscripciones } = await supabase
+			.from('suscripciones_usuario')
+			.select(`
+				*,
+				membresias (
+					nombre,
+					descripcion
+				),
+				perfiles (
+					correo_electronico
+				)
+			`)
+			.order('created_at', { ascending: false })
+			.limit(10);
+
+		if (errorSuscripciones) {
+			console.error('Error obteniendo suscripciones:', errorSuscripciones);
+		}
+
+		// Formatear datos para la respuesta
+		const pagosFormateados = (pagos || []).map((pago: any) => ({
+			id: pago.id,
+			referencia: pago.referencia,
+			estado: pago.estado,
+			monto: pago.monto,
+			membresia_nombre: pago.membresias?.nombre || 'N/A',
+			created_at: pago.created_at
+		}));
+
+		const suscripcionesFormateadas = (suscripciones || []).map((suscripcion: any) => ({
+			id: suscripcion.id,
+			usuario_id: suscripcion.usuario_id,
+			usuario_email: suscripcion.perfiles?.correo_electronico || 'N/A',
+			membresia_nombre: suscripcion.membresias?.nombre || 'N/A',
+			estado: suscripcion.estado,
+			fecha_inicio: suscripcion.fecha_inicio,
+			fecha_fin: suscripcion.fecha_fin,
+			created_at: suscripcion.created_at
+		}));
+
 		return json({
 			success: true,
 			message: 'Base de datos OK',
@@ -54,7 +113,11 @@ export const GET: RequestHandler = async () => {
 				pagos_epayco: 'OK'
 			},
 			schema: schemaData || 'No disponible',
-			test_data: pagosData
+			test_data: pagosData,
+			pagos: pagosFormateados,
+			suscripciones: suscripcionesFormateadas,
+			total_pagos: pagosFormateados.length,
+			total_suscripciones: suscripcionesFormateadas.length
 		});
 		
 	} catch (error) {

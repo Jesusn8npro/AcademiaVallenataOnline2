@@ -4,11 +4,31 @@
 	import SelectorMembresias from '$lib/components/Membresias/SelectorMembresias.svelte';
 
 	let mostrarSelector = false;
+	let testResults = {
+		pagos: [] as any[],
+		suscripciones: [] as any[],
+		loading: false
+	};
 
 	onMount(() => {
 		console.log('🧪 Página de prueba de membresías cargada');
 		console.log('👤 Usuario actual:', $usuario);
 	});
+
+	async function verificarBaseDatos() {
+		testResults.loading = true;
+		try {
+			// Verificar últimos pagos
+			const resPagos = await fetch('/api/test-db');
+			const dataPagos = await resPagos.json();
+			
+			testResults.pagos = dataPagos.pagos || [];
+			testResults.suscripciones = dataPagos.suscripciones || [];
+		} catch (error) {
+			console.error('Error verificando BD:', error);
+		}
+		testResults.loading = false;
+	}
 </script>
 
 <svelte:head>
@@ -22,101 +42,148 @@
 			<h1 class="text-4xl font-bold text-gray-900 mb-4">
 				🧪 Test de Membresías
 			</h1>
-			<p class="text-lg text-gray-600">
-				Página de prueba para verificar el flujo completo de pagos de membresías
+			<p class="text-lg text-gray-600 mb-6">
+				Página de pruebas para el sistema de membresías con ePayco
 			</p>
-		</div>
-
-		<!-- Información del usuario -->
-		<div class="bg-white rounded-lg shadow-md p-6 mb-8">
-			<h2 class="text-xl font-semibold mb-4 flex items-center">
-				👤 Estado del Usuario
-			</h2>
 			
+			<!-- Estado del usuario -->
 			{#if $usuario}
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div>
-						<strong>ID:</strong> {$usuario.id}
-					</div>
-					<div>
-						<strong>Nombre:</strong> {$usuario.nombre}
-					</div>
-					<div>
-						<strong>Email:</strong> {$usuario.correo_electronico}
-					</div>
-					<div>
-						<strong>Rol:</strong> {$usuario.rol}
-					</div>
+				<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+					✅ Usuario logueado: <strong>{$usuario.correo_electronico}</strong>
 				</div>
 			{:else}
-				<div class="text-center py-4">
-					<p class="text-yellow-600 mb-2">
-						⚠️ Usuario no autenticado (modo de prueba)
-					</p>
-					<p class="text-sm text-gray-500">
-						En producción real necesitarás estar logueado
-					</p>
+				<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+					⚠️ No hay usuario logueado - Las pruebas funcionarán de todos modos
 				</div>
 			{/if}
-			
-			<!-- Botón siempre visible para pruebas -->
+		</div>
+
+		<!-- Botones de acción -->
+		<div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
 			<button 
 				on:click={() => mostrarSelector = true}
-				class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors w-full"
+				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
 			>
-				🚀 Probar Selector de Membresías
+				🏷️ Probar Selector de Membresías
+			</button>
+			
+			<button 
+				on:click={verificarBaseDatos}
+				disabled={testResults.loading}
+				class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+			>
+				{#if testResults.loading}
+					⏳ Verificando...
+				{:else}
+					🔍 Verificar Base de Datos
+				{/if}
 			</button>
 		</div>
 
-		<!-- Instrucciones de prueba -->
-		<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-			<h3 class="text-lg font-semibold text-yellow-800 mb-3">
-				📋 Instrucciones de Prueba
-			</h3>
-			<ol class="list-decimal list-inside space-y-2 text-yellow-700">
-				<li>Haz clic en "Probar Selector de Membresías"</li>
-				<li>Selecciona un plan y confirma</li>
-				<li>Verifica que se abra el formulario de ePayco</li>
-				<li>Usa tarjetas de prueba de ePayco</li>
-				<li>Verifica que se active la membresía después del pago</li>
-				<li><strong>Para pruebas reales, necesitas estar logueado</strong></li>
-			</ol>
-		</div>
+		<!-- Resultados de verificación -->
+		{#if testResults.pagos.length > 0 || testResults.suscripciones.length > 0}
+		<div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+			<h2 class="text-2xl font-bold mb-4">📊 Resultados de la Base de Datos</h2>
+			
+			<!-- Últimos pagos -->
+			{#if testResults.pagos.length > 0}
+			<div class="mb-6">
+				<h3 class="text-lg font-semibold mb-3 text-blue-600">💰 Últimos Pagos</h3>
+				<div class="overflow-x-auto">
+					<table class="min-w-full bg-gray-50 rounded-lg">
+						<thead>
+							<tr class="bg-gray-200">
+								<th class="px-4 py-2 text-left">Referencia</th>
+								<th class="px-4 py-2 text-left">Estado</th>
+								<th class="px-4 py-2 text-left">Monto</th>
+								<th class="px-4 py-2 text-left">Membresía</th>
+								<th class="px-4 py-2 text-left">Fecha</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each testResults.pagos as pago}
+							<tr class="border-b">
+								<td class="px-4 py-2 font-mono text-sm">{pago.referencia}</td>
+								<td class="px-4 py-2">
+									<span class="px-2 py-1 rounded text-xs {pago.estado === 'exitoso' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+										{pago.estado}
+									</span>
+								</td>
+								<td class="px-4 py-2">${pago.monto}</td>
+								<td class="px-4 py-2">{pago.membresia_nombre || 'N/A'}</td>
+								<td class="px-4 py-2 text-sm">{new Date(pago.created_at).toLocaleString()}</td>
+							</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{/if}
 
-		<!-- Datos de prueba -->
-		<div class="bg-gray-50 rounded-lg p-6">
-			<h3 class="text-lg font-semibold text-gray-800 mb-3">
-				💳 Tarjetas de Prueba ePayco
-			</h3>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-				<div>
-					<strong>Visa (Exitosa):</strong><br>
-					4575623182290326<br>
-					CVV: 123, Fecha: 12/29
+			<!-- Suscripciones -->
+			{#if testResults.suscripciones.length > 0}
+			<div>
+				<h3 class="text-lg font-semibold mb-3 text-purple-600">📝 Suscripciones</h3>
+				<div class="overflow-x-auto">
+					<table class="min-w-full bg-gray-50 rounded-lg">
+						<thead>
+							<tr class="bg-gray-200">
+								<th class="px-4 py-2 text-left">Usuario</th>
+								<th class="px-4 py-2 text-left">Membresía</th>
+								<th class="px-4 py-2 text-left">Estado</th>
+								<th class="px-4 py-2 text-left">Inicio</th>
+								<th class="px-4 py-2 text-left">Fin</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each testResults.suscripciones as suscripcion}
+							<tr class="border-b">
+								<td class="px-4 py-2">{suscripcion.usuario_email || suscripcion.usuario_id}</td>
+								<td class="px-4 py-2">{suscripcion.membresia_nombre}</td>
+								<td class="px-4 py-2">
+									<span class="px-2 py-1 rounded text-xs {suscripcion.estado === 'activa' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+										{suscripcion.estado}
+									</span>
+								</td>
+								<td class="px-4 py-2 text-sm">{new Date(suscripcion.fecha_inicio).toLocaleDateString()}</td>
+								<td class="px-4 py-2 text-sm">{new Date(suscripcion.fecha_fin).toLocaleDateString()}</td>
+							</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
-				<div>
-					<strong>MasterCard (Exitosa):</strong><br>
-					5424180279791732<br>
-					CVV: 123, Fecha: 12/29
+			</div>
+			{/if}
+		</div>
+		{/if}
+
+		<!-- Instrucciones -->
+		<div class="bg-white rounded-lg shadow-lg p-6">
+			<h2 class="text-2xl font-bold mb-4">📋 Instrucciones de Prueba</h2>
+			
+			<div class="space-y-4">
+				<div class="border-l-4 border-blue-500 pl-4">
+					<h3 class="font-semibold text-blue-700">1. Pagos Exitosos</h3>
+					<p class="text-gray-600">Visa: <code class="bg-gray-100 px-2 py-1 rounded">4575623182290326</code></p>
+					<p class="text-gray-600">Mastercard: <code class="bg-gray-100 px-2 py-1 rounded">5254133674403564</code></p>
 				</div>
-				<div>
-					<strong>Visa (Rechazada):</strong><br>
-					4151611527583283<br>
-					CVV: 123, Fecha: 12/29
+				
+				<div class="border-l-4 border-red-500 pl-4">
+					<h3 class="font-semibold text-red-700">2. Pagos Rechazados</h3>
+					<p class="text-gray-600">Visa: <code class="bg-gray-100 px-2 py-1 rounded">4151611527583283</code></p>
 				</div>
-				<div>
-					<strong>Diners (Exitosa):</strong><br>
-					36432507068614<br>
-					CVV: 123, Fecha: 12/29
+				
+				<div class="border-l-4 border-green-500 pl-4">
+					<h3 class="font-semibold text-green-700">3. Datos Adicionales</h3>
+					<p class="text-gray-600">CVV: <code class="bg-gray-100 px-2 py-1 rounded">123</code></p>
+					<p class="text-gray-600">Vencimiento: <code class="bg-gray-100 px-2 py-1 rounded">12/26</code> (cualquier fecha futura)</p>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
 
-<!-- Modal del selector de membresías -->
+<!-- Modal del selector -->
 {#if mostrarSelector}
-	<SelectorMembresias 
-		bind:mostrarModal={mostrarSelector}
-	/>
+	<SelectorMembresias bind:mostrarModal={mostrarSelector} />
 {/if} 
