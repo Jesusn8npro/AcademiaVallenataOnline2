@@ -1,17 +1,3 @@
 {
-  "dockerfile": true,
-  "phases": {
-    "setup": {
-      "nixPkgs": ["nodejs_18"]
-    },
-    "install": {
-      "cmds": ["npm install"]
-    },
-    "build": {
-      "cmds": ["npx vite build"]
-    }
-  },
-  "start": {
-    "cmd": "node build/index.js"
-  }
+  "dockerfile": true
 } 

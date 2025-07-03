@@ -7,15 +7,18 @@ WORKDIR /app
 # Copiar archivos de package
 COPY package*.json ./
 
-# Instalar TODAS las dependencias (dev + production)
-RUN npm install
+# Instalar TODAS las dependencias explícitamente
+RUN npm install --include=dev
 
 # Copiar código fuente
 COPY . .
 
+# Configurar SvelteKit
+RUN npx svelte-kit sync
+
 # Build de la aplicación
 ENV NODE_ENV=production
-RUN npm run build
+RUN npx vite build
 
 # Limpiar devDependencies después del build
 RUN npm prune --production
