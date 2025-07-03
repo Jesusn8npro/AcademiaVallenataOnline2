@@ -64,6 +64,7 @@ export async function crearRegistroPago(datos: any): Promise<ResultadoOperacion>
 			usuario_id: datos.usuario_id,
 			curso_id: datos.curso_id || null,
 			tutorial_id: datos.tutorial_id || null,
+			membresia_id: datos.membresia_id || null, // 🆕 SOPORTE PARA MEMBRESÍAS
 			nombre_producto: datos.nombre_producto,
 			descripcion: datos.descripcion || null,
 			valor: datos.valor,
@@ -160,6 +161,11 @@ export async function obtenerPagoPorReferencia(refPayco: string): Promise<Result
 				),
 				tutoriales:tutorial_id (
 					titulo
+				),
+				membresias:membresia_id (
+					nombre,
+					precio_mensual,
+					precio_anual
 				)
 			`)
 			.eq('ref_payco', refPayco)
