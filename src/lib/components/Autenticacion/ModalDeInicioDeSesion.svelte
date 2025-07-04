@@ -2,29 +2,36 @@
   import { registrarUsuario, iniciarSesionConCorreo, obtenerPerfil } from '$lib/supabase/autenticacionSupabase';
   import { setUsuario } from '$lib/UsuarioActivo/usuario';
   import { goto } from '$app/navigation';
+  import { supabase } from '$lib/supabase/clienteSupabase';
   export let abierto = false;
   export let onCerrar = () => {};
   let usuario = '';
   let contrasena = '';
   let vistaRegistro = false;
+  let vistaRecuperar = false;
   // Campos de registro
   let nombre = '';
   let apellido = '';
   let whatsapp = '';
   let correoRegistro = '';
   let contrasenaRegistro = '';
-
   // Estado para login
   let cargando = false;
   let errorLogin = '';
+  // Recuperar contraseña
+  let correoRecuperar = '';
+  let mensajeRecuperar = '';
 
   function cerrarModal() {
     onCerrar();
     vistaRegistro = false;
+    vistaRecuperar = false;
     usuario = '';
     contrasena = '';
     errorLogin = '';
     cargando = false;
+    correoRecuperar = '';
+    mensajeRecuperar = '';
   }
   function detenerPropagacion(e: Event) {
     e.stopPropagation();
@@ -86,6 +93,21 @@
     cerrarModal();
     goto('/estudiante');
   }
+
+  async function enviarRecuperacion(e: Event) {
+    e.preventDefault();
+    mensajeRecuperar = '';
+    cargando = true;
+    const { error } = await supabase.auth.resetPasswordForEmail(correoRecuperar, {
+      redirectTo: window.location.origin + '/recuperar-contrasena'
+    });
+    cargando = false;
+    if (error) {
+      mensajeRecuperar = 'No se pudo enviar el correo. Verifica tu email.';
+    } else {
+      mensajeRecuperar = '¡Revisa tu correo para restablecer la contraseña!';
+    }
+  }
 </script>
 
 {#if abierto}
@@ -95,30 +117,59 @@
         &times;
       </button>
       <img src="/logo academia vallenata.png" alt="Logo Academia Vallenata" class="logo-modal" />
-      {#if !vistaRegistro}
-        <h2 class="titulo-modal">Iniciar sesión</h2>
-        <form class="formulario-inicio-sesion" autocomplete="off" on:submit={manejarLogin}>
-  <div class="campo-formulario">
-    <label for="usuario">Correo electrónico o usuario</label>
-    <input id="usuario" type="text" bind:value={usuario} placeholder="Tu correo o usuario" required />
-  </div>
-  <div class="campo-formulario">
-    <label for="contrasena">Contraseña</label>
-    <input id="contrasena" type="password" bind:value={contrasena} placeholder="Tu contraseña" required />
-  </div>
-  {#if errorLogin}
-    <div class="mensaje-error">{errorLogin}</div>
-  {/if}
-  <button type="submit" class="boton-enviar" disabled={cargando}>
-    {cargando ? 'Ingresando...' : 'Entrar'}
-  </button>
-</form>
+      {#if vistaRecuperar}
+        <h2 class="titulo-modal">Recuperar contraseña</h2>
+        <p class="login-desc">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+        <form class="formulario-inicio-sesion" on:submit={enviarRecuperacion}>
+          <div class="campo-formulario">
+            <label for="recuperarCorreo">Correo electrónico</label>
+            <div class="input-icono">
+              <input id="recuperarCorreo" type="email" bind:value={correoRecuperar} placeholder="Tu correo" required />
+              <span class="icono-input">📧</span>
+            </div>
+          </div>
+          {#if mensajeRecuperar}
+            <div class="mensaje-error">{mensajeRecuperar}</div>
+          {/if}
+          <button type="submit" class="boton-enviar" disabled={cargando}>
+            {cargando ? 'Enviando...' : 'Enviar enlace'}
+          </button>
+        </form>
         <div class="enlaces-extra">
-          <button type="button" class="enlace-olvido">¿Olvidaste tu contraseña?</button>
-          <button type="button" class="enlace-registrarse" on:click={() => vistaRegistro = true}>¿No tienes cuenta? Regístrate</button>
+          <button type="button" class="enlace-olvido" on:click={() => { vistaRecuperar = false; mensajeRecuperar = ''; correoRecuperar = ''; }}>Volver al inicio de sesión</button>
+        </div>
+      {:else if !vistaRegistro}
+        <h2 class="titulo-modal">¡Bienvenido de nuevo!</h2>
+        <p class="login-desc">Accede a tu cuenta para disfrutar de todos los beneficios de la Academia Vallenata Online.</p>
+        <form class="formulario-inicio-sesion" autocomplete="off" on:submit={manejarLogin}>
+          <div class="campo-formulario">
+            <label for="usuario">Correo electrónico o usuario</label>
+            <div class="input-icono">
+              <input id="usuario" type="text" bind:value={usuario} placeholder="Tu correo o usuario" required />
+              <span class="icono-input">📧</span>
+            </div>
+          </div>
+          <div class="campo-formulario">
+            <label for="contrasena">Contraseña</label>
+            <div class="input-icono">
+              <input id="contrasena" type="password" bind:value={contrasena} placeholder="Tu contraseña" required />
+              <span class="icono-input">🔒</span>
+            </div>
+          </div>
+          {#if errorLogin}
+            <div class="mensaje-error">{errorLogin}</div>
+          {/if}
+          <button type="submit" class="boton-enviar" disabled={cargando}>
+            {cargando ? 'Ingresando...' : 'Entrar'}
+          </button>
+        </form>
+        <div class="enlaces-extra">
+          <button type="button" class="enlace-olvido" on:click={() => { vistaRecuperar = true; }}>¿Olvidaste tu contraseña?</button>
+          <button type="button" class="enlace-registrarse" on:click={() => vistaRegistro = true}>¿No tienes cuenta? <b>Regístrate</b></button>
         </div>
       {:else}
         <h2 class="titulo-modal">Crear cuenta nueva</h2>
+        <p class="login-desc">Únete a la comunidad y accede a todos los cursos, eventos y beneficios exclusivos.</p>
         <form class="formulario-inicio-sesion" autocomplete="off" on:submit={manejarRegistro}>
           <div class="fila-nombre-apellido">
             <div class="campo-formulario">
@@ -132,15 +183,24 @@
           </div>
           <div class="campo-formulario">
             <label for="whatsapp">WhatsApp</label>
-            <input id="whatsapp" type="tel" bind:value={whatsapp} placeholder="Tu número de WhatsApp" required />
+            <div class="input-icono">
+              <input id="whatsapp" type="tel" bind:value={whatsapp} placeholder="Tu número de WhatsApp" required />
+              <span class="icono-input">📱</span>
+            </div>
           </div>
           <div class="campo-formulario">
             <label for="correoRegistro">Correo electrónico</label>
-            <input id="correoRegistro" type="email" bind:value={correoRegistro} placeholder="Tu correo electrónico" required />
+            <div class="input-icono">
+              <input id="correoRegistro" type="email" bind:value={correoRegistro} placeholder="Tu correo electrónico" required />
+              <span class="icono-input">📧</span>
+            </div>
           </div>
           <div class="campo-formulario">
             <label for="contrasenaRegistro">Contraseña</label>
-            <input id="contrasenaRegistro" type="password" bind:value={contrasenaRegistro} placeholder="Crea una contraseña" required />
+            <div class="input-icono">
+              <input id="contrasenaRegistro" type="password" bind:value={contrasenaRegistro} placeholder="Crea una contraseña" required />
+              <span class="icono-input">🔒</span>
+            </div>
           </div>
           {#if errorLogin}
             <div class="mensaje-error">{errorLogin}</div>
@@ -148,7 +208,7 @@
           <button type="submit" class="boton-enviar">Registrarme</button>
         </form>
         <div class="enlaces-extra">
-          <button type="button" class="enlace-olvido" on:click={() => vistaRegistro = false}>¿Ya tienes cuenta? Inicia sesión</button>
+          <button type="button" class="enlace-olvido" on:click={() => vistaRegistro = false}>¿Ya tienes cuenta? <b>Inicia sesión</b></button>
         </div>
       {/if}
     </div>
@@ -166,47 +226,41 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999; /* Muy por encima de todo */
+  z-index: 9999;
   transition: opacity 0.2s;
-  padding: 0 12px; /* Margen lateral en móviles */
+  padding: 0 12px;
 }
-
 .modal-inicio-sesion {
   width: 100%;
   max-width: 370px;
   margin: 24px auto;
   box-sizing: border-box;
-
-  background: #fff;
-  border-radius: 22px;
-  box-shadow: 0 6px 32px rgba(0,0,0,0.16), 0 1.5px 8px rgba(0,0,0,0.09);
-  padding: 1.7rem 1.5rem 1.2rem 1.5rem;
+  background: linear-gradient(135deg, #fff 80%, #ffe5d0 100%);
+  border-radius: 2rem;
+  box-shadow: 0 8px 40px #0002;
+  padding: 2.5rem 2rem 2rem 2rem;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   animation: aparecerModal 0.26s cubic-bezier(.4,1.2,.6,1) both;
+  text-align: center;
 }
 @media (max-width: 600px) {
   .modal-inicio-sesion {
-    padding: 0.8rem 0.65rem 0.7rem 0.65rem;
+    padding: 1.2rem .5rem 1.5rem .5rem;
     max-width: 97vw;
     margin: 12px 4px;
   }
 }
-@media (max-width: 600px) {
-  .modal-inicio-sesion {
-    padding: 1.2rem 0.6rem 1.1rem 0.6rem;
-    max-width: 97vw;
-    margin: 18px 7px;
-  }
+.login-logo, .logo-modal {
+  width: 70px; margin-bottom: 1rem; display: block; margin-left: auto; margin-right: auto;
 }
-@media (max-width: 600px) {
-  .modal-inicio-sesion {
-    padding: 2rem 1.2rem 1.5rem 1.2rem;
-    max-width: 98vw;
-    margin: 0 22px;
-  }
+.titulo-modal {
+  font-size: 1.5rem; font-weight: 900; color: #ff6600; margin-bottom: .5rem; text-align: center;
+}
+.login-desc {
+  color: #444; font-size: 1rem; margin-bottom: 1.5rem; text-align: center;
 }
 .formulario-inicio-sesion {
   display: flex;
@@ -225,113 +279,57 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-}
-@keyframes aparecerModal {
-  from { opacity: 0; transform: translateY(-32px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.boton-cerrar {
-  position: absolute;
-  top: 1.1rem;
-  right: 1.1rem;
-  background: none;
-  border: none;
-  font-size: 1.7rem;
-  color: #888;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.boton-cerrar:hover {
-  color: #e74c3c;
-}
-.titulo-modal {
-  text-align: center;
-  font-size: 1.45rem;
-  font-weight: 700;
-  color: #23235b;
-  margin-bottom: 0.7rem;
-}
-.formulario-inicio-sesion {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-.campo-formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  text-align: left;
 }
 .campo-formulario label {
   font-size: 1rem;
   color: #23235b;
-  font-weight: 500;
-}
-.campo-formulario input {
-  padding: 0.38rem 0.7rem;
-  border: 1px solid #d2d2d2;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.17s;
-}
-.campo-formulario input:focus {
-  border: 1.5px solid #23235b;
-}
-.boton-enviar {
-  background: #e6a800;
-  color: #181818;
-  border: none;
-  border-radius: 7px;
-  padding: 0.5rem 0;
-  font-size: 1.08rem;
   font-weight: 600;
-  cursor: pointer;
-  margin-top: 0.25rem;
-  transition: background 0.18s;
 }
-.boton-enviar:hover {
-  background: #ffce3a;
+.input-icono {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  border-radius: 10px;
+  border: 1.5px solid #eee;
+  padding: .5rem 1rem;
+  margin-top: .3rem;
+}
+.input-icono input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: 1rem;
+  padding: .5rem 0;
+}
+.input-icono input:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.icono-input { font-size: 1.2rem; color: #ff6600; margin-left: .5rem; }
+.boton-enviar {
+  background: linear-gradient(90deg, #ff6600, #ff8c42);
+  color: #fff; border: none; border-radius: 30px; padding: 1rem; font-size: 1.1rem; font-weight: 700;
+  margin-top: .5rem; cursor: pointer; box-shadow: 0 2px 12px #ff660033; transition: background .2s;
+}
+.boton-enviar:hover { background: linear-gradient(90deg, #ff8c42, #ff6600); }
+.mensaje-error {
+  color: #e74c3c; background: #fff3f0; border-radius: 8px; padding: .5rem .7rem; font-size: .98rem; margin-bottom: .2rem; text-align: center;
 }
 .enlaces-extra {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.7rem;
-  align-items: center;
+  margin-top: 1.2rem; display: flex; flex-direction: column; gap: .5rem; align-items: center;
 }
 .enlace-olvido, .enlace-registrarse {
-  background: none;
-  border: none;
-  color: #23235b;
-  font-size: 0.98rem;
-  text-decoration: underline;
-  cursor: pointer;
-  transition: color 0.16s;
-  padding: 0;
-  font-family: inherit;
+  background: none; border: none; color: #1a73e8; font-size: .97rem; text-decoration: underline; cursor: pointer; transition: color .2s; padding: 0; font-family: inherit;
 }
-.enlace-olvido:hover, .enlace-registrarse:hover {
-  color: #e6a800;
+.enlace-olvido:hover, .enlace-registrarse:hover { color: #ff6600; }
+.boton-cerrar {
+  position: absolute; top: 1.2rem; right: 1.2rem;
+  background: none; border: none; font-size: 2rem; color: #ff6600; cursor: pointer; transition: color .2s;
 }
-.logo-modal {
-  display: block;
-  margin: 0 auto 0.6rem auto;
-  max-width: 120px;
-  width: 100%;
-  height: auto;
-}
-@media (max-width: 600px) {
-  .modal-inicio-sesion {
-    padding: 1.3rem 0.7rem 1.2rem 0.7rem;
-    max-width: 90vw;
-  }
-  .titulo-modal {
-    font-size: 1.15rem;
-  }
-  .boton-cerrar {
-    top: 0.6rem;
-    right: 0.7rem;
-    font-size: 1.4rem;
-  }
+.boton-cerrar:hover { color: #d35400; }
+@media (max-width: 500px) {
+  .modal-inicio-sesion { padding: 1.2rem .5rem 1.5rem .5rem; }
 }
 </style>

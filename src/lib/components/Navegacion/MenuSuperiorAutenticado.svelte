@@ -69,36 +69,52 @@
   <!-- Menú Central - Solo Desktop -->
   <div class="menu-central">
     <a href="/administrador" class="enlace">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="7" height="9"/>
-        <rect x="14" y="3" width="7" height="5"/>
-        <rect x="14" y="12" width="7" height="9"/>
-        <rect x="3" y="16" width="7" height="5"/>
-      </svg>
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      </span>
       <span>Panel</span>
     </a>
     <a href="/administrador/crear-contenido" class="enlace">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-        <line x1="12" y1="18" x2="12" y2="12"/>
-        <line x1="9" y1="15" x2="15" y2="15"/>
-      </svg>
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </span>
       <span>Crear</span>
     </a>
     <a href="/administrador/panel-contenido" class="enlace">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </span>
       <span>Contenido</span>
     </a>
     <a href="/cursos" class="enlace">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-      </svg>
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>
+      </span>
       <span>Cursos</span>
+    </a>
+    <a href="/administrador/usuarios" class="enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+      </span>
+      <span>Usuarios</span>
+    </a>
+    <a href="/administrador/blog" class="enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 7h10M7 11h10M7 15h6"/></svg>
+      </span>
+      <span>Blog</span>
+    </a>
+    <a href="/administrador/pagos" class="enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M2 10h20"/><circle cx="8" cy="15" r="2"/><circle cx="16" cy="15" r="2"/></svg>
+      </span>
+      <span>Pagos</span>
+    </a>
+    <a href="/administrador/notificaciones" class="enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </span>
+      <span>Notificaciones</span>
     </a>
   </div>
 
@@ -566,36 +582,69 @@
 }
 
 /* Responsive */
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
+  .menu-central {
+    gap: 2px;
+  }
+  .enlace {
+    min-width: 60px;
+    max-width: 80px;
+    padding: 6px 2px;
+  }
+  .icono-enlace-nav svg {
+    width: 18px;
+    height: 18px;
+  }
+  .enlace span {
+    font-size: 0.89rem;
+  }
+}
+
+@media (max-width: 900px) {
   .menu-superior {
     padding: 0.7rem 1rem;
   }
-  
   .boton-hamburguesa-lujo {
     display: flex;
   }
-  
   .menu-central {
-    display: none;
+    display: none !important;
   }
-  
   .iconos-desktop {
     display: none;
   }
-  
   .icono-movil {
     display: flex;
   }
-  
   .nombre {
     display: none;
   }
-  
   .avatar {
     width: 48px;
     height: 48px;
     border: 3px solid #e5e7eb;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+}
+
+.icono-enlace-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0.2rem 0;
+}
+.enlace {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 90px;
+  max-width: 120px;
+  padding: 10px 8px;
+}
+.enlace span {
+  font-size: 1.01rem;
+  font-weight: 500;
+  color: #222;
+  margin-top: 0.1rem;
 }
 </style>
