@@ -3,7 +3,7 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import ComentarioItem from './ComentarioItem.svelte';
   export let leccionId: string;
-  export let usuarioActual: any = null; // { id, nombre, avatar_url }
+  export let usuarioActual: any = null; // { id, nombre }
   export let tipo: 'leccion' | 'clase' = 'leccion'; // 'leccion' para cursos, 'clase' para tutoriales
   // Si tipo === 'clase', usaremos la tabla comentarios_clases y el campo clase_id
 
@@ -170,7 +170,7 @@
   </div>
   {#if usuarioActual}
     <form on:submit|preventDefault={agregarComentario} class="comentario-form-bar">
-      <img src={usuarioActual.avatar_url || '/default-avatar.png'} alt="avatar" class="comentario-form-avatar" />
+              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(usuarioActual?.nombre || 'Usuario')}&background=667eea&color=fff`} alt="avatar" class="comentario-form-avatar" />
       <input
         class="comentario-form-input"
         type="text"

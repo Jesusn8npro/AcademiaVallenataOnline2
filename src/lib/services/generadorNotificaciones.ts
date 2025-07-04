@@ -216,22 +216,30 @@ export async function crearNotificacion(params: {
     fechaExpiracion.setDate(fechaExpiracion.getDate() + config.dias_expiracion);
 
     // Crear notificaciones para cada usuario
-    const notificaciones = destinatarios.map(usuarioId => ({
-      usuario_id: usuarioId,
-      tipo: params.tipo,
-      titulo: config.titulo,
-      mensaje: params.mensaje,
-      icono: config.icono,
-      categoria: config.categoria,
-      prioridad: config.prioridad,
-      leida: false,
-      archivada: false,
-      url_accion: params.url_accion,
-      entidad_id: params.entidad_id,
-      entidad_tipo: params.entidad_tipo,
-      datos_adicionales: params.datos_adicionales || {},
-      fecha_expiracion: fechaExpiracion.toISOString()
-    }));
+          const notificaciones = destinatarios.map(usuarioId => {
+        const notificacion: any = {
+          usuario_id: usuarioId,
+          tipo: params.tipo,
+          titulo: config.titulo,
+          mensaje: params.mensaje,
+          icono: config.icono,
+          categoria: config.categoria,
+          prioridad: config.prioridad,
+          leida: false,
+          archivada: false,
+          url_accion: params.url_accion,
+          entidad_tipo: params.entidad_tipo,
+          datos_adicionales: params.datos_adicionales || {},
+          fecha_expiracion: fechaExpiracion.toISOString()
+        };
+        
+        // Solo agregar entidad_id si se proporciona (para evitar problemas con tablas que no lo tienen)
+        if (params.entidad_id) {
+          notificacion.entidad_id = params.entidad_id;
+        }
+        
+        return notificacion;
+      });
 
     // Insertar notificaciones en lotes
     const TAMANO_LOTE = 50;
@@ -495,9 +503,10 @@ export async function notificarNuevoComentario(params: {
     usuario_id: params.autor_publicacion_id,
     mensaje: `${params.comentarista_nombre} comentó en tu publicación "${params.titulo_publicacion}": ${params.comentario_texto.substring(0, 100)}${params.comentario_texto.length > 100 ? '...' : ''}`,
     url_accion: `/comunidad/publicacion/${params.publicacion_id}#comentario-${params.comentario_id}`,
-    entidad_id: params.comentario_id,
+    // NO usar entidad_id para comentarios de comunidad porque esa columna no existe
     entidad_tipo: 'comentario',
     datos_adicionales: {
+      comentario_id: params.comentario_id,
       publicacion_id: params.publicacion_id,
       comentarista_nombre: params.comentarista_nombre,
       titulo_publicacion: params.titulo_publicacion

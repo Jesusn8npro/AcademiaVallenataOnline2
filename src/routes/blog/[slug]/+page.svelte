@@ -236,11 +236,13 @@
 
   /* Layout principal */
   .pagina-articulo-blog {
-    max-width: 1536px;
+    width: 100%;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 2rem 1rem;
     transition: opacity 0.5s ease-out;
     opacity: 0;
+    margin-top: 50px;
   }
 
   .pagina-articulo-blog.visible {

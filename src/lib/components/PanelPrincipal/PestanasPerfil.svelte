@@ -114,7 +114,7 @@
   .contenedor-pestañas-wrapper {
     position: relative;
     width: 100%;
-    margin-top: -34px;
+    margin-top: -60px;
     z-index: 20;
   }
 

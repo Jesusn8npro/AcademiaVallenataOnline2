@@ -3,10 +3,11 @@ import { onMount } from 'svelte';
 import { supabase } from '$lib/supabase';
 export let publicacionId: string;
 export let usuario: {
-  id: string,
-  nombre: string,
-  avatar_url: string
-};
+  id: string;
+  nombre: string;
+
+  email?: string;
+} | null = null;
 export let mostrar: boolean = false;
 export let autoFocusInput: boolean = false;
 
@@ -42,28 +43,43 @@ const dispatch = createEventDispatcher();
 
 async function enviarComentario() {
   if (!textoComentario.trim() || cargandoEnvio) return;
-  
+  if (!usuario) {
+    errorMensaje = 'Error: Usuario no autenticado';
+    return;
+  }
+  if (!usuario.id || !usuario.nombre) {
+    errorMensaje = 'Error: Datos de usuario incompletos (falta id o nombre)';
+    return;
+  }
+  if (!publicacionId) {
+    errorMensaje = 'Error: ID de publicación no válido';
+    return;
+  }
   cargandoEnvio = true;
+  errorMensaje = '';
   const nuevoComentario = {
     publicacion_id: publicacionId,
     usuario_id: usuario.id,
     usuario_nombre: usuario.nombre,
-    usuario_avatar: usuario.avatar_url,
+    usuario_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || 'Usuario')}&background=667eea&color=fff`,
     comentario: textoComentario.trim(),
-    fecha_creacion: new Date().toISOString(),
     comentario_padre_id: null
   };
-  
-  const { data, error: err } = await supabase.from('comunidad_comentarios').insert([nuevoComentario]).select();
-  if (err) {
-    errorMensaje = 'No se pudo enviar el comentario';
-  } else {
-    textoComentario = '';
-    // Agrega el comentario localmente para feedback inmediato
-    const comentarioCreado = { ...nuevoComentario, id: data?.[0]?.id || Math.random().toString(), total_likes: 0 };
-    comentarios = [...comentarios, comentarioCreado];
-    dispatch('comentarioEnviado', { comentario: comentarioCreado });
-    await cargarLikesComentarios();
+  try {
+    const { data, error: err } = await supabase
+      .from('comunidad_comentarios')
+      .insert([nuevoComentario])
+      .select();
+    if (err) {
+      errorMensaje = `Error al enviar comentario: ${err.message} (Código: ${err.code})`;
+    } else {
+      textoComentario = '';
+      errorMensaje = '';
+      await cargarComentarios();
+      dispatch('comentarioEnviado', { comentario: data?.[0] });
+    }
+  } catch (error) {
+    errorMensaje = 'Error inesperado al enviar el comentario';
   }
   cargandoEnvio = false;
 }
@@ -249,68 +265,66 @@ function formatearFecha(fechaISO: string): string {
   {/if}
 
   <!-- Formulario para nuevo comentario -->
-  <div class="formulario-comentario">
-    <div class="contenedor-avatar-usuario">
-      <img 
-        class="avatar-usuario-actual" 
-        src={usuario.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre)}&background=667eea&color=fff`} 
-        alt={usuario.nombre}
-      />
-    </div>
-    
-    <div class="contenedor-input-comentario">
-      <div class="input-wrapper">
-    <input
-      class="input-comentario"
-      placeholder="Escribe un comentario..."
-          bind:value={textoComentario}
-      bind:this={inputComentarioEl}
-          on:keydown={manejarTeclaPresionada}
-          maxlength={500}
-          disabled={cargandoEnvio}
-          aria-label="Escribir comentario"
-        />
-        <div class="contador-caracteres">
-          <span class="caracteres-usados" class:limite-cercano={textoComentario.length > 400}>
-            {textoComentario.length}/500
-          </span>
+  {#if usuario}
+    <div class="formulario-comentario">
+      <!-- Mostrar mensaje de error si existe -->
+      {#if errorMensaje}
+        <div class="mensaje-error">
+          <svg class="icono-error" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <span>{errorMensaje}</span>
+          <button class="cerrar-error" on:click={() => errorMensaje = ''}>×</button>
         </div>
+      {/if}
+      
+      <div class="contenedor-avatar-usuario">
+        <img 
+          class="avatar-usuario-actual" 
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(usuario?.nombre || '')}&background=667eea&color=fff`} 
+          alt={usuario?.nombre}
+        />
       </div>
       
-      <div class="acciones-formulario">
-        <button 
-          class="boton-enviar-comentario" 
-          on:click={enviarComentario} 
-          disabled={!textoComentario.trim() || cargandoEnvio}
-          aria-label="Enviar comentario"
-        >
-          {#if cargandoEnvio}
-            <div class="spinner-envio"></div>
-          {:else}
-            <svg class="icono-enviar" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-            </svg>
-          {/if}
-          <span class="texto-boton">
-            {cargandoEnvio ? 'Enviando...' : 'Enviar'}
-          </span>
-        </button>
+      <div class="contenedor-input-comentario">
+        <div class="input-wrapper">
+      <input
+        class="input-comentario"
+        placeholder="Escribe un comentario..."
+            bind:value={textoComentario}
+        bind:this={inputComentarioEl}
+            on:keydown={manejarTeclaPresionada}
+            maxlength={500}
+            disabled={cargandoEnvio}
+            aria-label="Escribir comentario"
+          />
+          <div class="contador-caracteres">
+            <span class="caracteres-usados" class:limite-cercano={textoComentario.length > 400}>
+              {textoComentario.length}/500
+            </span>
+          </div>
+        </div>
+        
+        <div class="acciones-formulario">
+          <button 
+            class="boton-enviar-comentario" 
+            on:click={enviarComentario} 
+            disabled={!textoComentario.trim() || cargandoEnvio}
+            aria-label="Enviar comentario"
+          >
+            {#if cargandoEnvio}
+              <div class="spinner-envio"></div>
+            {:else}
+              <svg class="icono-enviar" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            {/if}
+            <span class="texto-boton">
+              {cargandoEnvio ? 'Enviando...' : 'Enviar'}
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Mensaje de error -->
-  {#if errorMensaje}
-    <div class="mensaje-error" role="alert">
-      <svg class="icono-error" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-      </svg>
-      <span>{errorMensaje}</span>
-      <button class="boton-cerrar-error" on:click={() => errorMensaje = ''} aria-label="Cerrar error">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-        </svg>
-      </button>
     </div>
   {/if}
 </section>
@@ -780,31 +794,18 @@ function formatearFecha(fechaISO: string): string {
     letter-spacing: 0.025em;
   }
 
-  /* Mensaje de error */
+  /* === MENSAJE DE ERROR === */
   .mensaje-error {
-  display: flex;
-  align-items: center;
-    gap: 0.5rem;
-    background: rgba(245, 101, 101, 0.1);
-    border: 1px solid rgba(245, 101, 101, 0.3);
-    color: var(--color-error);
-    padding: 0.75rem 1rem;
-    margin: 0 1.5rem 1rem;
-    border-radius: var(--radio-borde-pequeno);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
     font-size: 0.9rem;
-    font-weight: 500;
-    animation: aparecerError 0.3s ease-out;
-}
-
-  @keyframes aparecerError {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   .icono-error {
@@ -813,34 +814,24 @@ function formatearFecha(fechaISO: string): string {
     flex-shrink: 0;
   }
 
-  .boton-cerrar-error {
+  .cerrar-error {
     background: none;
     border: none;
-    color: var(--color-error);
+    color: #dc2626;
     cursor: pointer;
-    padding: 0.25rem;
-  border-radius: 50%;
-    transition: var(--transicion-rapida);
+    font-size: 18px;
+    font-weight: bold;
     margin-left: auto;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
   }
 
-  .boton-cerrar-error:hover {
-    background: rgba(245, 101, 101, 0.2);
-    transform: scale(1.1);
+  .cerrar-error:hover {
+    background: rgba(220, 38, 38, 0.1);
   }
 
-  .boton-cerrar-error svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  /* Animaciones */
-  @keyframes girar {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  /* Responsive Design */
+  /* === RESPONSIVE === */
   @media (max-width: 768px) {
     .encabezado-comentarios {
       padding: 0.875rem 1rem 0.625rem;

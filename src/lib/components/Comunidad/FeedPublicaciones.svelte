@@ -31,14 +31,7 @@
       contadorComentarios = count;
     }
     // Likes
-    const { data: dataLikes, error: errorLikes } = await supabase
-      .from('comunidad_publicaciones')
-      .select('me_gusta')
-      .eq('id', id)
-      .single();
-    if (!errorLikes && dataLikes && Array.isArray(dataLikes.me_gusta)) {
-      meGusta = dataLikes.me_gusta;
-    }
+    await recargarConteoLikes();
   });
   export let total_compartidos: number = 0;
   export let usuario: any;
@@ -59,37 +52,36 @@
     if (!usuario || !usuario.id || cargandoMeGusta) return;
     cargandoMeGusta = true;
     errorMeGusta = '';
-    let nuevosMeGusta;
-    if (yaDioMeGusta) {
-      // Quitar like
-      nuevosMeGusta = meGusta.filter(uid => uid !== usuario.id);
-    } else {
-      // Dar like
-      nuevosMeGusta = [...meGusta, usuario.id];
-    }
-    // Optimista
-    meGusta = nuevosMeGusta;
-    const { error } = await supabase
-      .from('comunidad_publicaciones')
-      .update({ me_gusta: nuevosMeGusta })
-      .eq('id', id);
-    if (error) {
-      // Revertir si hay error
-      meGusta = [...me_gusta];
-      errorMeGusta = 'Error al actualizar el "me gusta"';
-      console.error(error);
-    } else {
-      // Recargar likes reales desde la base de datos para asegurar sincronía
-      const { data } = await supabase
-        .from('comunidad_publicaciones')
-        .select('me_gusta')
-        .eq('id', id)
-        .single();
-      if (data && Array.isArray(data.me_gusta)) {
-        meGusta = data.me_gusta;
+    try {
+      const { data, error } = await supabase.rpc('toggle_like_publicacion_sin_auth', {
+        p_publicacion_id: id,
+        p_usuario_id: usuario.id
+      });
+      if (error) {
+        errorMeGusta = 'Error al procesar el like';
+      } else {
+        if (data && !data.error) {
+          await recargarConteoLikes();
+        }
       }
+    } catch (error) {
+      errorMeGusta = 'Error inesperado al procesar el like';
     }
     cargandoMeGusta = false;
+  }
+
+  // 📊 Función para recargar el conteo real de likes
+  async function recargarConteoLikes() {
+    try {
+      const { data, error } = await supabase
+        .from('comunidad_publicaciones_likes')
+        .select('usuario_id')
+        .eq('publicacion_id', id);
+      if (!error && data) {
+        const nuevosLikes = data.map((like: any) => like.usuario_id);
+        meGusta = nuevosLikes;
+      }
+    } catch (error) {}
   }
 
   function manejarComentarClick() {
@@ -100,7 +92,7 @@
   }
 </script>
 
-<article class="tarjeta-publicacion">
+<article class="tarjeta-publicacion" id="publicacion-{id}">
   <!-- Encabezado de la publicación -->
   <header class="encabezado-publicacion">
     <div class="info-usuario">

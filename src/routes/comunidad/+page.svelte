@@ -30,31 +30,53 @@
     errorPublicaciones = '';
     const desde = pagina * LIMITE;
     const hasta = desde + LIMITE - 1;
+    
+    // Cargar publicaciones
     const { data, error } = await supabase
       .from('comunidad_publicaciones')
       .select('*')
       .order('fecha_creacion', { ascending: false })
       .range(desde, hasta);
+      
     if (error) {
       errorPublicaciones = 'Error al cargar publicaciones: ' + error.message;
     } else {
       if (!data || data.length < LIMITE) fin = true;
-      publicaciones = [...publicaciones, ...(data || []).map((pub: any) => ({
-        ...pub,
-        usuario_id: pub.usuario_id,
-        usuario_nombre: pub.usuario_nombre || 'Usuario',
-        usuario_avatar: pub.usuario_avatar || '',
-        contenido: pub.descripcion || '',
-        fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
-        url_imagen: pub.url_imagen || '',
-        url_video: pub.url_video || '',
-        url_gif: pub.url_gif || '',
-        tipo: pub.tipo || 'texto',
-        encuesta: pub.encuesta || null,
-        me_gusta: pub.me_gusta || [],
-        total_comentarios: pub.total_comentarios || 0,
-        total_compartidos: pub.total_compartidos || 0
-      }))];
+      
+      // Para cada publicación, cargar sus likes de forma más robusta
+      const publicacionesConLikes = await Promise.all((data || []).map(async (pub: any) => {
+        // Cargar IDs de usuarios que dieron like
+        const { data: likesData, error: likesError } = await supabase
+          .from('comunidad_publicaciones_likes')
+          .select('usuario_id')
+          .eq('publicacion_id', pub.id);
+          
+        const likesUsuarios = likesError ? [] : (likesData || []).map((like: any) => like.usuario_id);
+        
+        // Log para debugging
+        if (likesUsuarios.length > 0) {
+          console.log(`📊 Publicación ${pub.id}: ${likesUsuarios.length} likes cargados`);
+        }
+        
+        return {
+          ...pub,
+          usuario_id: pub.usuario_id,
+          usuario_nombre: pub.usuario_nombre || 'Usuario',
+          usuario_avatar: pub.usuario_avatar || '',
+          contenido: pub.descripcion || '',
+          fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
+          url_imagen: pub.url_imagen || '',
+          url_video: pub.url_video || '',
+          url_gif: pub.url_gif || '',
+          tipo: pub.tipo || 'texto',
+          encuesta: pub.encuesta || null,
+          me_gusta: likesUsuarios, // ✅ Usar likes de la tabla correcta
+          total_comentarios: pub.total_comentarios || 0,
+          total_compartidos: pub.total_compartidos || 0
+        };
+      }));
+      
+      publicaciones = [...publicaciones, ...publicacionesConLikes];
       pagina += 1;
     }
     cargandoPublicaciones = false;
@@ -77,8 +99,7 @@
     // Usuario para publicaciones
     usuario = {
       id: sesion.user.id,
-      nombre: perfil.nombre || perfil.nombre_usuario || 'Usuario',
-      avatar_url: perfil.url_foto_perfil || ''
+      nombre: perfil.nombre || perfil.nombre_usuario || 'Usuario'
     };
 
     // Cargar primeras publicaciones
@@ -87,7 +108,46 @@
     // Observer para scroll infinito
     observador = new IntersectionObserver(manejarInterseccion);
     if (centinela) observador.observe(centinela);
+
+    // 🎯 Manejar hash de URL para ir a publicación específica
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash;
+      const match = hash.match(/#publicacion-(.+)/);
+      if (match) {
+        const publicacionId = match[1];
+        // Esperar un poco para que se carguen las publicaciones
+        setTimeout(() => {
+          scrollAPublicacion(publicacionId);
+        }, 1000);
+      }
+    }
   });
+
+  // 🎯 Función para hacer scroll a una publicación específica
+  function scrollAPublicacion(publicacionId: string) {
+    const elemento = document.getElementById(`publicacion-${publicacionId}`);
+    if (elemento) {
+      elemento.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      // Resaltar la publicación brevemente
+      elemento.style.border = '3px solid #3b82f6';
+      elemento.style.borderRadius = '12px';
+      setTimeout(() => {
+        elemento.style.border = '';
+        elemento.style.borderRadius = '';
+      }, 3000);
+    } else {
+      // Si no se encuentra, intentar cargar más publicaciones
+      console.log('🔍 Publicación no encontrada, cargando más...');
+      if (!fin && !cargandoPublicaciones) {
+        cargarMasPublicaciones().then(() => {
+          setTimeout(() => scrollAPublicacion(publicacionId), 500);
+        });
+      }
+    }
+  }
 
   afterUpdate(() => {
     if (observador && centinela && !fin) {

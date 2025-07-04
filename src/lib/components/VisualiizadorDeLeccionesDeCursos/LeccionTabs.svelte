@@ -8,7 +8,7 @@
   export let recursos: string = '';
   export let comentarios: any[] = [];
   export let cursoId: string = '';
-  export let usuarioActual: any = null; // { id, rol, nombre, avatar_url }
+  export let usuarioActual: any = null; // { id, rol, nombre }
   export let leccionId: string = '';
   export let tipo: 'leccion' | 'clase' = 'leccion'; // Nuevo prop para distinguir tipo
   export let curso: any = {}; // Objeto completo del curso/tutorial desde Supabase

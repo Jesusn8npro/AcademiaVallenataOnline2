@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { supabase } from '$lib/supabase/clienteSupabase';
 
   // --- PROPS (Datos recibidos desde el padre) ---
@@ -21,13 +22,33 @@
   let tipoMensaje: 'portada' | 'avatar' | 'posicion' | null = null;
   let modoEdicion: 'portada' | 'avatar' | null = null;
   let reposicionandoPortada = false;
+  let mostrarMenuPortada = false;
+  let mostrarMenuAvatar = false;
+  let refMenuPortada: HTMLElement | null = null;
+  let refMenuAvatar: HTMLElement | null = null;
+  let refInputPortada: HTMLInputElement | null = null;
+  let refInputAvatar: HTMLInputElement | null = null;
 
-  function seleccionarArchivo(event: Event, tipo: 'portada' | 'avatar') {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+  // --- MANEJO DE EVENTOS GLOBALES PARA REPOSICIONAR PORTADA ---
+  function finalizarReposicion() {
+    if (reposicionandoPortada) {
+      guardarPosicionPortada();
+    }
+  }
 
-    archivoTemporal = file;
+  $: if (reposicionandoPortada) {
+    window.addEventListener('mouseup', finalizarReposicion);
+    window.addEventListener('touchend', finalizarReposicion);
+  } else {
+    window.removeEventListener('mouseup', finalizarReposicion);
+    window.removeEventListener('touchend', finalizarReposicion);
+  }
+
+  function seleccionarArchivo(event: any, tipo: 'portada' | 'avatar') {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+    archivoTemporal = archivo;
+    modoEdicion = tipo;
     const reader = new FileReader();
     reader.onload = (e) => {
       if (tipo === 'portada') {
@@ -36,34 +57,26 @@
         vistaAvatarTemporal = e.target?.result as string;
       }
     };
-    reader.readAsDataURL(file);
-    modoEdicion = tipo;
+    reader.readAsDataURL(archivo);
   }
 
   async function guardarCambios() {
     if (!archivoTemporal || !userId || !modoEdicion) return;
-
     subiendo = true;
     mensaje = '';
-
     const bucket = modoEdicion === 'portada' ? 'fotoportada' : 'avatars';
     const extension = archivoTemporal.name.split('.').pop();
     const nombreArchivo = `${modoEdicion}-${userId}-${Date.now()}.${extension}`;
-
     const { error: errorSubida } = await supabase.storage.from(bucket).upload(nombreArchivo, archivoTemporal, { upsert: true });
-
     if (errorSubida) {
       mostrarMensaje('Error al subir: ' + errorSubida.message, modoEdicion);
       subiendo = false;
       return;
     }
-
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(nombreArchivo);
     const nuevaUrl = urlData.publicUrl + '?t=' + Date.now();
-
     const campoUpdate = modoEdicion === 'portada' ? { portada_url: nuevaUrl } : { url_foto_perfil: nuevaUrl };
     await supabase.from('perfiles').update(campoUpdate).eq('id', userId);
-
     if (modoEdicion === 'portada') {
       urlPortada = nuevaUrl;
       vistaPortadaTemporal = null;
@@ -71,7 +84,6 @@
       urlAvatar = nuevaUrl;
       vistaAvatarTemporal = null;
     }
-
     mostrarMensaje('¡Actualizado exitosamente!', modoEdicion);
     limpiarSeleccion();
   }
@@ -87,20 +99,16 @@
   function manejarDragPortada(event: MouseEvent | TouchEvent) {
     if (!reposicionandoPortada) return;
     event.preventDefault();
-    
     const targetElement = (event.currentTarget as HTMLElement);
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
     const rect = targetElement.getBoundingClientRect();
     const y = clientY - rect.top;
-    
     posicionPortadaY = Math.max(0, Math.min(100, (y / rect.height) * 100));
   }
 
   async function guardarPosicionPortada() {
     if (!userId) return;
-    
     await supabase.from('perfiles').update({ posicion_img_portada: String(posicionPortadaY) }).eq('id', userId);
-    
     reposicionandoPortada = false;
     mostrarMensaje('¡Posición guardada!', 'posicion');
   }
@@ -113,7 +121,80 @@
       tipoMensaje = null;
     }, 3000);
   }
+
+  function abrirMenuPortada(e: any) {
+    e.stopPropagation();
+    mostrarMenuPortada = true;
+  }
+  function abrirMenuAvatar(e: any) {
+    e.stopPropagation();
+    mostrarMenuAvatar = true;
+  }
+  function cerrarMenus() {
+    mostrarMenuPortada = false;
+    mostrarMenuAvatar = false;
+  }
+
+  function clickFueraMenuPortada(e: Event) {
+    if (refMenuPortada && !refMenuPortada.contains(e.target as Node) && 
+        !(e.target as Element).closest('.icono-camara-portada')) {
+      mostrarMenuPortada = false;
+    }
+  }
+  function clickFueraMenuAvatar(e: any) {
+    if (refMenuAvatar && !refMenuAvatar.contains(e.target)) {
+      mostrarMenuAvatar = false;
+    }
+  }
+
+  $: if (mostrarMenuPortada) {
+    window.addEventListener('mousedown', clickFueraMenuPortada);
+    window.addEventListener('touchstart', clickFueraMenuPortada);
+  } else {
+    window.removeEventListener('mousedown', clickFueraMenuPortada);
+    window.removeEventListener('touchstart', clickFueraMenuPortada);
+  }
+  $: if (mostrarMenuAvatar) {
+    window.addEventListener('mousedown', clickFueraMenuAvatar);
+  } else {
+    window.removeEventListener('mousedown', clickFueraMenuAvatar);
+  }
+
+  function verFotoPortada() {
+    if (urlPortada) window.open(urlPortada, '_blank');
+    mostrarMenuPortada = false;
+  }
+  function verFotoAvatar() {
+    if (urlAvatar) window.open(urlAvatar, '_blank');
+    mostrarMenuAvatar = false;
+  }
+  function subirFotoPortada() {
+    refInputPortada?.click();
+    mostrarMenuPortada = false;
+    modoEdicion = 'portada';
+  }
+  function subirFotoAvatar() {
+    refInputAvatar?.click();
+    mostrarMenuAvatar = false;
+    modoEdicion = 'avatar';
+  }
+  function moverPortada() {
+    reposicionandoPortada = true;
+    mostrarMenuPortada = false;
+  }
+
+  onDestroy(() => {
+    window.removeEventListener('mousedown', clickFueraMenuPortada);
+    window.removeEventListener('touchstart', clickFueraMenuPortada);
+    window.removeEventListener('mousedown', clickFueraMenuAvatar);
+  });
 </script>
+
+<!--
+  Estructura visual y media queries organizados:
+  - General styles
+  - Media queries agrupados al final y comentados
+-->
 
 <!-- Contenedor Principal -->
 <div class="contenedor-portada" on:mousemove={manejarDragPortada} on:touchmove={manejarDragPortada}>
@@ -122,36 +203,59 @@
     alt="Portada de perfil"
     class="imagen-portada"
     class:reposicionando={reposicionandoPortada}
-    style="object-position: 50% {posicionPortadaY}%"
+    style="object-position: 50% {posicionPortadaY}%;"
   />
   
-  <!-- Controles -->
-  <div class="controles-portada">
-    {#if modoEdicion === 'portada'}
-      <button class="boton-control" on:click={guardarCambios} disabled={subiendo}>{subiendo ? 'Guardando...' : 'Guardar'}</button>
-      <button class="boton-control secundario" on:click={limpiarSeleccion} disabled={subiendo}>Cancelar</button>
-    {:else if reposicionandoPortada}
-      <button class="boton-control" on:click={guardarPosicionPortada}>Guardar Posición</button>
-      <button class="boton-control secundario" on:click={() => reposicionandoPortada = false}>Cancelar</button>
-    {:else if !modoEdicion}
-      <label class="boton-control">
-        Cambiar Portada <input type="file" class="input-oculto" on:change={(e) => seleccionarArchivo(e, 'portada')} />
-      </label>
-      <button class="boton-control secundario" on:click={() => reposicionandoPortada = true}>Reposicionar</button>
-    {/if}
-  </div>
+  <!-- Menú flotante portada -->
+  {#if mostrarMenuPortada}
+    <div class="menu-flotante-portada" bind:this={refMenuPortada}>
+      {#if urlPortada}
+        <button on:click={verFotoPortada}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Ver foto de portada</button>
+      {/if}
+      <button on:click={subirFotoPortada}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><rect x="4" y="16" width="16" height="4" rx="2"/></svg> Subir foto nueva</button>
+      <button on:click={moverPortada}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18m9-9H3"/></svg> Mover</button>
+    </div>
+  {/if}
+
+  <!-- Botones Guardar/Cancelar portada cuando hay imagen temporal -->
+  {#if vistaPortadaTemporal || modoEdicion === 'portada'}
+    <div class="controles-portada">
+      <button class="boton-control" on:click={guardarCambios} disabled={subiendo}>
+        {subiendo ? 'Guardando...' : 'Guardar'}
+      </button>
+      <button class="boton-control secundario" on:click={limpiarSeleccion} disabled={subiendo}>
+        Cancelar
+      </button>
+    </div>
+  {/if}
+
+  <!-- Icono cámara portada: SIEMPRE abre menú -->
+  <span class="icono-camara-portada" on:click|stopPropagation={abrirMenuPortada}>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="4"/><path d="M5 7h2l2-3h6l2 3h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
+    <span class="texto-cambiar-portada">Cambiar portada</span>
+  </span>
+  <input type="file" class="input-oculto" bind:this={refInputPortada} on:change={(e) => seleccionarArchivo(e, 'portada')} />
 
   <!-- Avatar -->
   <div class="contenedor-avatar">
-    <div class="avatar-interactivo">
+    <div class="avatar-interactivo" on:click={abrirMenuAvatar} style="cursor:pointer;">
       <img src={vistaAvatarTemporal || urlAvatar || 'https://randomuser.me/api/portraits/women/44.jpg'} alt="Avatar" class="imagen-avatar" />
-      {#if !modoEdicion}
-        <label class="overlay-avatar">
-          Cambiar Foto <input type="file" class="input-oculto" on:change={(e) => seleccionarArchivo(e, 'avatar')} />
-        </label>
-      {/if}
+      <!-- Icono cámara perfil SIEMPRE visible y abre menú -->
+      <span class="icono-camara-avatar" on:click|stopPropagation={abrirMenuAvatar}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="4"/><path d="M5 7h2l2-3h6l2 3h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
+      </span>
     </div>
+    <input type="file" class="input-oculto" bind:this={refInputAvatar} on:change={(e) => seleccionarArchivo(e, 'avatar')} />
     
+    <!-- Menú flotante avatar -->
+    {#if mostrarMenuAvatar}
+      <div class="menu-flotante-avatar" bind:this={refMenuAvatar}>
+        {#if urlAvatar}
+          <button on:click={verFotoAvatar}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Ver foto del perfil</button>
+        {/if}
+        <button on:click={subirFotoAvatar}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><rect x="4" y="16" width="16" height="4" rx="2"/></svg> Elegir foto del perfil</button>
+      </div>
+    {/if}
     {#if modoEdicion === 'avatar'}
       <div class="controles-avatar">
         <button class="boton-guardar-avatar" on:click={guardarCambios} disabled={subiendo}>{subiendo ? 'Guardando...' : 'Guardar'}</button>
@@ -226,10 +330,11 @@
   .contenedor-portada {
     position: relative;
     width: 100%;
-    height: 300px;
+    height: 350px;
     overflow: visible;
     border-radius: var(--borde-radius) var(--borde-radius) 0 0;
     z-index: 1;
+    margin-top: 25px;
   }
 
   .imagen-portada {
@@ -239,6 +344,8 @@
     transition: object-position 0.3s ease;
     z-index: 2;
     position: relative;
+    border-radius: 20px;
+    
   }
   .imagen-portada.reposicionando { cursor: grabbing; }
 
@@ -249,7 +356,15 @@
     right: 16px;
     display: flex;
     gap: 12px;
-    z-index: 10;
+    z-index: 9999;
+  }
+
+  /* Ajustes responsivos para los controles */
+  @media (max-width: 900px) {
+    .controles-portada {
+      top: 16px; /* Mantener en la parte superior */
+      right: 16px;
+    }
   }
 
   .boton-control {
@@ -265,13 +380,35 @@
     font-size: 0.9rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
+
   .boton-control:hover:not(:disabled) {
     background: rgba(0, 0, 0, 0.85);
     transform: translateY(-2px);
   }
-  .boton-control.secundario { background: rgba(245, 158, 107, 0.8); }
-  .boton-control.secundario:hover:not(:disabled) { background: rgba(245, 158, 107, 1); }
-  .boton-control:disabled { background: var(--gris-medio); cursor: not-allowed; }
+
+  .boton-control.secundario { 
+    background: rgba(245, 158, 107, 0.8); 
+  }
+
+  .boton-control.secundario:hover:not(:disabled) { 
+    background: rgba(245, 158, 107, 1); 
+  }
+
+  .boton-control:disabled { 
+    background: var(--gris-medio); 
+    cursor: not-allowed; 
+  }
+
+  /* Ajustes responsivos para los botones */
+  @media (max-width: 480px) {
+    .controles-portada {
+      gap: 8px;
+    }
+    .boton-control {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+  }
 
   /* === AVATAR === */
   .contenedor-avatar {
@@ -279,7 +416,7 @@
     left: 50%;
     bottom: -80px;
     transform: translateX(-50%);
-    z-index: 15;
+    z-index: 9998;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -299,6 +436,7 @@
     object-fit: cover;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    z-index: 100;
   }
   .avatar-interactivo:hover .imagen-avatar { box-shadow: 0 12px 40px rgba(37, 99, 235, 0.2); }
 
@@ -346,7 +484,7 @@
   .info-usuario {
     background: var(--fondo-blanco);
     margin-top: 70px;
-    padding: 8px 32px;
+    padding: 1px 1px;
     border-radius: 0 0 var(--borde-radius) var(--borde-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
     display: flex;
@@ -355,14 +493,17 @@
     gap: 20px;
     position: relative;
     z-index: 1;
+    overflow: visible;
   }
 
   /* --- Secciones Info --- */
   .seccion-estadisticas {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     flex: 1.5;
+    position: relative;
+    z-index: 1;
   }
 
   .estadistica {
@@ -372,6 +513,7 @@
     justify-content: center;
     text-align: center;
     flex: 1;
+    margin-bottom: 0;
   }
 
   .icono-estadistica { font-size: 2.2rem; line-height: 1; }
@@ -388,29 +530,51 @@
   .seccion-central {
     text-align: center;
     flex: 1;
+    margin-top: 0;
   }
 
-  .nombre-usuario { font-size: 1.5rem; font-weight: 700; color: var(--gris-oscuro); }
-  .correo-usuario { color: var(--color-primario); font-weight: 500; font-size: 0.9rem; margin-block: 2px 8px; }
-  .estrellas { font-size: 1.2rem; color: var(--color-secundario); }
+  .nombre-usuario {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+    margin-bottom: 2px;
+    margin-top: 2px;
+  }
+  .correo-usuario {
+    color: var(--color-primario);
+    font-weight: 500;
+    font-size: 0.88rem;
+    margin-block: 0 4px;
+  }
+  .estrellas {
+    font-size: 1.05rem;
+    color: var(--color-secundario);
+    margin-bottom: 2px;
+  }
 
   .seccion-accion {
     flex: 1.2;
     text-align: center;
+    margin-top: 0;
   }
 
-  .saludo-accion { font-size: 1.1rem; font-weight: 700; color: var(--gris-oscuro); margin-bottom: 8px;}
+  .saludo-accion {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+    margin-bottom: 4px;
+  }
 
   .boton-accion-principal {
     background: linear-gradient(135deg, var(--color-primario), #1d4ed8);
     color: var(--texto-blanco);
-    padding: 12px 20px;
+    padding: 8px 12px;
     border-radius: 8px;
     border: none;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     width: 100%;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
   }
@@ -444,42 +608,148 @@
     10%, 90% { opacity: 1; transform: translateY(0); }
   }
 
-  /* === RESPONSIVE === */
+  /* === ICONOS === */
+  .icono-camara-portada {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 30px;
+    padding: 6px 12px 6px 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .texto-cambiar-portada {
+    display: none;
+    color: var(--gris-oscuro);
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .icono-camara-avatar {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* === MENÚS FLOTANTES === */
+  .menu-flotante-portada {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 200px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    z-index: 10000;
+  }
+
+  .menu-flotante-avatar {
+    position: absolute;
+    top: auto;
+    bottom: 110%;
+    left: 50%;
+    transform: translate(-50%, -8px);
+    z-index: 9999;
+    min-width: 220px;
+    background: white;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.10);
+    border-radius: 12px;
+    padding: 8px;
+  }
+
+  .menu-flotante-portada button,
+  .menu-flotante-avatar button {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gris-oscuro);
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .menu-flotante-portada button:hover,
+  .menu-flotante-avatar button:hover {
+    background: var(--gris-claro);
+  }
+
+  .menu-flotante-portada button svg,
+  .menu-flotante-avatar button svg {
+    flex-shrink: 0;
+  }
+
+  /* === MEDIA QUERIES RESPONSIVOS === */
+  /* --- Tablet y móvil --- */
   @media (max-width: 900px) {
-    .contenedor-portada {
-      height: 190px;
-    }
+    .contenedor-portada { height: 250px; }
     .info-usuario { flex-direction: column; align-items: center; gap: 24px; }
     .seccion-estadisticas, .seccion-central, .seccion-accion { width: 100%; flex: none; }
     .seccion-estadisticas { justify-content: space-around; }
     .separador-vertical { display: none; }
+    .controles-portada { top: 16px; right: 16px; }
+    .icono-camara-portada { padding: 6px; border-radius: 50%; }
+    .menu-flotante-avatar {
+      bottom: 150px;
+      min-width: 95vw;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,0.1);
+      left: 50%;
+      transform: translateX(-50%, 0);
+    }
+    .contenedor-avatar { bottom: -60px; }
   }
-
+  /* --- Móvil pequeño --- */
+  @media (max-width: 600px) {
+    .menu-flotante-portada {
+      top: auto;
+      bottom: 80px;
+      right: 16px;
+      transform: translateX(-50%);
+      min-width: 95vw;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,0.1);
+      left: 50%;
+    }
+    .menu-flotante-avatar { min-width: 95vw; }
+  }
+  /* --- Ajustes botones en móvil --- */
   @media (max-width: 480px) {
-    .seccion-estadisticas {
-      display: flex;
-      justify-content: space-around;
-      width: 100%;
-      gap: 8px;
-    }
-    .estadistica .icono-estadistica {
-      font-size: 1.9rem;
-    }
-    .estadistica .valor {
-      font-size: 1.1rem;
-    }
-    .estadistica .etiqueta {
-      font-size: 0.6rem;
-    }
-
+    .controles-portada { gap: 8px; }
+    .boton-control { padding: 8px 16px; font-size: 0.85rem; }
+    .seccion-estadisticas .icono-estadistica { font-size: 1.9rem; }
+    .estadistica .valor { font-size: 1.1rem; }
+    .estadistica .etiqueta { font-size: 0.6rem; }
     .info-usuario { padding: 10px; }
-
-    .controles-portada {
-      gap: 2px;
-    }
-    .boton-control {
-      padding: 5px 8px;
-      font-size: 0.8rem;
-    }
+  }
+  /* --- Mostrar texto solo en escritorio --- */
+  @media (min-width: 901px) {
+    .texto-cambiar-portada { display: inline; }
+    .icono-camara-portada { padding-right: 16px; }
   }
 </style>
+

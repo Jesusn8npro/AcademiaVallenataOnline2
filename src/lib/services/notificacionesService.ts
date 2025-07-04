@@ -44,6 +44,8 @@ export interface EstadisticasNotificaciones {
 class NotificacionesService {
 	private channel: RealtimeChannel | null = null;
 	private callbacks: ((notificacion: Notificacion) => void)[] = [];
+	private contadorCallbacks: ((contador: number) => void)[] = [];
+	private usuarioActual: string | null = null;
 
 	/**
 	 * 🔔 Obtener todas las notificaciones del usuario actual
@@ -61,7 +63,7 @@ class NotificacionesService {
 			}
 
 			let query = supabase
-				.from('vista_notificaciones')
+				.from('notificaciones')
 				.select('*')
 				.eq('usuario_id', user.id)
 				.order('fecha_creacion', { ascending: false });
@@ -347,45 +349,202 @@ class NotificacionesService {
 	}
 
 	/**
-	 * 🎧 Suscribirse a notificaciones en tiempo real
+	 * 🔔 Suscribirse a notificaciones en tiempo real
 	 */
-	suscribirseANotificaciones(callback: (notificacion: Notificacion) => void): void {
-		if (this.channel) {
-			this.channel.unsubscribe();
+	async suscribirseANotificaciones(callback: (notificacion: Notificacion) => void): Promise<void> {
+		try {
+			// Obtener usuario actual
+			const { data: { user } } = await supabase.auth.getUser();
+			if (!user) {
+				console.warn('No hay usuario autenticado para suscribirse a notificaciones');
+				return;
+			}
+
+			this.usuarioActual = user.id;
+			this.callbacks.push(callback);
+
+			// Si ya hay un canal activo, no crear otro
+			if (this.channel) {
+				console.log('✅ Ya hay una suscripción activa a notificaciones');
+				return;
+			}
+
+			// Crear canal de tiempo real para notificaciones
+			this.channel = supabase
+				.channel(`notificaciones_${user.id}`)
+				.on(
+					'postgres_changes',
+					{
+						event: 'INSERT',
+						schema: 'public',
+						table: 'notificaciones',
+						filter: `usuario_id=eq.${user.id}`
+					},
+					(payload: any) => {
+						console.log('🔔 Nueva notificación recibida:', payload);
+						
+						// Transformar el payload a nuestro formato
+						const nuevaNotificacion: Notificacion = {
+							id: payload.new.id,
+							usuario_id: payload.new.usuario_id,
+							tipo: payload.new.tipo,
+							titulo: payload.new.titulo,
+							mensaje: payload.new.mensaje,
+							icono: payload.new.icono,
+							categoria: payload.new.categoria,
+							prioridad: payload.new.prioridad,
+							leida: payload.new.leida,
+							archivada: payload.new.archivada,
+							url_accion: payload.new.url_accion,
+							entidad_id: payload.new.entidad_id,
+							entidad_tipo: payload.new.entidad_tipo,
+							datos_adicionales: payload.new.datos_adicionales,
+							fecha_creacion: payload.new.fecha_creacion,
+							fecha_lectura: payload.new.fecha_lectura,
+							fecha_expiracion: payload.new.fecha_expiracion
+						};
+
+						// Llamar a todos los callbacks registrados
+						this.callbacks.forEach(cb => {
+							try {
+								cb(nuevaNotificacion);
+							} catch (error) {
+								console.error('Error en callback de notificación:', error);
+							}
+						});
+
+						// Actualizar contador
+						this.actualizarContador();
+
+						// Mostrar notificación del navegador si está permitido
+						this.mostrarNotificacionNativa(nuevaNotificacion);
+					}
+				)
+				.on(
+					'postgres_changes',
+					{
+						event: 'UPDATE',
+						schema: 'public',
+						table: 'notificaciones',
+						filter: `usuario_id=eq.${user.id}`
+					},
+					(payload: any) => {
+						console.log('🔄 Notificación actualizada:', payload);
+						// Actualizar contador cuando se marque como leída
+						this.actualizarContador();
+					}
+				)
+				.subscribe((status: string) => {
+					console.log('📡 Estado de suscripción a notificaciones:', status);
+					if (status === 'SUBSCRIBED') {
+						console.log('✅ Suscrito exitosamente a notificaciones en tiempo real');
+					} else if (status === 'CHANNEL_ERROR') {
+						console.error('❌ Error en el canal de notificaciones');
+						this.channel = null;
+					}
+				});
+
+		} catch (error) {
+			console.error('❌ Error al suscribirse a notificaciones:', error);
 		}
-
-		this.callbacks.push(callback);
-
-		// Crear canal de Supabase Realtime
-		this.channel = supabase
-			.channel('notificaciones-cambios')
-			.on(
-				'postgres_changes',
-				{
-					event: 'INSERT',
-					schema: 'public',
-					table: 'notificaciones'
-				},
-				(payload: any) => {
-					console.log('📨 Nueva notificación en tiempo real:', payload.new);
-					this.callbacks.forEach(cb => cb(payload.new as Notificacion));
-				}
-			)
-			.subscribe();
-
-		console.log('🎧 Suscrito a notificaciones en tiempo real');
 	}
 
 	/**
-	 * 🔇 Desuscribirse de notificaciones en tiempo real
+	 * 🔢 Suscribirse a cambios en el contador de notificaciones
+	 */
+	suscribirseAContador(callback: (contador: number) => void): void {
+		this.contadorCallbacks.push(callback);
+		// Obtener contador inicial
+		this.actualizarContador();
+	}
+
+	/**
+	 * 🔄 Actualizar contador y notificar a los callbacks
+	 */
+	private async actualizarContador(): Promise<void> {
+		const contador = await this.obtenerContadorNoLeidas();
+		this.contadorCallbacks.forEach(callback => {
+			try {
+				callback(contador);
+			} catch (error) {
+				console.error('Error en callback de contador:', error);
+			}
+		});
+	}
+
+	/**
+	 * 🔕 Desuscribirse de notificaciones en tiempo real
 	 */
 	desuscribirseDeNotificaciones(): void {
 		if (this.channel) {
+			console.log('🔕 Desuscribiéndose de notificaciones en tiempo real');
 			this.channel.unsubscribe();
 			this.channel = null;
 		}
 		this.callbacks = [];
-		console.log('🔇 Desuscrito de notificaciones en tiempo real');
+		this.contadorCallbacks = [];
+		this.usuarioActual = null;
+	}
+
+	/**
+	 * 🔔 Mostrar notificación nativa del navegador
+	 */
+	private async mostrarNotificacionNativa(notificacion: Notificacion): Promise<void> {
+		// Verificar si las notificaciones están permitidas
+		if (typeof window === 'undefined' || !('Notification' in window)) {
+			return;
+		}
+
+		// Solicitar permiso si no se ha concedido
+		if (Notification.permission === 'default') {
+			await Notification.requestPermission();
+		}
+
+		// Mostrar notificación si está permitido
+		if (Notification.permission === 'granted') {
+			const notification = new Notification(notificacion.titulo, {
+				body: notificacion.mensaje,
+				icon: '/favicon.png', // Usar el favicon de la app
+				badge: '/favicon.png',
+				tag: notificacion.id, // Evitar duplicados
+				requireInteraction: notificacion.prioridad === 'alta',
+				silent: notificacion.prioridad === 'baja'
+			});
+
+			// Auto-cerrar después de 5 segundos (excepto alta prioridad)
+			if (notificacion.prioridad !== 'alta') {
+				setTimeout(() => notification.close(), 5000);
+			}
+
+			// Manejar clic en la notificación
+			notification.onclick = () => {
+				window.focus();
+				if (notificacion.url_accion) {
+					window.location.href = notificacion.url_accion;
+				}
+				notification.close();
+			};
+		}
+	}
+
+	/**
+	 * 🔔 Solicitar permisos de notificación
+	 */
+	async solicitarPermisosNotificacion(): Promise<boolean> {
+		if (typeof window === 'undefined' || !('Notification' in window)) {
+			return false;
+		}
+
+		if (Notification.permission === 'granted') {
+			return true;
+		}
+
+		if (Notification.permission === 'default') {
+			const permission = await Notification.requestPermission();
+			return permission === 'granted';
+		}
+
+		return false;
 	}
 
 	/**

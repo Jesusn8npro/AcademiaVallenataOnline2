@@ -281,7 +281,7 @@
 <style>
   .formulario-perfil {
     max-width: 100%;
-    margin: 0 auto;
+    margin: 0 ;
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 24px;
     padding: 1rem;

@@ -108,7 +108,7 @@
   .contenedor-perfil {
     max-width: 1500px;
     margin: 2rem auto;
-    padding: 0 1rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -117,7 +117,6 @@
   .contenido-principal-perfil {
     background: #fff;
     border-radius: 16px;
-    padding: 2rem;
     box-shadow: 0 4px 24px 0 rgba(0,0,0,0.04);
   }
 

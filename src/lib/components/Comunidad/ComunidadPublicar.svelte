@@ -7,7 +7,7 @@
   import { subirArchivoComunidad } from '$lib/supabase/supabase-comunidad';
 
   // Props
-  export let usuario: { id: string, nombre: string, avatar_url: string } | null = null;
+  export let usuario: { id: string, nombre: string } | null = null;
 
   // Estados principales
   let showModal = false;
@@ -123,7 +123,7 @@
       const insertData = {
       usuario_id: usuario?.id,
       usuario_nombre: usuario?.nombre,
-      usuario_avatar: usuario?.avatar_url,
+      usuario_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario?.nombre || 'Usuario')}&background=667eea&color=fff`,
         titulo: datosEncuesta.pregunta,
       descripcion: '',
       tipo: 'encuesta',
@@ -146,6 +146,8 @@
 
   // Función principal de publicación
   const publicar = async () => {
+    console.log('🚀 INICIANDO PUBLICACIÓN');
+    console.log('👤 Usuario:', usuario);
     try {
       let url_media = null;
 
@@ -166,12 +168,14 @@
       const insertData: any = {
         usuario_id: usuario?.id,
         usuario_nombre: usuario?.nombre,
-        usuario_avatar: usuario?.avatar_url,
+        usuario_avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario?.nombre || 'Usuario')}&background=667eea&color=fff`,
         titulo,
       descripcion: texto,
       tipo,
         fecha_creacion: new Date().toISOString()
       };
+
+      console.log('📝 DATOS A INSERTAR:', insertData);
 
       // Asignar campos de media según tipo
       if (tipo === 'foto' && url_media) insertData.url_imagen = url_media;
@@ -179,15 +183,25 @@
       else if (tipo === 'gif' && url_media) insertData.url_gif = url_media;
 
       // Insertar en Supabase
-      const { error } = await supabase
+      console.log('💾 INSERTANDO EN SUPABASE...');
+      const { data, error } = await supabase
       .from('comunidad_publicaciones')
-      .insert([insertData]);
+      .insert([insertData])
+      .select();
 
-      if (error) throw error;
+      console.log('📊 RESPUESTA SUPABASE:', { data, error });
 
+      if (error) {
+        console.error('❌ ERROR SUPABASE:', error);
+        throw error;
+      }
+
+    console.log('✅ PUBLICACIÓN EXITOSA');
     dispatch('publicar');
     cerrarModal();
     } catch (error: any) {
+      console.error('💥 ERROR EN PUBLICACIÓN:', error);
+      console.error('💥 ERROR COMPLETO:', JSON.stringify(error, null, 2));
       alert(`Error al publicar: ${error.message || error}`);
     }
   };
@@ -198,7 +212,7 @@
   <div class="publisher-header">
     <div class="user-avatar">
       <img 
-        src={usuario?.avatar_url || 'https://ui-avatars.com/api/?name=Usuario'} 
+        src={'https://ui-avatars.com/api/?name=' + encodeURIComponent(usuario?.nombre || 'Usuario')} 
         alt="Avatar" 
         class="avatar-img"
       />
@@ -262,7 +276,7 @@
       <!-- Info del usuario -->
       <div class="user-info">
         <img 
-          src={usuario?.avatar_url || 'https://ui-avatars.com/api/?name=Usuario'} 
+          src={'https://ui-avatars.com/api/?name=' + encodeURIComponent(usuario?.nombre || 'Usuario')} 
           alt="Avatar"
           class="user-avatar-large"
         />

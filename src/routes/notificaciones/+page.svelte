@@ -39,10 +39,16 @@
 		await cargarEstadisticas();
 
 		// Suscribirse a notificaciones en tiempo real
-		notificacionesService.suscribirseANotificaciones((nuevaNotificacion) => {
+		await notificacionesService.suscribirseANotificaciones((nuevaNotificacion) => {
 			notificaciones = [nuevaNotificacion, ...notificaciones];
 			aplicarFiltros();
 			cargarEstadisticas(); // Actualizar estadísticas
+		});
+
+		// Suscribirse al contador en tiempo real
+		notificacionesService.suscribirseAContador((nuevoContador) => {
+			// Actualizar estadísticas cuando cambie el contador
+			cargarEstadisticas();
 		});
 	});
 

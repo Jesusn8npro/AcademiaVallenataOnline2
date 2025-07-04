@@ -24,7 +24,7 @@
 		await cargarNotificaciones();
 
 		// Suscribirse a nuevas notificaciones en tiempo real
-		notificacionesService.suscribirseANotificaciones(async (nuevaNotificacion) => {
+		await notificacionesService.suscribirseANotificaciones(async (nuevaNotificacion) => {
 			// Agregar a la lista
 			notificaciones = [nuevaNotificacion, ...notificaciones];
 			await actualizarEstado();
@@ -36,6 +36,11 @@
 					if (mostrarDropdown) mostrarDropdown = false;
 				}, 5000);
 			}
+		});
+
+		// Suscribirse al contador en tiempo real
+		notificacionesService.suscribirseAContador((nuevoContador) => {
+			totalNoLeidas = nuevoContador;
 		});
 
 		// Listener para cerrar dropdown al hacer clic fuera
