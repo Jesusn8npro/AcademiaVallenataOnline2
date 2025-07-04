@@ -46,3 +46,47 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# Archivos ejecutables y grandes
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tar.bz2
+
+# Archivos de video/audio grandes
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.ogg
+
+# Archivos de imagen muy grandes (más de 10MB típicamente)
+*.psd
+*.ai
+*.sketch
+*.fig
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Archivos de backup
+*.bak
+*.backup
+*.old 
