@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables CSS para el sistema de paquetes */
+:root {
+  --primary-color: #667eea;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --background-white: #ffffff;
+  --background-light: #f9fafb;
+  --border-color: #d1d5db;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Estilos globales para asegurar background consistente */
+html, body {
+  background-color: #fff !important;
+  background: #fff !important;
+}
+
+/* Asegurar que el contenedor principal siempre tenga background blanco */
+#svelte {
+  background: #fff !important;
+  min-height: 100vh;
+}
+
+.layout-autenticado {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  margin-top: 64px; /* altura del nav superior */
+}
+
+.admin-sidebar-container {
+  width: 240px;
+  min-width: 60px;
+  max-width: 320px;
+  height: calc(100vh - 64px);
+  box-sizing: border-box;
+  border-right: 2px solid #e6a800;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+}
+
+.main-content {
+  flex: 1 1 0%;
+  min-width: 0;
+  background: #fff !important; /* Forzar background blanco siempre */
+  padding: 0;
+  margin: 0;
+  margin-left: 280px; /* Espacio para el sidebar expandido por defecto */
+  overflow-x: hidden;
+  box-sizing: border-box;
+  display: block;
+  transition: margin-left 0.25s ease; /* Transición suave cuando cambia el sidebar */
+}
+
+/* Clase para cuando el sidebar está colapsado */
+.main-content.sidebar-colapsado {
+  margin-left: 80px; /* Espacio para el sidebar colapsado */
+}
+
+/* Responsive: Eliminar margin-left cuando el sidebar está oculto en móviles */
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0 !important; /* Sin margen cuando el sidebar está oculto */
+    width: 100%;
+    padding: 1rem; /* Añadir padding para mejor experiencia móvil */
+  }
+  
+  .main-content.sidebar-colapsado {
+    margin-left: 0 !important; /* Sin margen incluso si tiene la clase colapsado */
+  }
+  
+  .layout-autenticado {
+    margin-top: 60px; /* Ajustar para móviles */
+  }
+}
+
+/* Para pantallas muy pequeñas, asegurar que ocupe todo el ancho */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw;
+  }
+}
+
+/* Páginas del blog: eliminar el margin-left del sidebar para mantener consistencia visual */
+.pagina-blog,
+.pagina-articulo-blog {
+  margin-left: 0 !important;
+}

@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/administrador/panel-contenido/+page.svelte";

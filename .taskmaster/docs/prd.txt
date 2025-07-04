@@ -1,0 +1,372 @@
+**INSTRUCCIÓN PARA TASKMASTER: GENERAR TODAS LAS TAREAS EN ESPAÑOL ÚNICAMENTE. Todos los títulos, descripciones, detalles de implementación y estrategias de prueba deben estar completamente en español.**
+
+# 📋 PRD: Academia Vallenata Online - Plataforma SaaS Revolucionaria
+
+## 🎯 1. RESUMEN EJECUTIVO
+
+### 1.1 VISIÓN DEL PROYECTO
+Transformar **Academia Vallenata Online** de una plataforma WordPress obsoleta a una **SaaS revolucionaria** que será la experiencia de aprendizaje de acordeón vallenato más avanzada del mundo.
+
+### 1.2 OBJETIVOS PRINCIPALES
+- ✅ **Reemplazar WordPress** completamente (lento y limitado)
+- 🚀 **Crear plataforma moderna** con SvelteKit + Supabase
+- 💰 **Implementar monetización avanzada** (tutoriales + cursos + membresías)
+- 🎮 **Gamificar el aprendizaje** con simulador videojuego
+- 👥 **Construir comunidad activa** con interacción social
+- 🤖 **Integrar IA** para soporte y automatizaciones
+
+### 1.3 MÉTRICAS DE ÉXITO
+- **Performance**: < 2 segundos de carga
+- **Responsividad**: 100% componentes móvil-friendly  
+- **Conversión**: +300% vs WordPress actual
+- **Retención**: 80% usuarios activos después de 30 días
+
+---
+
+## 📱 2. INVENTARIO COMPLETO DE PÁGINAS EXISTENTES
+
+### 2.1 PÁGINAS PÚBLICAS (Sin autenticación)
+| Página | Ruta | Archivo | Estado Responsivo | Prioridad |
+|--------|------|---------|-------------------|-----------|
+| **Home/Landing** | `/` | `src/routes/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Blog Principal** | `/blog` | `src/routes/blog/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Artículo Individual** | `/blog/[slug]` | `src/routes/blog/[slug]/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Catálogo Cursos** | `/cursos` | `src/routes/cursos/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Curso Individual** | `/cursos/[slug]` | `src/routes/cursos/[slug]/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Lección de Curso** | `/cursos/[slug]/[modulo]/[leccion]` | `src/routes/cursos/[slug]/[modulo]/[leccion]/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Tutoriales** | `/tutoriales` | `src/routes/tutoriales/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Tutorial Individual** | `/tutoriales/[slug]` | `src/routes/tutoriales/[slug]/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Clase Tutorial** | `/tutoriales/[slug]/clase/[claseSlug]` | `src/routes/tutoriales/[slug]/clase/[claseSlug]/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Simulador Acordeón** | `/simulador-de-acordeon` | `src/routes/simulador-de-acordeon/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Sesión Cerrada** | `/sesion_cerrada` | `src/routes/sesion_cerrada/+page.svelte` | ❌ 0% | 🟢 BAJA |
+
+### 2.2 PÁGINAS DE USUARIO AUTENTICADO
+| Página | Ruta | Archivo | Estado Responsivo | Prioridad |
+|--------|------|---------|-------------------|-----------|
+| **Dashboard Estudiante** | `/estudiante` | `src/routes/estudiante/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Mis Cursos** | `/mis-cursos` | `src/routes/mis-cursos/+page.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Mi Perfil** | `/mi-perfil` | `src/routes/mi-perfil/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Comunidad** | `/comunidad` | `src/routes/comunidad/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Publicaciones** | `/publicaciones` | `src/routes/publicaciones/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+
+### 2.3 PÁGINAS ADMINISTRATIVAS
+| Página | Ruta | Archivo | Estado Responsivo | Prioridad |
+|--------|------|---------|-------------------|-----------|
+| **Dashboard Admin** | `/administrador` | `src/routes/administrador/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Panel Contenido** | `/administrador/panel-contenido` | `src/routes/administrador/panel-contenido/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Crear Contenido** | `/administrador/crear-contenido` | `src/routes/administrador/crear-contenido/+page.svelte` | ❌ 0% | 🟡 MEDIA |
+| **Blog Admin** | `/administrador/blog` | `src/routes/administrador/blog/+page.svelte` | ❌ 0% | 🟢 BAJA |
+
+### 2.4 COMPONENTES DE NAVEGACIÓN
+| Componente | Archivo | Estado Responsivo | Prioridad |
+|------------|---------|-------------------|-----------|
+| **Menú Principal** | `src/lib/components/Navegacion/MenuPublico2.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Menú Autenticado** | `src/lib/components/Navegacion/MenuSuperiorAutenticado.svelte` | ❌ 0% | 🔥 CRÍTICA |
+| **Sidebar Admin** | `src/lib/components/Navegacion/AdminSidebar.svelte` | ✅ 100% | ✅ COMPLETO |
+| **Menú Móvil Inferior** | `src/lib/components/Navegacion/MenuInferiorResponsivo.svelte` | ✅ 100% | ✅ COMPLETO |
+| **Modal Login** | `src/lib/components/Autenticacion/ModalDeInicioDeSesion.svelte` | ❌ 0% | 🔥 CRÍTICA |
+
+---
+
+## 🏗️ 3. ARQUITECTURA Y STACK TECNOLÓGICO
+
+### 3.1 STACK ACTUAL
+- **Frontend**: SvelteKit + TypeScript + TailwindCSS
+- **Backend**: Supabase (PostgreSQL + Auth + Storage + Realtime)
+- **Estilos**: TailwindCSS + CSS personalizado
+- **Deployment**: Vercel/Netlify (pendiente)
+
+### 3.2 INTEGRACIONES PENDIENTES
+- **Pagos**: Stripe + PayPal
+- **IA**: OpenAI API para chatbot y automatizaciones
+- **Email**: Resend/SendGrid para notificaciones
+- **Analytics**: Google Analytics 4 + Mixpanel
+- **CDN**: Cloudflare para performance
+
+---
+
+## 💰 4. MODELO DE MONETIZACIÓN
+
+### 4.1 FUENTES DE INGRESOS
+1. **TUTORIALES INDIVIDUALES** 💰
+   - Pago único por canción específica
+   - Precio: $5-15 USD por tutorial
+   - Acceso permanente
+
+2. **CURSOS COMPLETOS** 💰💰
+   - Pago único por curso estructurado
+   - Precio: $50-200 USD por curso
+   - Incluye certificación
+
+3. **MEMBRESÍAS PREMIUM** 💰💰💰
+   - Mensual: $29.99 USD
+   - Anual: $299.99 USD (2 meses gratis)
+   - Acceso total + beneficios exclusivos
+
+4. **SERVICIOS PREMIUM** 💰
+   - Clases 1:1: $50-100 USD/hora
+   - Certificaciones oficiales: $100 USD
+   - Venta de acordeones: Comisión 10-15%
+
+### 4.2 SISTEMA DE ACCESO
+- **Usuarios Gratuitos**: Preview limitado, comunidad básica
+- **Compradores**: Acceso al contenido comprado
+- **Miembros Premium**: Acceso total, comunidad premium, soporte prioritario
+
+---
+
+## 🎮 5. FUNCIONALIDADES PRINCIPALES
+
+### 5.1 SISTEMA DE USUARIOS ✅ (COMPLETADO)
+- [✅] Registro/Login con Supabase Auth
+- [✅] Perfiles personalizados con avatar
+- [✅] Roles (admin/estudiante)
+- [✅] Gestión de sesiones
+
+### 5.2 GESTIÓN DE CONTENIDO ✅ (COMPLETADO)
+- [✅] CRUD completo de cursos
+- [✅] CRUD completo de tutoriales  
+- [✅] Sistema de módulos y lecciones
+- [✅] Upload de archivos multimedia
+- [✅] Editor de contenido
+
+### 5.3 COMUNIDAD BÁSICA ✅ (COMPLETADO)
+- [✅] Publicaciones con texto/imagen
+- [✅] Sistema de comentarios
+- [✅] Likes y reacciones
+- [✅] Feed de actividad
+
+### 5.4 SIMULADOR DE ACORDEÓN ✅ (COMPLETADO)
+- [✅] Web Audio API funcional
+- [✅] Simulación de teclas y bajos
+- [✅] Reproducción de sonidos reales
+- [✅] Interfaz básica de acordeón
+
+### 5.5 FUNCIONALIDADES PENDIENTES ❌
+- [ ] **Sistema de Pagos** (Stripe integration)
+- [ ] **Membresías y Suscripciones**
+- [ ] **Responsividad Total** (0% páginas responsivas)
+- [ ] **Simulador Videojuego** (gamificación)
+- [ ] **Mensajería Privada**
+- [ ] **Soporte con IA**
+- [ ] **Analytics Avanzados**
+- [ ] **Email Marketing**
+
+---
+
+## 📱 6. PLAN DE RESPONSIVIDAD (PRIORIDAD #1)
+
+### 6.1 FASE 1: COMPONENTES CRÍTICOS (SEMANA 1)
+**Objetivo**: Hacer funcionales las páginas más importantes
+
+#### PRIORIDAD MÁXIMA 🔥
+1. **MenuPublico2.svelte** - Menú principal público
+   - Hamburger menu móvil
+   - Navegación touch-friendly
+   - Logo responsive
+
+2. **Home/Landing (+page.svelte)** - Página principal
+   - Hero section responsive
+   - Grid de cursos adaptativo
+   - CTAs optimizados móvil
+
+3. **ModalDeInicioDeSesion.svelte** - Modal autenticación
+   - Formulario móvil optimizado
+   - Teclado virtual friendly
+   - Validación en tiempo real
+
+4. **Catálogo Cursos (/cursos)** - Lista de cursos
+   - Grid responsive (1-2-3-4 columnas)
+   - Filtros móviles
+   - Cards optimizadas
+
+#### PRIORIDAD ALTA 🟡
+5. **Dashboard Estudiante (/estudiante)** - Panel principal
+   - Layout móvil optimizado
+   - Navegación por pestañas
+   - Progreso visual
+
+6. **Curso Individual (/cursos/[slug])** - Página de curso
+   - Video player responsive
+   - Lista de lecciones móvil
+   - Botón de compra optimizado
+
+### 6.2 FASE 2: PÁGINAS DE CONTENIDO (SEMANA 2)
+7. **Lecciones de Curso** - Visualización de contenido
+8. **Tutoriales** - Catálogo y páginas individuales
+9. **Mis Cursos** - Dashboard de progreso
+10. **Mi Perfil** - Configuración de usuario
+
+### 6.3 FASE 3: FUNCIONALIDADES AVANZADAS (SEMANA 3)
+11. **Simulador Acordeón** - Adaptación móvil
+12. **Comunidad** - Feed responsive
+13. **Páginas Admin** - Panel administrativo móvil
+
+---
+
+## 🛠️ 7. COMPONENTES A DESARROLLAR
+
+### 7.1 COMPONENTES DE PAGO (PENDIENTES)
+- [ ] **CheckoutStripe.svelte** - Procesamiento de pagos
+- [ ] **SelectorPlan.svelte** - Elección de membresía
+- [ ] **HistorialPagos.svelte** - Facturas y transacciones
+- [ ] **GestorSuscripcion.svelte** - Upgrade/cancel suscripción
+
+### 7.2 COMPONENTES DE GAMIFICACIÓN (PENDIENTES)
+- [ ] **SimuladorGameEngine.svelte** - Motor de juego
+- [ ] **PartituraInteractiva.svelte** - Notas tipo Guitar Hero
+- [ ] **SistemaPuntuacion.svelte** - Scores y ranking
+- [ ] **LogrosYBadges.svelte** - Sistema de recompensas
+
+### 7.3 COMPONENTES DE COMUNIDAD AVANZADA (PENDIENTES)
+- [ ] **ChatPrivado.svelte** - Mensajería entre usuarios
+- [ ] **GruposTemáticos.svelte** - Comunidades especializadas
+- [ ] **EventosEnVivo.svelte** - Masterclasses en vivo
+- [ ] **NotificacionesPush.svelte** - Sistema de alertas
+
+### 7.4 COMPONENTES DE IA (PENDIENTES)
+- [ ] **ChatbotIA.svelte** - Soporte inteligente 24/7
+- [ ] **RecomendacionesIA.svelte** - Contenido personalizado
+- [ ] **AsistentePractica.svelte** - Coach virtual
+- [ ] **AnalyticsPredictivos.svelte** - Insights con ML
+
+---
+
+## 📊 8. BASE DE DATOS (SUPABASE)
+
+### 8.1 TABLAS EXISTENTES ✅
+- **usuarios** - Autenticación y perfiles
+- **cursos** - Información de cursos
+- **modulos** - Módulos de cursos
+- **lecciones** - Lecciones individuales
+- **tutoriales** - Tutoriales individuales
+- **partes_tutorial** - Partes de tutoriales
+- **comunidad_publicaciones** - Posts de comunidad
+- **comunidad_comentarios** - Comentarios
+- **progreso_lecciones** - Progreso de estudiantes
+
+### 8.2 TABLAS PENDIENTES ❌
+- [ ] **pagos** - Transacciones y facturas
+- [ ] **suscripciones** - Membresías activas
+- [ ] **compras** - Tutoriales/cursos comprados
+- [ ] **mensajes_privados** - Chat entre usuarios
+- [ ] **logros** - Sistema de gamificación
+- [ ] **rankings** - Leaderboards
+- [ ] **tickets_soporte** - Sistema de ayuda
+
+---
+
+## 🚀 9. ROADMAP DE DESARROLLO - 6 SEMANAS
+
+### SEMANA 1: RESPONSIVIDAD CRÍTICA 📱
+**Objetivo**: Páginas principales 100% móvil-friendly
+- [ ] Auditoría completa de componentes
+- [ ] MenuPublico2.svelte responsive
+- [ ] Home page responsive
+- [ ] Modal login responsive
+- [ ] Catálogo cursos responsive
+- [ ] Dashboard estudiante responsive
+
+### SEMANA 2: SISTEMA DE PAGOS 💰
+**Objetivo**: Monetización completa
+- [ ] Integración Stripe
+- [ ] Compra de tutoriales individuales
+- [ ] Compra de cursos completos
+- [ ] Sistema de membresías
+- [ ] Panel de gestión de pagos
+
+### SEMANA 3: SIMULADOR VIDEOJUEGO 🎮
+**Objetivo**: Gamificación completa
+- [ ] Motor de juego responsive
+- [ ] Modo Guitar Hero
+- [ ] Sistema de puntuación
+- [ ] Logros y badges
+- [ ] Ranking global
+
+### SEMANA 4: COMUNIDAD AVANZADA 👥
+**Objetivo**: Interacción social completa
+- [ ] Sistema de mensajería privada
+- [ ] Grupos temáticos
+- [ ] Eventos en vivo
+- [ ] Notificaciones push
+
+### SEMANA 5: INTELIGENCIA ARTIFICIAL 🤖
+**Objetivo**: Automatización con IA
+- [ ] Chatbot de soporte
+- [ ] Recomendaciones personalizadas
+- [ ] Asistente de práctica
+- [ ] Analytics predictivos
+
+### SEMANA 6: OPTIMIZACIÓN Y LANZAMIENTO 🚀
+**Objetivo**: Producción lista
+- [ ] Testing exhaustivo
+- [ ] Optimización performance
+- [ ] SEO y marketing
+- [ ] Migración WordPress
+
+---
+
+## 📋 10. CHECKLIST DE RESPONSIVIDAD
+
+### 10.1 BREAKPOINTS ESTÁNDAR
+```css
+/* Mobile First */
+sm: 640px   /* Móvil grande */
+md: 768px   /* Tablet */
+lg: 1024px  /* Desktop pequeño */
+xl: 1280px  /* Desktop grande */
+2xl: 1536px /* Desktop extra grande */
+```
+
+### 10.2 COMPONENTES POR VERIFICAR
+- [ ] **Navegación**: Menús colapsables, hamburger
+- [ ] **Formularios**: Inputs touch-friendly, validación
+- [ ] **Grids**: Responsive columns (1-2-3-4)
+- [ ] **Imágenes**: Lazy loading, responsive images
+- [ ] **Videos**: Players adaptivos
+- [ ] **Modales**: Fullscreen en móvil
+- [ ] **Tablas**: Scroll horizontal o stack
+- [ ] **Botones**: Tamaño mínimo 44px touch
+
+### 10.3 TESTING DEVICES
+- [ ] **iPhone SE** (375x667)
+- [ ] **iPhone 12/13** (390x844)
+- [ ] **Samsung Galaxy** (360x740)
+- [ ] **iPad** (768x1024)
+- [ ] **Desktop** (1920x1080)
+
+---
+
+## 🎯 11. OBJETIVOS POR PÁGINA
+
+### 11.1 HOME/LANDING
+**Objetivo**: Convertir visitantes en usuarios registrados
+- Hero impactante con propuesta de valor
+- Testimonios y prueba social
+- Preview de contenido gratuito
+- CTAs claros de registro
+
+### 11.2 CATÁLOGO CURSOS
+**Objetivo**: Mostrar valor y generar compras
+- Filtros intuitivos por nivel/género
+- Cards atractivas con preview
+- Precios claros y ofertas
+- Botones de compra prominentes
+
+### 11.3 DASHBOARD ESTUDIANTE
+**Objetivo**: Engagement y retención
+- Progreso visual motivador
+- Acceso rápido a contenido
+- Recomendaciones personalizadas
+- Comunidad integrada
+
+### 11.4 SIMULADOR ACORDEÓN
+**Objetivo**: Diferenciación y engagement
+- Experiencia inmersiva
+- Gamificación adictiva
+- Progresión clara
+- Competencia social
+
+---
+
+Este PRD reorganizado te da una **hoja de ruta clara** para desarrollar Academia Vallenata Online de manera estructurada y eficiente. Cada página tiene objetivos claros y prioridades definidas. 🚀🎵 
