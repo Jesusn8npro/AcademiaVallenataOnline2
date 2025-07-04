@@ -377,10 +377,11 @@ class NotificacionesService {
 					{
 						event: 'INSERT',
 						schema: 'public',
-						table: 'notificaciones',
-						filter: `usuario_id=eq.${user.id}`
+						table: 'notificaciones'
 					},
 					(payload: any) => {
+						// Solo procesar si la notificación es para el usuario actual
+						if (payload.new.usuario_id !== user.id) return;
 						console.log('🔔 Nueva notificación recibida:', payload);
 						
 						// Transformar el payload a nuestro formato
