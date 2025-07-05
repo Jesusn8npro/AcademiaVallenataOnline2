@@ -13,7 +13,6 @@
   ];
 
   import { page } from '$app/stores';
-  import { get } from 'svelte/store';
   import { onMount } from 'svelte';
 
   let indiceActivo = 0;
@@ -22,16 +21,29 @@
   let puedeScrollDerecha = false;
 
   $: {
-    const rutaActual = get(page).url.pathname;
-    // Encuentra la coincidencia más específica
-    const mejorCoincidencia = pestañas.reduce((mejor, pestaña, indice) => {
-      if (rutaActual.startsWith(pestaña.route) && pestaña.route.length > (mejor.longitud || 0)) {
-        return { indice, longitud: pestaña.route.length };
-      }
-      return mejor;
-    }, { indice: -1, longitud: 0 });
+    const rutaActual = $page.url.pathname;
     
-    indiceActivo = mejorCoincidencia.indice !== -1 ? mejorCoincidencia.indice : 0;
+    // Mapeo directo de rutas a índices para mejor precisión
+    const mapaRutas: { [key: string]: number } = {
+      '/mi-perfil': 0,
+      '/mis-cursos': 1,
+      '/comunidad': 2,
+      '/publicaciones': 3,
+      '/blog': 4,
+      '/configuracion': 5,
+      '/sesion_cerrada': 6
+    };
+    
+    // Buscar coincidencia exacta primero
+    if (mapaRutas.hasOwnProperty(rutaActual)) {
+      indiceActivo = mapaRutas[rutaActual];
+    } else {
+      // Fallback: encontrar la mejor coincidencia por prefijo
+      const mejorCoincidencia = pestañas.findIndex(pestaña => 
+        rutaActual.startsWith(pestaña.route) && pestaña.route !== '/'
+      );
+      indiceActivo = mejorCoincidencia !== -1 ? mejorCoincidencia : 0;
+    }
   }
 
   function actualizarEstadoScroll() {
@@ -87,8 +99,24 @@
           aria-label={pestaña.label}
           role="tab"
           on:click={(e) => {
-            if (!pestaña.route) e.preventDefault();
-            else goto(pestaña.route);
+            e.preventDefault(); // Prevenir navegación normal
+            
+            if (!pestaña.route) return;
+            
+            // Navegación sin scroll para rutas del perfil
+            const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+            
+            if (rutasPerfilSinScroll.includes(pestaña.route)) {
+              // Mantener posición del scroll para páginas del perfil
+              goto(pestaña.route, { 
+                keepFocus: true,
+                noScroll: true,
+                replaceState: false
+              });
+            } else {
+              // Navegación normal para otras páginas (como /comunidad, /blog, /sesion_cerrada)
+              goto(pestaña.route);
+            }
           }}
         >
           <div class="contenido-pestaña">

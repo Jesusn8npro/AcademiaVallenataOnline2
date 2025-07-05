@@ -6,27 +6,121 @@
   import { progresoLecciones } from '$lib/progresoLeccionesStore';
   import { obtenerCursoCompletoPorSlug } from '$lib/services/cursoService';
   import { usuario } from '$lib/UsuarioActivo/usuario';
+  import { onMount, onDestroy } from 'svelte';
 
   // Props
   export let inscripcion: any;
   
-  // Variables reactivas
-  $: esCurso = !!inscripcion.curso;
-  $: esTutorial = !!inscripcion.tutorial;
-  $: contenido = esCurso ? inscripcion.curso : inscripcion.tutorial;
+  // Variables reactivas básicas
+  $: esCurso = !!inscripcion.cursos;
+  $: esTutorial = !!inscripcion.tutoriales;
+  $: contenido = esCurso ? inscripcion.cursos : inscripcion.tutoriales;
   $: titulo = contenido?.titulo || 'Sin título';
   $: imagen = contenido?.imagen_url || '/images/default-curso.jpg';
   $: slug = contenido?.slug || generateSlug(titulo);
-  $: progreso = inscripcion.progreso || 0;
   $: completado = inscripcion.completado || false;
   $: fechaInscripcion = inscripcion.fecha_inscripcion ? new Date(inscripcion.fecha_inscripcion).toLocaleDateString('es-ES') : '';
-  
-  // Determinar texto del botón basado en progreso real del store
-  $: progresoReal = $progresoLecciones[esCurso ? inscripcion.curso_id : inscripcion.tutorial_id];
-  $: tieneProgreso = progresoReal && (progresoReal.partes_completadas || 0) > 0;
-  $: textoBoton = tieneProgreso ? 'Continuar' : 'Empezar';
-  $: tipoContenido = esCurso ? 'Curso' : 'Tutorial';
   $: contenidoId = esCurso ? inscripcion.curso_id : inscripcion.tutorial_id;
+  $: tipoContenido = esCurso ? 'Curso' : 'Tutorial';
+
+  // Variables de progreso
+  let progresoData = { porcentaje: 0, completadas: 0, total: 0 };
+  let cargandoProgreso = true;
+
+  // Variables reactivas para progreso
+  $: tieneProgreso = progresoData.completadas > 0;
+  $: textoBoton = tieneProgreso ? 'Continuar' : 'Empezar';
+
+  // Función para cargar progreso
+  async function cargarProgreso() {
+    if (!$usuario?.id || !contenidoId) {
+      cargandoProgreso = false;
+      return;
+    }
+
+    try {
+      cargandoProgreso = true;
+
+      if (esCurso) {
+        // Progreso de curso
+        const { data: modulos } = await supabase
+          .from('modulos')
+          .select('id, lecciones(id)')
+          .eq('curso_id', contenidoId);
+
+        if (modulos && modulos.length > 0) {
+          const leccionIds = modulos.flatMap((m: any) => m.lecciones?.map((l: any) => l.id) || []);
+          
+          if (leccionIds.length > 0) {
+            const { data: progreso } = await supabase
+              .from('progreso_lecciones')
+              .select('leccion_id, estado')
+              .eq('usuario_id', $usuario.id)
+              .in('leccion_id', leccionIds);
+
+            const completadas = progreso?.filter((p: any) => p.estado === 'completada').length || 0;
+            const total = leccionIds.length;
+            const porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+            progresoData = { porcentaje, completadas, total };
+          }
+        }
+      } else if (esTutorial) {
+        // Progreso de tutorial
+        const { data: partes } = await supabase
+          .from('partes_tutorial')
+          .select('id')
+          .eq('tutorial_id', contenidoId);
+
+        if (partes && partes.length > 0) {
+          const { data: progreso } = await supabase
+            .from('progreso_tutorial')
+            .select('parte_tutorial_id, completado')
+            .eq('usuario_id', $usuario.id)
+            .eq('tutorial_id', contenidoId);
+
+          const completadas = progreso?.filter((p: any) => p.completado).length || 0;
+          const total = partes.length;
+          const porcentaje = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+          progresoData = { porcentaje, completadas, total };
+        }
+      }
+    } catch (error) {
+      console.error('[TarjetaCurso] Error cargando progreso:', error);
+    } finally {
+      cargandoProgreso = false;
+    }
+  }
+
+  // Cargar progreso al montar el componente
+  onMount(() => {
+    cargarProgreso();
+    
+    // Listener para actualizar progreso cuando el usuario regrese de ver lecciones
+    const handleFocus = () => {
+      if ($usuario?.id && contenidoId) {
+        cargarProgreso();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    // Limpiar listener al destruir el componente
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  });
+
+  // Recargar progreso cuando cambie el usuario o el contenido
+  $: if ($usuario?.id && contenidoId) {
+    cargarProgreso();
+  }
+
+  // Recargar progreso cuando cambie el store (para sincronizar con lecciones completadas)
+  $: if ($progresoLecciones && contenidoId) {
+    cargarProgreso();
+  }
 
   // Función que usa el MISMO SERVICIO que funciona en la página de detalles
   async function navegarAContenido() {
@@ -209,10 +303,26 @@
     </div>
     
     <div class="progreso-seccion">
-      <BarraProgresoGeneral 
-        tipo={esCurso ? 'curso' : 'tutorial'} 
-        contenidoId={contenidoId} 
-      />
+      {#if cargandoProgreso}
+        <div class="cargando-progreso">
+          <div class="spinner"></div>
+          <span>Cargando progreso...</span>
+        </div>
+      {:else}
+        <div class="progreso-info">
+          <div class="progreso-texto">
+            Progreso: {progresoData.completadas} / {progresoData.total} {esCurso ? 'lecciones' : 'clases'} ({progresoData.porcentaje}%)
+          </div>
+          <div class="barra-progreso">
+            <div 
+              class="progreso-relleno" 
+              style="width: {progresoData.porcentaje}%"
+              class:curso={esCurso}
+              class:tutorial={esTutorial}
+            ></div>
+          </div>
+        </div>
+      {/if}
     </div>
     
     <div class="acciones">
@@ -330,6 +440,62 @@
 
   .progreso-seccion {
     margin: 8px 0;
+  }
+
+  .cargando-progreso {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .progreso-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .progreso-texto {
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .barra-progreso {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progreso-relleno {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  .progreso-relleno.curso {
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+  }
+
+  .progreso-relleno.tutorial {
+    background: linear-gradient(90deg, #a855f7, #c084fc);
   }
 
   .acciones {

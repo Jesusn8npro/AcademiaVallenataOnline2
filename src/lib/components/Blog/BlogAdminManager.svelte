@@ -5,6 +5,7 @@
 	import { getAdminAccess } from '$lib/components/supabase';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { notificarNuevoArticuloBlog } from '$lib/services/generadorNotificaciones';
 
 	// Interfaces para tipado
 	interface Articulo {
@@ -147,12 +148,36 @@
 				slug: generarSlug(formulario.titulo)
 			};
 
-			const { error } = editandoId
-				? await supabase.from('blog_articulos').update(datosArticulo).eq('id', editandoId)
-				: await supabase.from('blog_articulos').insert([datosArticulo]);
+			const { data, error } = editandoId
+				? await supabase.from('blog_articulos').update(datosArticulo).eq('id', editandoId).select()
+				: await supabase.from('blog_articulos').insert([datosArticulo]).select();
 
 			if (error) {
 				throw new Error(error.message);
+			}
+
+			// 🔔 ENVIAR NOTIFICACIONES PARA ARTÍCULOS DEL BLOG (solo para artículos nuevos y publicados)
+			if (!editandoId && datosArticulo.estado === 'publicado' && data && data.length > 0) {
+				const articuloCreado = data[0];
+				console.log('📢 ENVIANDO NOTIFICACIONES PARA ARTÍCULO DEL BLOG...');
+				
+				try {
+					const { data: { user } } = await supabase.auth.getUser();
+					const resultadoNotificacion = await notificarNuevoArticuloBlog({
+						articulo_id: articuloCreado.id,
+						titulo_articulo: articuloCreado.titulo,
+						resumen: articuloCreado.resumen || 'Nuevo artículo disponible',
+						autor_id: user?.id || ''
+					});
+					
+					if (resultadoNotificacion.exito) {
+						console.log(`✅ Notificaciones de artículo enviadas: ${resultadoNotificacion.notificaciones_creadas}`);
+					} else {
+						console.error('❌ Error enviando notificaciones de artículo:', resultadoNotificacion.error);
+					}
+				} catch (errorNotificacion) {
+					console.error('❌ Error inesperado enviando notificaciones de artículo:', errorNotificacion);
+				}
 			}
 
 			// Éxito con animación

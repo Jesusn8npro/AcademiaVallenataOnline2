@@ -483,7 +483,7 @@
   /* === INFO USUARIO === */
   .info-usuario {
     background: var(--fondo-blanco);
-    margin-top: 70px;
+    margin-top: 90px;
     padding: 1px 1px;
     border-radius: 0 0 var(--borde-radius) var(--borde-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
@@ -513,7 +513,7 @@
     justify-content: center;
     text-align: center;
     flex: 1;
-    margin-bottom: 0;
+    margin-bottom: 10px;
   }
 
   .icono-estadistica { font-size: 2.2rem; line-height: 1; }
@@ -530,7 +530,7 @@
   .seccion-central {
     text-align: center;
     flex: 1;
-    margin-top: 0;
+    margin-top: 10px;
   }
 
   .nombre-usuario {

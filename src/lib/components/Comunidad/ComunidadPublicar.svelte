@@ -5,6 +5,7 @@
   import CrearEncuesta from '$lib/components/Comunidad/CrearEncuesta.svelte';
   import GifPicker from '$lib/components/Comunidad/GifPicker.svelte';
   import { subirArchivoComunidad } from '$lib/supabase/supabase-comunidad';
+  import { notificarNuevaPublicacionComunidad } from '$lib/services/generadorNotificaciones';
 
   // Props
   export let usuario: { id: string, nombre: string } | null = null;
@@ -131,11 +132,49 @@
         fecha_creacion: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('comunidad_publicaciones')
-        .insert([insertData]);
+        .insert([insertData])
+        .select();
 
       if (error) throw error;
+
+      // 🔔 ENVIAR NOTIFICACIONES PARA ENCUESTAS (SOLO SI ES ADMIN)
+      if (data && data.length > 0 && usuario?.id) {
+        const encuestaCreada = data[0];
+        console.log('🔍 VERIFICANDO ROL DEL USUARIO PARA ENCUESTA...');
+        
+        const esAdmin = await esUsuarioAdministrador(usuario.id);
+        console.log('👑 ¿Es administrador para encuesta?', esAdmin);
+        
+        // 🚨 VERIFICACIÓN ESTRICTA - SOLO PROCEDER SI ES ADMIN
+        if (!esAdmin) {
+          console.log('🚫 USUARIO NO ES ADMIN - SALIENDO SIN ENVIAR NOTIFICACIONES DE ENCUESTA');
+          console.log('🚫 FIN DE VERIFICACIÓN DE ENCUESTA - NO SE PROCESAN NOTIFICACIONES');
+          // Salir inmediatamente sin procesar notificaciones
+        } else {
+          console.log('👑 ✅ CONFIRMADO: USUARIO ES ADMIN - PROCEDIENDO CON NOTIFICACIONES DE ENCUESTA...');
+          
+          try {
+            console.log('📤 INICIANDO ENVÍO DE NOTIFICACIONES DE ENCUESTA...');
+            const resultadoNotificacion = await notificarNuevaPublicacionComunidad({
+              publicacion_id: encuestaCreada.id,
+              titulo_publicacion: datosEncuesta.pregunta || 'Nueva encuesta',
+              contenido: `Nueva encuesta: ${datosEncuesta.pregunta}`,
+              autor_id: usuario?.id || '',
+              autor_nombre: usuario?.nombre || 'Usuario'
+            });
+            
+            if (resultadoNotificacion.exito) {
+              console.log(`✅ Notificaciones de encuesta enviadas exitosamente: ${resultadoNotificacion.notificaciones_creadas}`);
+            } else {
+              console.error('❌ Error enviando notificaciones de encuesta:', resultadoNotificacion.error);
+            }
+          } catch (errorNotificacion) {
+            console.error('❌ Error inesperado enviando notificaciones de encuesta:', errorNotificacion);
+          }
+        }
+      }
 
       dispatch('publicar');
     cerrarModal();
@@ -197,12 +236,99 @@
       }
 
     console.log('✅ PUBLICACIÓN EXITOSA');
+    
+    // 🔔 ENVIAR NOTIFICACIONES (SOLO SI ES ADMIN)
+    if (data && data.length > 0 && usuario?.id) {
+      const publicacionCreada = data[0];
+      console.log('🔍 VERIFICANDO ROL DEL USUARIO...');
+      
+      const esAdmin = await esUsuarioAdministrador(usuario.id);
+      console.log('👑 ¿Es administrador?', esAdmin);
+      
+      // 🚨 VERIFICACIÓN ESTRICTA - SOLO PROCEDER SI ES ADMIN
+      if (!esAdmin) {
+        console.log('🚫 USUARIO NO ES ADMIN - SALIENDO SIN ENVIAR NOTIFICACIONES');
+        console.log('🚫 FIN DE VERIFICACIÓN - NO SE PROCESAN NOTIFICACIONES');
+        // Salir inmediatamente sin procesar notificaciones
+      } else {
+        console.log('👑 ✅ CONFIRMADO: USUARIO ES ADMIN - PROCEDIENDO CON NOTIFICACIONES...');
+        
+        try {
+          console.log('📤 INICIANDO ENVÍO DE NOTIFICACIONES...');
+          const resultadoNotificacion = await notificarNuevaPublicacionComunidad({
+            publicacion_id: publicacionCreada.id,
+            titulo_publicacion: titulo || 'Nueva publicación',
+            contenido: texto || 'Contenido multimedia',
+            autor_id: usuario?.id || '',
+            autor_nombre: usuario?.nombre || 'Usuario'
+          });
+          
+          if (resultadoNotificacion.exito) {
+            console.log(`✅ Notificaciones enviadas exitosamente: ${resultadoNotificacion.notificaciones_creadas}`);
+          } else {
+            console.error('❌ Error enviando notificaciones:', resultadoNotificacion.error);
+          }
+        } catch (errorNotificacion) {
+          console.error('❌ Error inesperado enviando notificaciones:', errorNotificacion);
+        }
+      }
+    }
+    
     dispatch('publicar');
     cerrarModal();
     } catch (error: any) {
       console.error('💥 ERROR EN PUBLICACIÓN:', error);
       console.error('💥 ERROR COMPLETO:', JSON.stringify(error, null, 2));
       alert(`Error al publicar: ${error.message || error}`);
+    }
+  };
+
+  // Función para verificar si el usuario es administrador
+  const esUsuarioAdministrador = async (userId: string): Promise<boolean> => {
+    try {
+      console.log('🔍 VERIFICANDO ROL PARA USUARIO ID:', userId);
+      console.log('🔍 TIPO DE USUARIO ID:', typeof userId);
+      
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('rol, nombre, correo_electronico')
+        .eq('id', userId)
+        .single();
+      
+      console.log('📊 RESPUESTA COMPLETA DE BASE DE DATOS:', { data, error });
+      
+      if (error) {
+        console.error('❌ Error verificando rol del usuario:', error);
+        console.error('❌ DETALLE DEL ERROR:', JSON.stringify(error, null, 2));
+        return false;
+      }
+      
+      if (!data) {
+        console.error('❌ NO SE ENCONTRÓ USUARIO CON ID:', userId);
+        return false;
+      }
+      
+      const rolUsuario = data.rol;
+      console.log('👤 DATOS COMPLETOS DEL USUARIO:', data);
+      console.log('👤 ROL DEL USUARIO (raw):', rolUsuario);
+      console.log('👤 TIPO DEL ROL:', typeof rolUsuario);
+      console.log('👤 ROL TRIMMED:', `"${rolUsuario?.trim()}"`);
+      
+      const esAdmin = rolUsuario === 'admin';
+      console.log('🔐 COMPARACIÓN rolUsuario === "admin":', esAdmin);
+      console.log('🔐 RESULTADO FINAL - ¿ES ADMIN?:', esAdmin);
+      
+      // Verificación adicional
+      if (rolUsuario !== 'admin') {
+        console.log('🚫 USUARIO NO ES ADMIN - NO SE ENVIARÁN NOTIFICACIONES');
+        console.log('🚫 ROL ACTUAL:', rolUsuario, 'ESPERADO: admin');
+      }
+      
+      return esAdmin;
+    } catch (error) {
+      console.error('❌ Error inesperado verificando rol:', error);
+      console.error('❌ STACK TRACE:', JSON.stringify(error, null, 2));
+      return false;
     }
   };
 </script>
