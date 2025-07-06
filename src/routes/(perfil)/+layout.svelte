@@ -103,7 +103,7 @@
 <style>
   .layout-perfil-fijo {
     max-width: 1500px;
-    margin: 2rem auto;
+    margin: 1rem auto;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -112,17 +112,18 @@
   .encabezado-fijo {
     /* 🔒 FIJO - No se mueve entre navegaciones */
     position: relative;
-    z-index: 10;
+    z-index: 100;
     background: #ffffff;
     border-radius: 16px;
     margin-bottom: 1rem;
+    overflow: hidden; /* Para contener el border-radius */
   }
 
   .pestañas-fijas {
     /* 🔒 FIJO - Las pestañas se mantienen siempre visibles */
     position: sticky;
     top: 80px; /* Ajusta según la altura de tu header */
-    z-index: 20;
+    z-index: 50;
     background: #ffffff;
     border-radius: 16px;
     margin-bottom: 1rem;
@@ -196,12 +197,51 @@
   /* Responsive */
   @media (max-width: 768px) {
     .layout-perfil-fijo {
-      margin: 1rem;
+      margin: 0.5rem;
       padding: 0;
     }
     
     .pestañas-fijas {
       top: 60px; /* Ajuste para móviles */
+    }
+  }
+
+  /* Móvil pequeño - Sin márgenes laterales como Facebook */
+  @media (max-width: 480px) {
+    .layout-perfil-fijo {
+      margin: 0;
+      padding: 0;
+      width: 100vw; /* Asegurar que ocupe todo el ancho de la pantalla */
+    }
+    
+    .encabezado-fijo {
+      border-radius: 0;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pestañas-fijas {
+      border-radius: 0;
+      margin-bottom: 0.5rem;
+    }
+    
+    .contenido-dinamico {
+      border-radius: 0;
+    }
+  }
+
+  /* También para tablets en orientación vertical */
+  @media (max-width: 768px) {
+    .layout-perfil-fijo {
+      margin: 0.25rem;
+      padding: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .layout-perfil-fijo {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
     }
   }
 </style> 

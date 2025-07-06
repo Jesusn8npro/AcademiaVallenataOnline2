@@ -2,15 +2,34 @@
   // Iconos SVG inline para máxima personalización y rendimiento
   import { goto } from '$app/navigation';
 
-  const pestañas = [
+  // 🆕 Props para modo público
+  export let esPerfilPublico = false;
+  export let usuarioSlug = '';
+
+  // Pestañas para perfil privado (completas)
+  const pestañasPrivadas = [
     { label: 'Perfil', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-3.5 8-3.5 8-3.5s8 0 8 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mi-perfil' },
     { label: 'Mis Cursos', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='4' y='4' width='16' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M8 9h8M8 14h5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mis-cursos' },
-    { label: 'Comunidad', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/comunidad' },
     { label: 'Publicaciones', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='6' y='4' width='12' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M9 9h6M9 13h6' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/publicaciones' },
+    { label: 'Grabaciones', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='8' stroke='currentColor' stroke-width='1.5'/><path d='M15 12l-6-3v6z' fill='currentColor'/></svg>`, route: '/grabaciones' },
+    { label: 'Ranking', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M6 20v-2a6 6 0 0 1 12 0v2' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/ranking' },
+    { label: 'Comunidad', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/comunidad' },
     { label: 'Blog', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20v2.5a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 4 19.5zM4 5.5A2.5 2.5 0 0 1 6.5 3H20v14H6.5A2.5 2.5 0 0 1 4 14.5v-9z' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/blog' },
     { label: 'Configuración', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1 1.51V5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/configuracion' },
     { label: 'Salir', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M16 17l5-5-5-5M21 12H9' stroke='currentColor' stroke-width='1.5'/><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/sesion_cerrada' }
   ];
+
+  // Pestañas para perfil público (limitadas)
+  const pestañasPublicas = [
+    { label: 'Perfil', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-3.5 8-3.5 8-3.5s8 0 8 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: `/usuario/${usuarioSlug}` },
+    { label: 'Publicaciones', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='6' y='4' width='12' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M9 9h6M9 13h6' stroke='currentColor' stroke-width='1.5'/></svg>`, route: `/usuario/${usuarioSlug}/publicaciones` },
+    { label: 'Grabaciones', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='8' stroke='currentColor' stroke-width='1.5'/><path d='M15 12l-6-3v6z' fill='currentColor'/></svg>`, route: `/usuario/${usuarioSlug}/grabaciones` },
+    { label: 'Ranking', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M6 20v-2a6 6 0 0 1 12 0v2' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.5'/></svg>`, route: `/usuario/${usuarioSlug}/ranking` },
+    { label: 'Comunidad', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/comunidad' }
+  ];
+
+  // Variable reactiva para seleccionar pestañas según el modo
+  $: pestañas = esPerfilPublico ? pestañasPublicas : pestañasPrivadas;
 
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -23,26 +42,44 @@
   $: {
     const rutaActual = $page.url.pathname;
     
-    // Mapeo directo de rutas a índices para mejor precisión
-    const mapaRutas: { [key: string]: number } = {
-      '/mi-perfil': 0,
-      '/mis-cursos': 1,
-      '/comunidad': 2,
-      '/publicaciones': 3,
-      '/blog': 4,
-      '/configuracion': 5,
-      '/sesion_cerrada': 6
-    };
-    
-    // Buscar coincidencia exacta primero
-    if (mapaRutas.hasOwnProperty(rutaActual)) {
-      indiceActivo = mapaRutas[rutaActual];
+    if (esPerfilPublico) {
+      // Mapeo para perfil público
+      const mapaRutasPublicas: { [key: string]: number } = {
+        [`/usuario/${usuarioSlug}`]: 0,
+        [`/usuario/${usuarioSlug}/publicaciones`]: 1,
+        [`/usuario/${usuarioSlug}/grabaciones`]: 2,
+        [`/usuario/${usuarioSlug}/ranking`]: 3,
+        '/comunidad': 4
+      };
+      
+      if (mapaRutasPublicas.hasOwnProperty(rutaActual)) {
+        indiceActivo = mapaRutasPublicas[rutaActual];
+      } else {
+        indiceActivo = 0; // Default al perfil
+      }
     } else {
-      // Fallback: encontrar la mejor coincidencia por prefijo
-      const mejorCoincidencia = pestañas.findIndex(pestaña => 
-        rutaActual.startsWith(pestaña.route) && pestaña.route !== '/'
-      );
-      indiceActivo = mejorCoincidencia !== -1 ? mejorCoincidencia : 0;
+      // Mapeo para perfil privado
+      const mapaRutasPrivadas: { [key: string]: number } = {
+        '/mi-perfil': 0,
+        '/mis-cursos': 1,
+        '/publicaciones': 2,
+        '/grabaciones': 3,
+        '/ranking': 4,
+        '/comunidad': 5,
+        '/blog': 6,
+        '/configuracion': 7,
+        '/sesion_cerrada': 8
+      };
+      
+      if (mapaRutasPrivadas.hasOwnProperty(rutaActual)) {
+        indiceActivo = mapaRutasPrivadas[rutaActual];
+      } else {
+        // Fallback: encontrar la mejor coincidencia por prefijo
+        const mejorCoincidencia = pestañas.findIndex(pestaña => 
+          rutaActual.startsWith(pestaña.route) && pestaña.route !== '/'
+        );
+        indiceActivo = mejorCoincidencia !== -1 ? mejorCoincidencia : 0;
+      }
     }
   }
 
@@ -103,19 +140,33 @@
             
             if (!pestaña.route) return;
             
-            // Navegación sin scroll para rutas del perfil
-            const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
-            
-            if (rutasPerfilSinScroll.includes(pestaña.route)) {
-              // Mantener posición del scroll para páginas del perfil
-              goto(pestaña.route, { 
-                keepFocus: true,
-                noScroll: true,
-                replaceState: false
-              });
+            if (esPerfilPublico) {
+              // Para perfiles públicos, navegación específica
+              if (pestaña.route.startsWith(`/usuario/${usuarioSlug}`)) {
+                goto(pestaña.route, { 
+                  keepFocus: true,
+                  noScroll: true,
+                  replaceState: false
+                });
+              } else {
+                // Navegación normal para otras páginas (como /comunidad)
+                goto(pestaña.route);
+              }
             } else {
-              // Navegación normal para otras páginas (como /comunidad, /blog, /sesion_cerrada)
-              goto(pestaña.route);
+              // Navegación para perfil privado (original)
+              const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/grabaciones', '/ranking', '/configuracion'];
+              
+              if (rutasPerfilSinScroll.includes(pestaña.route)) {
+                // Mantener posición del scroll para páginas del perfil
+                goto(pestaña.route, { 
+                  keepFocus: true,
+                  noScroll: true,
+                  replaceState: false
+                });
+              } else {
+                // Navegación normal para otras páginas (como /comunidad, /blog, /sesion_cerrada)
+                goto(pestaña.route);
+              }
             }
           }}
         >
@@ -143,7 +194,7 @@
     position: relative;
     width: 100%;
     margin-top: -60px;
-    z-index: 20;
+    z-index: 10;
   }
 
   .nav-container-interno {
@@ -234,7 +285,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 25;
+    z-index: 15;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
     transition: all 0.2s ease;
     opacity: 0;

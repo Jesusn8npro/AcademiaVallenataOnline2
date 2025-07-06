@@ -3,103 +3,10 @@
   import PorcentajePerfil from '$lib/components/Banners/PorcentajePerfil.svelte';
   import BannerSlider from '$lib/components/Banners/BannerSlider.svelte';
   import { perfilStore } from '$lib/stores/perfilStore';
-  import { usuario } from '$lib/UsuarioActivo/usuario';
-  import { supabase } from '$lib/supabase/clienteSupabase';
-  import { onMount } from 'svelte';
 
   // Usar datos del store en lugar de cargar por separado
   $: perfilData = $perfilStore.perfil;
   $: cargandoPerfil = $perfilStore.cargando;
-
-  // Estados para las inscripciones
-  let inscripciones: any[] = [];
-  let cargandoCursos = true;
-  let errorCursos: string | null = null;
-
-  async function cargarInscripciones() {
-    if (!$usuario?.id) {
-      cargandoCursos = false;
-      return;
-    }
-
-    try {
-      cargandoCursos = true;
-      errorCursos = null;
-
-      // Primero obtener todas las inscripciones del usuario
-      const { data: inscripcionesData, error } = await supabase
-        .from('inscripciones')
-        .select('*')
-        .eq('usuario_id', $usuario.id)
-        .order('fecha_inscripcion', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!inscripcionesData || inscripcionesData.length === 0) {
-        inscripciones = [];
-        return;
-      }
-
-      // Separar las inscripciones por tipo
-      const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
-      const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
-
-      // Obtener datos de cursos si hay inscripciones a cursos
-      let cursosData = [];
-      if (inscripcionesCursos.length > 0) {
-        const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
-        const { data: cursos } = await supabase
-          .from('cursos')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
-          .in('id', cursoIds);
-        cursosData = cursos || [];
-      }
-
-      // Obtener datos de tutoriales si hay inscripciones a tutoriales
-      let tutorialesData = [];
-      if (inscripcionesTutoriales.length > 0) {
-        const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
-        const { data: tutoriales } = await supabase
-          .from('tutoriales')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad')
-          .in('id', tutorialIds);
-        tutorialesData = tutoriales || [];
-      }
-
-      // Combinar todo
-      inscripciones = [
-        // Inscripciones a cursos
-        ...inscripcionesCursos.map((inscripcion: any) => ({
-          ...inscripcion,
-          cursos: cursosData.find((curso: any) => curso.id === inscripcion.curso_id)
-        })),
-        // Inscripciones a tutoriales
-        ...inscripcionesTutoriales.map((inscripcion: any) => ({
-          ...inscripcion,
-          tutoriales: tutorialesData.find((tutorial: any) => tutorial.id === inscripcion.tutorial_id)
-        }))
-      ];
-
-      // Reordenar por fecha de inscripción
-      inscripciones.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
-    } catch (error: any) {
-      console.error('Error cargando inscripciones:', error);
-      errorCursos = error.message || 'Error desconocido al cargar los cursos';
-    } finally {
-      cargandoCursos = false;
-    }
-  }
-
-  onMount(() => {
-    cargarInscripciones();
-  });
-
-  // Recargar cuando cambie el usuario
-  $: if ($usuario?.id) {
-    cargarInscripciones();
-  }
 </script>
 
 <svelte:head>
@@ -115,12 +22,8 @@
         <p>Continúa con tu aprendizaje de acordeón vallenato</p>
       </div>
       
-      <!-- Pasar las props necesarias a GridMisCursos -->
-      <GridMisCursos 
-        {inscripciones}
-        isLoading={cargandoCursos}
-        error={errorCursos}
-      />
+      <!-- 🎯 USANDO EL COMPONENTE AUTOSUFICIENTE (sin props, se carga solo) -->
+      <GridMisCursos />
     </div>
     
     <aside class="columna-lateral">

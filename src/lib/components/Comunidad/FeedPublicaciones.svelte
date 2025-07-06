@@ -2,9 +2,11 @@
   import ComunidadComentarios from './ComunidadComentarios.svelte';
   import EncuestaPublicacion from './EncuestaPublicacion.svelte';
   import { supabase } from '$lib/supabase/clienteSupabase';
+  import { generarUrlPerfilPublico } from '$lib/utils/perfilUtils';
   export let id: string = "";
   export let usuario_id: string = "";
   export let usuario_nombre: string = "Wall Oliveros";
+  export let usuario_slug: string = ""; // 🆕 Slug para el perfil público
   export let usuario_avatar: string = "https://tbijzvtyyewhtwgakgka.supabase.co/storage/v1/object/public/avatars/avatar-002a2282-8990-4ad2-9098-186e5edf359a-1749872362580.PNG";
   export let fecha: string = "14 de junio a las 11:43";
   export let contenido: string = "Esta es una publicación de ejemplo. ¡Puedes cambiar el texto!";
@@ -47,6 +49,9 @@
 
   // Saber si el usuario actual ya dio like
   $: yaDioMeGusta = usuario && meGusta.includes(usuario.id);
+
+  // Verificar si tiene slug válido
+  $: tieneSlugValido = usuario_slug && usuario_slug.trim() !== '';
 
   async function alternarMeGusta() {
     if (!usuario || !usuario.id || cargandoMeGusta) return;
@@ -105,7 +110,13 @@
         <div class="indicador-estado"></div>
       </div>
       <div class="detalles-usuario">
-        <h3 class="nombre-usuario">{usuario_nombre}</h3>
+        {#if tieneSlugValido}
+          <a href="/usuario/{usuario_slug}" class="enlace-perfil">
+            <h3 class="nombre-usuario">{usuario_nombre}</h3>
+          </a>
+        {:else}
+          <h3 class="nombre-usuario">{usuario_nombre}</h3>
+        {/if}
         <div class="metadatos-publicacion">
           <time class="fecha-publicacion">{fecha}</time>
           <span class="separador">·</span>
@@ -129,7 +140,18 @@
 
   <!-- Contenido de la publicación -->
   <div class="contenido-principal">
-    <p class="texto-publicacion">{contenido}</p>
+    <!-- Mostrar texto especial para publicaciones automáticas de fotos -->
+    {#if tipo === 'foto_perfil'}
+      <p class="texto-publicacion-automatica">
+        <span class="accion-automatica">Actualizó su foto de perfil</span>
+      </p>
+    {:else if tipo === 'foto_portada'}
+      <p class="texto-publicacion-automatica">
+        <span class="accion-automatica">Actualizó su foto de portada</span>
+      </p>
+    {:else}
+      <p class="texto-publicacion">{contenido}</p>
+    {/if}
     
     <!-- Media de la publicación -->
   {#if url_imagen}
@@ -351,7 +373,62 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-}
+  }
+
+  /* 🆕 Estilos para enlace del perfil */
+  .enlace-perfil {
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transicion-rapida);
+    border-radius: 6px;
+    padding: 0.125rem 0.25rem;
+    margin: -0.125rem -0.25rem;
+  }
+
+  .enlace-perfil:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .enlace-perfil .nombre-usuario {
+    transition: inherit;
+  }
+
+  .enlace-perfil:hover .nombre-usuario {
+    background: linear-gradient(135deg, var(--color-primario), var(--color-acento));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 🔥 Enlace funcional forzado */
+  .enlace-perfil-funcional {
+    display: block !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 999 !important;
+    position: relative !important;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: transparent !important;
+  }
+
+  .enlace-perfil-funcional:hover {
+    background: rgba(37, 99, 235, 0.1) !important;
+    transform: translateY(-1px);
+  }
+
+  .enlace-perfil-funcional .nombre-usuario {
+    color: #1f2937 !important;
+    background: transparent !important;
+  }
+
+  .enlace-perfil-funcional:hover .nombre-usuario {
+    color: #2563eb !important;
+    background: transparent !important;
+  }
 
   .metadatos-publicacion {
   display: flex;
@@ -423,7 +500,26 @@
     margin: 0 0 1rem 0;
     white-space: pre-line;
     word-wrap: break-word;
-}
+  }
+
+  /* Estilos para publicaciones automáticas de fotos */
+  .texto-publicacion-automatica {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+  }
+
+  .accion-automatica {
+    color: var(--color-texto-secundario);
+    font-weight: 600;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    display: inline-block;
+  }
 
   /* Media */
   .contenedor-media {

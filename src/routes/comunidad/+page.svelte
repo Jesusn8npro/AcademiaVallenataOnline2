@@ -31,10 +31,19 @@
     const desde = pagina * LIMITE;
     const hasta = desde + LIMITE - 1;
     
-    // Cargar publicaciones
+    // Cargar publicaciones (EXCLUIR publicaciones automáticas de fotos)
     const { data, error } = await supabase
       .from('comunidad_publicaciones')
-      .select('*')
+      .select(`
+        *,
+        perfiles:usuario_id (
+          nombre,
+          apellido,
+          nombre_usuario,
+          url_foto_perfil
+        )
+      `)
+      .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
       .order('fecha_creacion', { ascending: false })
       .range(desde, hasta);
       
@@ -58,11 +67,24 @@
           console.log(`📊 Publicación ${pub.id}: ${likesUsuarios.length} likes cargados`);
         }
         
+        // 🔥 GENERAR SLUG DESDE NOMBRE SI NO EXISTE nombre_usuario
+        const nombreCompleto = pub.perfiles ? `${pub.perfiles.nombre || ''} ${pub.perfiles.apellido || ''}`.trim() : pub.usuario_nombre || '';
+        const slugGenerado = pub.perfiles?.nombre_usuario || 
+          nombreCompleto.toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || 
+          `usuario-${pub.usuario_id.slice(0, 8)}`;
+        
+        // ✅ Slug generado automáticamente si no existe nombre_usuario
+
         return {
           ...pub,
           usuario_id: pub.usuario_id,
-          usuario_nombre: pub.usuario_nombre || 'Usuario',
-          usuario_avatar: pub.usuario_avatar || '',
+          usuario_nombre: nombreCompleto || 'Usuario',
+          usuario_slug: slugGenerado, // 🆕 Slug generado automáticamente
+          usuario_avatar: pub.perfiles?.url_foto_perfil || pub.usuario_avatar || '',
           contenido: pub.descripcion || '',
           fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
           url_imagen: pub.url_imagen || '',
@@ -226,6 +248,7 @@
           id={pub.id}
           usuario_id={pub.usuario_id}
           usuario_nombre={pub.usuario_nombre}
+          usuario_slug={pub.usuario_slug}
           usuario_avatar={pub.usuario_avatar}
           fecha={pub.fecha_creacion}
           contenido={pub.descripcion}
@@ -262,7 +285,9 @@
     <!-- Columna Derecha -->
     <div class="columna-derecha">
       <RankingComunidad />
-      <SliderCursos />
+      <div class="bloque-cursos">
+        <SliderCursos />
+      </div>
     </div>
   </div>
 </div>

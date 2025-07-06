@@ -1,593 +1,636 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { inscripcionesComunidad, cargarInscripcionesComunidad } from '$lib/components/MisCursos/storeMisCursosComunidad';
-  import { progresoLecciones } from '$lib/progresoLeccionesStore';
-  import { usuario } from '$lib/UsuarioActivo/usuario';
-  import BarraProgresoGeneral from '$lib/components/VisualiizadorDeLeccionesDeCursos/BarraProgresoGeneral.svelte';
-  import { obtenerProgresoCurso } from '$lib/services/progresoService';
-  import { obtenerProgresoTutorial } from '$lib/services/progresoTutorialService';
-  import { goto } from '$app/navigation';
+  import TarjetaCurso from '$lib/components/MisCursos/TarjetaCurso.svelte';
   import { supabase } from '$lib/supabase/clienteSupabase';
-  import { obtenerCursoCompletoPorSlug } from '$lib/services/cursoService';
-  import { generateSlug } from '$lib/utilidades/utilidadesSlug';
+  import { usuario } from '$lib/UsuarioActivo/usuario';
+  import { onMount } from 'svelte';
 
-  let currentIndex = 0;
-  let carouselContainer: HTMLElement;
-  let itemWidth = 280;
+  // Referencias del slider
+  let sliderContainer: HTMLElement;
+  let canScrollLeft = false;
+  let canScrollRight = true;
 
-  onMount(async () => {
-    await cargarInscripcionesComunidad();
-    await cargarProgresoEnStore();
-  });
+  // Estados de datos
+  let inscripciones: any[] = [];
+  let cargando = true;
+  let error: string | null = null;
 
-  $: inscripciones = ($inscripcionesComunidad.inscripciones as any[]) || [];
-  $: totalItems = inscripciones.length;
-  $: maxIndex = Math.max(0, totalItems - 1);
-
-  // Re-cargar progreso cuando cambien las inscripciones o el usuario
-  $: if (inscripciones.length > 0 && $usuario?.id) {
-    cargarProgresoEnStore();
+  // Funciones de navegación
+  function scrollLeft() {
+    if (sliderContainer && inscripciones.length > 0) {
+      const containerWidth = sliderContainer.offsetWidth;
+      sliderContainer.scrollBy({ 
+        left: -containerWidth, // Scroll exacto del ancho del contenedor
+        behavior: 'smooth' 
+      });
+      setTimeout(actualizarBotones, 300);
+    }
   }
 
-  // Usar exactamente la misma función que la página de Mis Cursos
-  async function cargarProgresoEnStore() {
-    if (!$usuario?.id || inscripciones.length === 0) return;
+  function scrollRight() {
+    if (sliderContainer && inscripciones.length > 0) {
+      const containerWidth = sliderContainer.offsetWidth;
+      sliderContainer.scrollBy({ 
+        left: containerWidth, // Scroll exacto del ancho del contenedor
+        behavior: 'smooth' 
+      });
+      setTimeout(actualizarBotones, 300);
+    }
+  }
 
-    const progresoMap: any = {};
+  function actualizarBotones() {
+    if (!sliderContainer) return;
     
-    // Cargar progreso para cada inscripción usando los servicios que ya funcionan
-    for (const inscripcion of inscripciones) {
-      try {
-        if (inscripcion.curso_id) {
-          // Es un curso - usar el servicio que funciona
-          const { data } = await obtenerProgresoCurso(inscripcion.curso_id);
-          if (data) {
-            progresoMap[inscripcion.curso_id] = {
-              partes_completadas: data.partes_completadas || 0,
-              total_partes: data.total_partes || 0,
-              progreso: data.progreso || 0
-            };
-          }
-        } else if (inscripcion.tutorial_id) {
-          // Es un tutorial - usar el servicio que funciona
-          const { data } = await obtenerProgresoTutorial(inscripcion.tutorial_id);
-          if (data) {
-            progresoMap[inscripcion.tutorial_id] = {
-              partes_completadas: data.partes_completadas || 0,
-              total_partes: data.total_partes || 0,
-              progreso: data.progreso || 0
-            };
-          }
-        }
-      } catch (error) {
-        console.error('Error cargando progreso:', error);
-        // En caso de error, usar valores por defecto
-        const contenidoId = inscripcion.curso_id || inscripcion.tutorial_id;
-        if (contenidoId) {
-          progresoMap[contenidoId] = {
-            partes_completadas: 0,
-            total_partes: 0,
-            progreso: 0
-          };
-        }
+    const { scrollLeft, scrollWidth, clientWidth } = sliderContainer;
+    canScrollLeft = scrollLeft > 0;
+    canScrollRight = scrollLeft < scrollWidth - clientWidth - 10; // Margen de error
+  }
+
+  // Cargar inscripciones usando la MISMA LÓGICA que GridMisCursos
+  async function cargarInscripciones() {
+    if (!$usuario?.id) {
+      cargando = false;
+      return;
+    }
+
+    try {
+      cargando = true;
+      error = null;
+
+      console.log('🚀 [SliderCursos] Cargando inscripciones para usuario:', $usuario.id);
+
+      // Primero obtener todas las inscripciones del usuario
+      const { data: inscripcionesData, error: err } = await supabase
+        .from('inscripciones')
+        .select('*')
+        .eq('usuario_id', $usuario.id)
+        .order('fecha_inscripcion', { ascending: false });
+
+      if (err) {
+        throw err;
       }
-    }
-    
-    // Actualizar el store con todos los datos de progreso
-    progresoLecciones.update(store => ({ ...store, ...progresoMap }));
-    console.log('Progreso cargado en slider:', progresoMap);
-  }
 
-  function nextSlide() {
-    if (currentIndex < maxIndex) {
-      currentIndex++;
-    }
-  }
+      if (!inscripcionesData || inscripcionesData.length === 0) {
+        console.log('📭 [SliderCursos] No hay inscripciones');
+        inscripciones = [];
+        return;
+      }
 
-  function prevSlide() {
-    if (currentIndex > 0) {
-      currentIndex--;
-    }
-  }
+      console.log('📋 [SliderCursos] Inscripciones encontradas:', inscripcionesData.length);
 
-  function goToSlide(index: number) {
-    currentIndex = Math.max(0, Math.min(index, maxIndex));
-  }
+      // Separar las inscripciones por tipo
+      const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
+      const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
 
-  function determinarTextoBoton(inscripcion: any) {
-    const esCurso = !!inscripcion.curso;
-    const progresoReal = $progresoLecciones[esCurso ? inscripcion.curso_id : inscripcion.tutorial_id];
-    const tieneProgreso = progresoReal && (progresoReal.partes_completadas || 0) > 0;
-    
-    if (inscripcion.completado) return 'Completado';
-    if (tieneProgreso) return 'Continuar';
-    return 'Empezar';
-  }
+      console.log('🎯 [SliderCursos] Cursos:', inscripcionesCursos.length, 'Tutoriales:', inscripcionesTutoriales.length);
 
-  // NAVEGACIÓN INTELIGENTE - COPIADA EXACTAMENTE DE TarjetaCurso.svelte
-  async function navegarAContenido(inscripcion: any) {
-    const esCurso = !!inscripcion.curso;
-    const esTutorial = !!inscripcion.tutorial;
-    const contenido = esCurso ? inscripcion.curso : inscripcion.tutorial;
-    const progresoReal = $progresoLecciones[esCurso ? inscripcion.curso_id : inscripcion.tutorial_id];
-    const tieneProgreso = progresoReal && (progresoReal.partes_completadas || 0) > 0;
-
-    console.log('[SliderCursos] navegarAContenido - contenido:', contenido);
-    console.log('[SliderCursos] navegarAContenido - tipo:', esCurso ? 'curso' : 'tutorial');
-    console.log('[SliderCursos] tieneProgreso:', tieneProgreso);
-
-    if (esCurso) {
-      // LÓGICA PARA CURSOS MEJORADA CON MANEJO DE PROGRESO
-      const cursoSlug = contenido.slug || generateSlug(contenido.titulo);
-      
-      try {
-        const { curso: cursoCompleto, error: errCurso } = await obtenerCursoCompletoPorSlug(cursoSlug);
-        if (errCurso || !cursoCompleto) {
-            console.error('[SliderCursos] No se pudo cargar el curso completo para navegación', errCurso);
-            goto(`/cursos/${cursoSlug}`);
-            return;
-        }
-
-        // Si el usuario tiene progreso, intentar llevarlo a la siguiente lección pendiente
-        if (tieneProgreso && $usuario) {
-            const todasLasLeccionesIds = cursoCompleto.modulos.flatMap((m: any) => m.lecciones?.map((l: any) => l.id) || []).filter(Boolean);
-
-            if (todasLasLeccionesIds.length > 0) {
-                const { data: progresoData, error: progresoError } = await supabase
-                    .from('progreso_lecciones')
-                    .select('leccion_id, estado')
-                    .eq('usuario_id', $usuario.id)
-                    .in('leccion_id', todasLasLeccionesIds);
-                
-                if (!progresoError) {
-                    const leccionesCompletadas = new Set(
-                        progresoData.filter((p: any) => p.estado === 'completada').map((p: any) => p.leccion_id)
-                    );
-
-                    let proximaLeccion = null;
-                    let moduloDeLaLeccion = null;
-
-                    for (const modulo of cursoCompleto.modulos) {
-                        const leccionEncontrada = modulo.lecciones?.find((l: any) => !leccionesCompletadas.has(l.id));
-                        if (leccionEncontrada) {
-                            proximaLeccion = leccionEncontrada;
-                            moduloDeLaLeccion = modulo;
-                            break;
-                        }
-                    }
-
-                    if (proximaLeccion && moduloDeLaLeccion) {
-                        const moduloSlug = moduloDeLaLeccion.slug || generateSlug(moduloDeLaLeccion.titulo);
-                        const leccionSlug = proximaLeccion.slug || generateSlug(proximaLeccion.titulo);
-                        const rutaDestino = `/cursos/${cursoSlug}/${moduloSlug}/${leccionSlug}`;
-                        console.log('[SliderCursos][CURSO][CONTINUAR] Navegando a:', rutaDestino);
-                        goto(rutaDestino);
-                        return; // Navegación exitosa a la siguiente lección
-                    }
-                } else {
-                  console.error("Error fetching course progress, will navigate to first lesson.", progresoError);
-                }
-            }
-        }
-
-        // FALLBACK: Si no hay progreso, o todo está completo, o hubo un error. Navegar a la primera lección.
-        console.log('[SliderCursos][CURSO][EMPEZAR/REPASAR] Navegando a primera lección.');
-        if (cursoCompleto.modulos && cursoCompleto.modulos.length > 0) {
-            const primerModulo = cursoCompleto.modulos.find((m: any) => m.lecciones && m.lecciones.length > 0);
-            if (primerModulo) {
-                const primeraLeccion = primerModulo.lecciones[0];
-                const moduloSlug = primerModulo.slug || generateSlug(primerModulo.titulo);
-                const leccionSlug = primeraLeccion.slug || generateSlug(primeraLeccion.titulo);
-                const rutaDestino = `/cursos/${cursoSlug}/${moduloSlug}/${leccionSlug}`;
-                console.log('[SliderCursos][CURSO] rutaDestino Fallback:', rutaDestino);
-                goto(rutaDestino);
-                return;
-            }
-        }
+      // Obtener datos de cursos si hay inscripciones a cursos
+      let cursosData = [];
+      if (inscripcionesCursos.length > 0) {
+        const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
+        const { data: cursos, error: errorCursos } = await supabase
+          .from('cursos')
+          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
+          .in('id', cursoIds);
         
-        console.warn('[SliderCursos] No se encontraron lecciones en el curso, navegando a la página de detalles.');
-        goto(`/cursos/${cursoSlug}`);
-
-      } catch (error) {
-          console.error('[SliderCursos] Error en navegación de curso:', error);
-          goto(`/cursos/${cursoSlug}`);
-          return;
-      }
-    }
-
-    if (esTutorial) {
-      // LÓGICA PARA TUTORIALES - AHORA IGUAL DE INTELIGENTE QUE LA DE CURSOS
-      const tutorialSlug = contenido.slug || generateSlug(contenido.titulo);
-
-      try {
-        // 1. Cargar todas las clases (partes) del tutorial
-        const { data: todasLasClases, error: clasesError } = await supabase
-          .from('partes_tutorial')
-          .select('id, titulo, slug, orden')
-          .eq('tutorial_id', contenido.id)
-          .order('orden', { ascending: true });
-
-        if (clasesError || !todasLasClases || todasLasClases.length === 0) {
-          console.error('[SliderCursos] Error cargando clases del tutorial o no hay clases:', clasesError);
-          goto(`/tutoriales/${tutorialSlug}`); // Ir a la página de detalles como fallback
-          return;
+        if (errorCursos) {
+          console.error('❌ [SliderCursos] Error cargando cursos:', errorCursos);
+        } else {
+          cursosData = cursos || [];
+          console.log('✅ [SliderCursos] Cursos cargados:', cursosData.length);
         }
-
-        // 2. Si el usuario tiene progreso, buscar la siguiente clase
-        if (tieneProgreso && $usuario) {
-          const { data: progresoData, error: progresoError } = await supabase
-            .from('progreso_tutorial')
-            .select('parte_tutorial_id, completado')
-            .eq('usuario_id', $usuario.id)
-            .eq('tutorial_id', contenido.id);
-
-          if (!progresoError) {
-            const clasesCompletadas = new Set(
-              progresoData
-                .filter((p: any) => p.completado)
-                .map((p: any) => p.parte_tutorial_id)
-            );
-
-            const proximaClase = todasLasClases.find((clase: any) => !clasesCompletadas.has(clase.id));
-
-            if (proximaClase) {
-              const claseSlug = proximaClase.slug || generateSlug(proximaClase.titulo);
-              const rutaDestino = `/tutoriales/${tutorialSlug}/clase/${claseSlug}`;
-              console.log('[SliderCursos][TUTORIAL][CONTINUAR] Navegando a:', rutaDestino);
-              goto(rutaDestino);
-              return; // Navegación exitosa
-            }
-          } else {
-            console.error("Error fetching tutorial progress, will navigate to first class.", progresoError);
-          }
-        }
-
-        // 3. FALLBACK: Si no hay progreso, o todo está completo, o hubo un error. Navegar a la primera clase.
-        const primeraClase = todasLasClases[0];
-        const claseSlug = primeraClase.slug || generateSlug(primeraClase.titulo);
-        const rutaDestino = `/tutoriales/${tutorialSlug}/clase/${claseSlug}`;
-        console.log('[SliderCursos][TUTORIAL][EMPEZAR/REPASAR] Navegando a:', rutaDestino);
-        goto(rutaDestino);
-        return;
-
-      } catch (error) {
-        console.error('[SliderCursos] Error en navegación de tutorial:', error);
-        goto(`/tutoriales/${tutorialSlug}`);
-        return;
       }
-    }
 
-    alert('No se encontró la primera lección o clase.\\n\\nRevisa la consola (F12) para ver la estructura de datos recibida.');
-    console.error('[SliderCursos][ERROR][GENERAL] contenido:', contenido);
+      // Obtener datos de tutoriales si hay inscripciones a tutoriales
+      let tutorialesData = [];
+      if (inscripcionesTutoriales.length > 0) {
+        const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
+        console.log('🔍 [SliderCursos] Tutorial IDs a consultar:', tutorialIds);
+        
+        const { data: tutoriales, error: errorTutoriales } = await supabase
+          .from('tutoriales')
+          .select('id, titulo, imagen_url, descripcion, categoria')
+          .in('id', tutorialIds);
+        
+        if (errorTutoriales) {
+          console.error('❌ [SliderCursos] Error cargando tutoriales:', errorTutoriales);
+        } else {
+          tutorialesData = tutoriales || [];
+          console.log('✅ [SliderCursos] Tutoriales cargados:', tutorialesData.length);
+        }
+      }
+
+      // Combinar todo - USANDO ESTRUCTURA ORIGINAL (SINGULAR)
+      inscripciones = [
+        // Inscripciones a cursos
+        ...inscripcionesCursos.map((inscripcion: any) => ({
+          ...inscripcion,
+          curso: cursosData.find((curso: any) => curso.id === inscripcion.curso_id)  // SINGULAR
+        })),
+        // Inscripciones a tutoriales
+        ...inscripcionesTutoriales.map((inscripcion: any) => {
+          const tutorialEncontrado = tutorialesData.find((tutorial: any) => tutorial.id === inscripcion.tutorial_id);
+          return {
+            ...inscripcion,
+            tutorial: tutorialEncontrado  // SINGULAR
+          };
+        })
+      ];
+
+      // Reordenar por fecha de inscripción
+      inscripciones.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
+
+      console.log('🎉 [SliderCursos] Resultado final:', {
+        total: inscripciones.length,
+        cursos: inscripciones.filter(i => i.curso).length,
+        tutoriales: inscripciones.filter(i => i.tutorial).length,
+        items: inscripciones.map(i => ({
+          tipo: i.curso ? 'CURSO' : 'TUTORIAL',
+          titulo: i.curso?.titulo || i.tutorial?.titulo
+        }))
+      });
+
+    } catch (err: any) {
+      console.error('💥 [SliderCursos] Error cargando inscripciones:', err);
+      error = err.message || 'Error desconocido al cargar los cursos';
+    } finally {
+      cargando = false;
+    }
   }
+
+  // Reintentar carga
+  function reintentar() {
+    cargarInscripciones();
+  }
+
+  // Navegación
+  function irACursos() {
+    window.location.href = '/cursos';
+  }
+
+  function irATutoriales() {
+    window.location.href = '/tutoriales';
+  }
+
+  // Reactividad: Actualizar botones cuando cambien las inscripciones
+  $: if (inscripciones.length > 0) {
+    setTimeout(actualizarBotones, 100);
+  }
+
+  // Cargar datos al montar el componente
+  onMount(async () => {
+    if ($usuario?.id) {
+      await cargarInscripciones();
+    }
+  });
 </script>
 
-<div class="slider-container">
-  <h3 class="slider-title">
-    <span class="titulo-icono">🚀</span> Continúa tu aprendizaje
-  </h3>
-
-  {#if $inscripcionesComunidad.isLoading}
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando tus cursos...</p>
-    </div>
-  {:else if $inscripcionesComunidad.error}
-    <div class="error-state">
-      <p>❌ {$inscripcionesComunidad.error}</p>
-    </div>
-  {:else if inscripciones.length === 0}
-    <div class="empty-state">
-      <p>No tienes cursos inscritos aún.</p>
-      <a href="/cursos" class="btn-explorar">Explorar cursos</a>
-    </div>
-  {:else}
-    <div class="carousel-wrapper">
-      <!-- Botón anterior -->
-      {#if currentIndex > 0}
-        <button class="nav-btn nav-btn-prev" on:click={prevSlide}>
-          &#8249;
-        </button>
+<div class="slider-contenedor">
+  <!-- Header con botones encima -->
+  <div class="header-section">
+    <div class="titulo-section">
+      <h2 class="titulo">Mis Cursos</h2>
+      {#if inscripciones.length > 0}
+        <span class="badge-progreso">
+          {inscripciones.length} contenido{inscripciones.length !== 1 ? 's' : ''}
+        </span>
       {/if}
+    </div>
+    
+    <!-- Botones de navegación -->
+    <div class="botones-navegacion">
+      <button 
+        class="btn-nav" 
+        class:disabled={!canScrollLeft}
+        disabled={!canScrollLeft}
+        on:click={scrollLeft}
+        aria-label="Anterior"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      
+      <button 
+        class="btn-nav" 
+        class:disabled={!canScrollRight}
+        disabled={!canScrollRight}
+        on:click={scrollRight}
+        aria-label="Siguiente"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-      <!-- Contenedor del carousel -->
-      <div class="carousel-container" bind:this={carouselContainer}>
-        <div 
-          class="carousel-track" 
-          style="transform: translateX(-{currentIndex * (itemWidth + 16)}px)"
-        >
-          {#each inscripciones as inscripcion (inscripcion.id)}
-            <div class="curso-card">
-              <div class="imagen-container">
-                <img 
-                  src={inscripcion.curso?.imagen_url || inscripcion.tutorial?.imagen_url || '/images/default-curso.jpg'} 
-                  alt={inscripcion.curso?.titulo || inscripcion.tutorial?.titulo}
-                  class="curso-imagen"
-                />
-                <div class="badge-tipo">
-                  {inscripcion.curso ? 'Curso' : 'Tutorial'}
-                </div>
-              </div>
-
-              <div class="contenido-card">
-                <h4 class="titulo-curso">
-                  {inscripcion.curso?.titulo || inscripcion.tutorial?.titulo}
-                </h4>
-
-                <!-- Usar BarraProgresoGeneral que ya funciona -->
-                <div class="progreso-wrapper">
-                  <BarraProgresoGeneral 
-                    tipo={inscripcion.curso ? 'curso' : 'tutorial'}
-                    contenidoId={inscripcion.curso ? inscripcion.curso_id : inscripcion.tutorial_id}
-                  />
-                </div>
-
-                <button 
-                  class="btn-accion {inscripcion.completado ? 'completado' : ''}"
-                  on:click={() => navegarAContenido(inscripcion)}
-                >
-                  {determinarTextoBoton(inscripcion)}
-                </button>
-              </div>
-            </div>
-          {/each}
+  <!-- Contenido del slider -->
+  <div class="slider-wrapper">
+    {#if cargando}
+      <div class="estado-carga">
+        <div class="spinner"></div>
+        <p>Cargando tus cursos...</p>
+      </div>
+    {:else if error}
+      <div class="estado-error">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        <p class="error-mensaje">{error}</p>
+        <button class="btn-reintentar" on:click={reintentar}>
+          Reintentar
+        </button>
+      </div>
+    {:else if inscripciones.length === 0}
+      <div class="estado-vacio">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        <h3>¡Comienza tu aprendizaje!</h3>
+        <p>No tienes cursos inscritos aún. Explora nuestro catálogo y comienza a aprender acordeón.</p>
+        <div class="botones-accion">
+          <button class="btn-principal" on:click={irACursos}>
+            Ver Cursos
+          </button>
+          <button class="btn-secundario" on:click={irATutoriales}>
+            Ver Tutoriales
+          </button>
         </div>
       </div>
-
-      <!-- Botón siguiente -->
-      {#if currentIndex < maxIndex}
-        <button class="nav-btn nav-btn-next" on:click={nextSlide}>
-          &#8250;
-        </button>
-      {/if}
-    </div>
-
-    <!-- Indicadores de página -->
-    {#if totalItems > 1}
-      <div class="pagination-dots">
-        {#each Array(totalItems) as _, i}
-          <button 
-            class="dot {i === currentIndex ? 'active' : ''}"
-            on:click={() => goToSlide(i)}
-          />
+    {:else}
+      <div 
+        class="slider-grid"
+        bind:this={sliderContainer}
+        on:scroll={actualizarBotones}
+      >
+        {#each inscripciones as inscripcion}
+          <div class="tarjeta-wrapper">
+            <TarjetaCurso 
+              inscripcion={inscripcion}
+            />
+          </div>
         {/each}
       </div>
     {/if}
-  {/if}
+  </div>
 </div>
 
 <style>
-  .slider-container {
+  .slider-contenedor {
     width: 100%;
-    max-width: 280px;
+    max-width: 100%;
     margin: 0 auto;
+    padding: 0;
   }
 
-  .slider-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #1f2937;
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
+
+  .titulo-section {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-
-  .titulo-icono {
-    font-size: 1.2rem;
-  }
-
-  .carousel-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .carousel-container {
+    gap: 12px;
     flex: 1;
-    overflow: hidden;
-    border-radius: 12px;
   }
 
-  .carousel-track {
-    display: flex;
-    gap: 16px;
-    transition: transform 0.3s ease;
+  .titulo {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
   }
 
-  .curso-card {
-    min-width: 280px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .curso-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  .imagen-container {
-    position: relative;
-    height: 120px;
-    overflow: hidden;
-  }
-
-  .curso-imagen {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .badge-tipo {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+  .badge-progreso {
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     color: white;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-
-  .contenido-card {
-    padding: 12px;
-  }
-
-  .titulo-curso {
-    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
     font-weight: 600;
-    margin-bottom: 8px;
-    color: #1f2937;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    white-space: nowrap;
   }
 
-  .progreso-wrapper {
-    margin-bottom: 12px;
+  .botones-navegacion {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
-  .btn-accion {
-    width: 100%;
-    padding: 8px 16px;
-    border: none;
+  .btn-nav {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e5e7eb;
+    background: white;
     border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
+    color: #4b5563;
   }
 
-  .btn-accion:hover {
-    background: linear-gradient(135deg, #2563eb, #1e40af);
+  .btn-nav:hover:not(.disabled) {
+    background: #f3f4f6;
+    border-color: #d1d5db;
     transform: translateY(-1px);
   }
 
-  .btn-accion.completado {
-    background: linear-gradient(135deg, #10b981, #059669);
+  .btn-nav.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
-  .btn-accion.completado:hover {
-    background: linear-gradient(135deg, #059669, #047857);
+  .slider-wrapper {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
   }
 
-  .nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    color: #374151;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 10;
-    transition: all 0.2s ease;
+  .slider-grid {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
+    padding: 0;
   }
 
-  .nav-btn:hover {
-    background: white;
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  .slider-grid::-webkit-scrollbar {
+    display: none;
   }
 
-  .nav-btn-prev {
-    left: -16px;
-  }
-
-  .nav-btn-next {
-    right: -16px;
-  }
-
-  .pagination-dots {
+  .tarjeta-wrapper {
+    flex: 0 0 100%;
+    min-width: 100%;
+    width: 100%;
+    scroll-snap-align: start;
     display: flex;
     justify-content: center;
-    gap: 6px;
-    margin-top: 12px;
+    align-items: center;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
 
-  .dot {
-    width: 8px;
-    height: 8px;
-    border: none;
-    border-radius: 50%;
-    background: #d1d5db;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+  .tarjeta-wrapper :global(.tarjeta-curso) {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 
-  .dot.active {
-    background: #3b82f6;
-  }
-
-  .loading-state, .error-state, .empty-state {
+  /* Estados */
+  .estado-carga,
+  .estado-error,
+  .estado-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
     text-align: center;
-    padding: 24px;
-    background: #f9fafb;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
+  }
+
+  .estado-carga {
+    color: #6b7280;
   }
 
   .spinner {
-    width: 32px;
-    height: 32px;
-    margin: 0 auto 12px;
-    border: 3px solid #e5e7eb;
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f4f6;
     border-top: 3px solid #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin-bottom: 16px;
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
-  .btn-explorar {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 8px 16px;
-    background: #3b82f6;
+  .estado-error {
+    color: #ef4444;
+  }
+
+  .error-mensaje {
+    margin: 16px 0;
+    font-size: 1.1rem;
+  }
+
+  .btn-reintentar {
+    background: #ef4444;
     color: white;
-    text-decoration: none;
+    border: none;
+    padding: 12px 24px;
     border-radius: 8px;
     font-weight: 600;
-    transition: background-color 0.2s ease;
+    cursor: pointer;
+    transition: background 0.2s ease;
   }
 
-  .btn-explorar:hover {
-    background: #2563eb;
+  .btn-reintentar:hover {
+    background: #dc2626;
   }
 
-  /* Responsive */
-  @media (max-width: 640px) {
-    .slider-container {
-      max-width: 240px;
+  .estado-vacio {
+    color: #6b7280;
+  }
+
+  .estado-vacio h3 {
+    color: #1f2937;
+    font-size: 1.5rem;
+    margin: 20px 0 12px;
+  }
+
+  .estado-vacio p {
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+    max-width: 500px;
+  }
+
+  .botones-accion {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-principal {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-principal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-secundario {
+    background: white;
+    color: #3b82f6;
+    border: 2px solid #3b82f6;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secundario:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  /* Adaptativo para SIDEBAR PEQUEÑO (como en publicaciones) */
+  @container (max-width: 400px) {
+    .titulo {
+      font-size: 1.4rem;
     }
 
-    .curso-card {
-      min-width: 240px;
+    .badge-progreso {
+      font-size: 0.8rem;
+      padding: 4px 8px;
     }
 
-    .nav-btn-prev {
-      left: -12px;
+    .btn-nav {
+      width: 32px;
+      height: 32px;
     }
 
-    .nav-btn-next {
-      right: -12px;
+    .tarjeta-wrapper {
+      padding: 0 8px; /* Menos padding en pantallas pequeñas */
+    }
+
+    .estado-carga,
+    .estado-error,
+    .estado-vacio {
+      padding: 40px 16px;
+    }
+
+    .estado-vacio h3 {
+      font-size: 1.2rem;
+    }
+
+    .estado-vacio p {
+      font-size: 0.95rem;
+    }
+  }
+
+  /* ESTILOS GLOBALES para CONTENEDORES ESPECÍFICOS */
+  
+  /* Para columna derecha de COMUNIDAD (320px) */
+  :global(.columna-derecha) .slider-contenedor {
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  :global(.columna-derecha) .titulo {
+    font-size: 1.4rem !important;
+  }
+
+  :global(.columna-derecha) .badge-progreso {
+    font-size: 0.8rem !important;
+    padding: 4px 8px !important;
+  }
+
+  :global(.columna-derecha) .btn-nav {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  :global(.columna-derecha) .tarjeta-wrapper {
+    padding: 0 8px !important; /* Centrar con padding mínimo */
+  }
+
+  /* Para bloque-cursos de PUBLICACIONES (350px) */
+  :global(.bloque-cursos) .slider-contenedor {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  :global(.bloque-cursos) .titulo {
+    font-size: 1.4rem !important;
+  }
+
+  :global(.bloque-cursos) .badge-progreso {
+    font-size: 0.8rem !important;
+    padding: 4px 8px !important;
+  }
+
+  :global(.bloque-cursos) .btn-nav {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  :global(.bloque-cursos) .tarjeta-wrapper {
+    padding: 0 8px !important; /* Centrar con padding mínimo */
+  }
+
+  :global(.bloque-cursos) .estado-carga,
+  :global(.bloque-cursos) .estado-error,
+  :global(.bloque-cursos) .estado-vacio {
+    padding: 40px 16px !important;
+  }
+
+  :global(.bloque-cursos) .estado-vacio h3 {
+    font-size: 1.2rem !important;
+  }
+
+  :global(.bloque-cursos) .estado-vacio p {
+    font-size: 0.95rem !important;
+  }
+
+  /* Responsive general */
+  @media (max-width: 768px) {
+    .header-section {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .titulo-section {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .titulo {
+      font-size: 1.5rem;
+    }
+
+    .botones-navegacion {
+      align-self: flex-end;
+    }
+
+    .tarjeta-wrapper {
+      padding: 0 5px; /* Padding mínimo en móviles */
+    }
+
+    .botones-accion {
+      flex-direction: column;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .btn-principal,
+    .btn-secundario {
+      width: 100%;
     }
   }
 </style> 

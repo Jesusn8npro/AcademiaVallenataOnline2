@@ -4,6 +4,7 @@
   import { quintOut } from 'svelte/easing';
 
   export let perfil: any = {};
+  export let esEditable = true; // 🆕 Nuevo prop para modo lectura
 
   const dispatch = createEventDispatcher();
   let guardando = false;
@@ -70,8 +71,8 @@
 </script>
 
 {#if listo}
-<div class="formulario-perfil" in:fly={{ y: 20, duration: 300 }}>
-  <form on:submit|preventDefault={guardarPerfil}>
+<div class="formulario-perfil" class:solo-lectura={!esEditable} in:fly={{ y: 20, duration: 300 }}>
+  <form on:submit|preventDefault={esEditable ? guardarPerfil : undefined}>
     
     <!-- SECCIÓN: Información Personal -->
     <div class="seccion-acordeon">
@@ -117,48 +118,50 @@
       {/if}
     </div>
 
-    <!-- SECCIÓN: Ubicación y Contacto -->
-    <div class="seccion-acordeon">
-      <button type="button" class="header-seccion" on:click={() => toggleSeccion('ubicacion')}>
-        <div class="titulo-wrapper">
-          <div class="icono-seccion">📍</div>
-          <h2 class="titulo-seccion">Ubicación y Contacto</h2>
-        </div>
-        <div class="icono-cheveron" class:rotado={seccionActiva === 'ubicacion'}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </button>
-      
-      {#if seccionActiva === 'ubicacion'}
-        <div class="contenido-seccion" transition:slide={{ duration: 300, easing: quintOut }}>
-          <div class="grid-form grid-3-columnas">
-            <div class="campo">
-              <label for="pais">País</label>
-              <input id="pais" type="text" bind:value={perfil.pais} placeholder="Tu país" class="input-principal"/>
+    <!-- SECCIÓN: Ubicación y Contacto - SOLO para perfil editable -->
+    {#if esEditable}
+      <div class="seccion-acordeon">
+        <button type="button" class="header-seccion" on:click={() => toggleSeccion('ubicacion')}>
+          <div class="titulo-wrapper">
+            <div class="icono-seccion">📍</div>
+            <h2 class="titulo-seccion">Ubicación y Contacto</h2>
+          </div>
+          <div class="icono-cheveron" class:rotado={seccionActiva === 'ubicacion'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </button>
+        
+        {#if seccionActiva === 'ubicacion'}
+          <div class="contenido-seccion" transition:slide={{ duration: 300, easing: quintOut }}>
+            <div class="grid-form grid-3-columnas">
+              <div class="campo">
+                <label for="pais">País</label>
+                <input id="pais" type="text" bind:value={perfil.pais} placeholder="Tu país" class="input-principal"/>
+              </div>
+              <div class="campo">
+                <label for="ciudad">Ciudad</label>
+                <input id="ciudad" type="text" bind:value={perfil.ciudad} placeholder="Tu ciudad" class="input-principal"/>
+              </div>
+              <div class="campo">
+                <label for="direccion">Dirección</label>
+                <input id="direccion" type="text" bind:value={perfil.direccion_completa} placeholder="Dirección completa" class="input-principal"/>
+              </div>
             </div>
-            <div class="campo">
-              <label for="ciudad">Ciudad</label>
-              <input id="ciudad" type="text" bind:value={perfil.ciudad} placeholder="Tu ciudad" class="input-principal"/>
-            </div>
-            <div class="campo">
-              <label for="direccion">Dirección</label>
-              <input id="direccion" type="text" bind:value={perfil.direccion_completa} placeholder="Dirección completa" class="input-principal"/>
+            <div class="seccion-whatsapp">
+              <label class="whatsapp-label"><span class="icono-whatsapp">📱</span> WhatsApp</label>
+              <div class="whatsapp-container">
+                <select bind:value={indicativoSeleccionado} class="select-indicativo">
+                  {#each paisesComunes as pais}
+                    <option value={pais.codigo}>{pais.bandera} {pais.codigo}</option>
+                  {/each}
+                </select>
+                <input type="tel" bind:value={numeroWhatsapp} placeholder="Número de WhatsApp" class="input-whatsapp"/>
+              </div>
             </div>
           </div>
-          <div class="seccion-whatsapp">
-            <label class="whatsapp-label"><span class="icono-whatsapp">📱</span> WhatsApp</label>
-            <div class="whatsapp-container">
-              <select bind:value={indicativoSeleccionado} class="select-indicativo">
-                {#each paisesComunes as pais}
-                  <option value={pais.codigo}>{pais.bandera} {pais.codigo}</option>
-                {/each}
-              </select>
-              <input type="tel" bind:value={numeroWhatsapp} placeholder="Número de WhatsApp" class="input-whatsapp"/>
-            </div>
-          </div>
-        </div>
-      {/if}
-    </div>
+        {/if}
+      </div>
+    {/if}
 
     <!-- SECCIÓN: Trayectoria Musical -->
     <div class="seccion-acordeon">
@@ -218,62 +221,66 @@
       {/if}
     </div>
 
-    <!-- SECCIÓN: Información Adicional -->
-    <div class="seccion-acordeon">
-      <button type="button" class="header-seccion" on:click={() => toggleSeccion('adicional')}>
-        <div class="titulo-wrapper">
-          <div class="icono-seccion">📄</div>
-          <h2 class="titulo-seccion">Información Adicional</h2>
-        </div>
-        <div class="icono-cheveron" class:rotado={seccionActiva === 'adicional'}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </button>
+    <!-- SECCIÓN: Información Adicional - SOLO para perfil editable -->
+    {#if esEditable}
+      <div class="seccion-acordeon">
+        <button type="button" class="header-seccion" on:click={() => toggleSeccion('adicional')}>
+          <div class="titulo-wrapper">
+            <div class="icono-seccion">📄</div>
+            <h2 class="titulo-seccion">Información Adicional</h2>
+          </div>
+          <div class="icono-cheveron" class:rotado={seccionActiva === 'adicional'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </button>
 
-      {#if seccionActiva === 'adicional'}
-        <div class="contenido-seccion" transition:slide={{ duration: 300, easing: quintOut }}>
-          <div class="grid-form grid-3-columnas">
-            <div class="campo">
-              <label for="documento_tipo">Tipo de Documento</label>
-              <select id="documento_tipo" bind:value={perfil.documento_tipo} class="input-principal">
-                <option value="CC">Cédula de Ciudadanía</option>
-                <option value="CE">Cédula de Extranjería</option>
-                <option value="TI">Tarjeta de Identidad</option>
-                <option value="PP">Pasaporte</option>
-              </select>
-            </div>
-            <div class="campo">
-              <label for="documento_numero">Número de Documento</label>
-              <input id="documento_numero" type="text" bind:value={perfil.documento_numero} placeholder="Número del documento" class="input-principal"/>
-            </div>
-            <div class="campo">
-              <label for="como_nos_conocio">¿Cómo nos conociste?</label>
-              <select id="como_nos_conocio" bind:value={perfil.como_nos_conocio} class="input-principal">
-                <option value="">Selecciona una opción...</option>
-                <option value="redes_sociales">Redes Sociales</option>
-                <option value="youtube">YouTube</option>
-                <option value="google">Google</option>
-                <option value="recomendacion">Recomendación</option>
-                <option value="otro">Otro</option>
-              </select>
+        {#if seccionActiva === 'adicional'}
+          <div class="contenido-seccion" transition:slide={{ duration: 300, easing: quintOut }}>
+            <div class="grid-form grid-3-columnas">
+              <div class="campo">
+                <label for="documento_tipo">Tipo de Documento</label>
+                <select id="documento_tipo" bind:value={perfil.documento_tipo} class="input-principal">
+                  <option value="CC">Cédula de Ciudadanía</option>
+                  <option value="CE">Cédula de Extranjería</option>
+                  <option value="TI">Tarjeta de Identidad</option>
+                  <option value="PP">Pasaporte</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="documento_numero">Número de Documento</label>
+                <input id="documento_numero" type="text" bind:value={perfil.documento_numero} placeholder="Número del documento" class="input-principal"/>
+              </div>
+              <div class="campo">
+                <label for="como_nos_conocio">¿Cómo nos conociste?</label>
+                <select id="como_nos_conocio" bind:value={perfil.como_nos_conocio} class="input-principal">
+                  <option value="">Selecciona una opción...</option>
+                  <option value="redes_sociales">Redes Sociales</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="google">Google</option>
+                  <option value="recomendacion">Recomendación</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-      {/if}
-    </div>
+        {/if}
+      </div>
+    {/if}
 
     <!-- Botón Guardar -->
-    <div class="acciones-form">
-      <button type="submit" class="btn-guardar" disabled={guardando} class:guardando>
-        {#if guardando}
-          <div class="spinner"></div>
-          Guardando...
-        {:else}
-          <span class="icono-guardar">💾</span>
-          Guardar Cambios
-        {/if}
-      </button>
-    </div>
+    {#if esEditable}
+      <div class="acciones-form">
+        <button type="submit" class="btn-guardar" disabled={guardando} class:guardando>
+          {#if guardando}
+            <div class="spinner"></div>
+            Guardando...
+          {:else}
+            <span class="icono-guardar">💾</span>
+            Guardar Cambios
+          {/if}
+        </button>
+      </div>
+    {/if}
   </form>
 </div>
 {/if}
@@ -388,6 +395,18 @@
     font-size: 0.95rem;
     transition: all 0.2s ease;
     background: white;
+  }
+  
+  /* Estilos para modo solo lectura */
+  .solo-lectura .input-principal, 
+  .solo-lectura .textarea-principal, 
+  .solo-lectura .select-indicativo, 
+  .solo-lectura .input-whatsapp {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
+    pointer-events: none;
+    cursor: default;
   }
 
   .input-principal:focus, .textarea-principal:focus, .select-indicativo:focus, .input-whatsapp:focus {

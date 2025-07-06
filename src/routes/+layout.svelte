@@ -101,7 +101,7 @@
     
     <div class="layout-autenticado">
       <AdminSidebar />
-      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''}`}>
+      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''}`}>
         {#if esPaginaPerfilFijo}
           <!-- 🔒 PÁGINAS DE PERFIL - SIN TRANSICIÓN NI KEY BLOCK PARA MÁXIMA ESTABILIDAD -->
           <slot />

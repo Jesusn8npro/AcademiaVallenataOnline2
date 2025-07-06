@@ -1,19 +1,181 @@
 <script lang="ts">
   import TarjetaCurso from './TarjetaCurso.svelte';
+  import { supabase } from '$lib/supabase/clienteSupabase';
+  import { usuario } from '$lib/UsuarioActivo/usuario';
+  import { onMount } from 'svelte';
   
-  // Props
+  // Props opcionales para permitir modo externo (legacy)
   export let inscripciones: any[] = [];
   export let isLoading: boolean = false;
   export let error: string | null = null;
+  export let modoExterno: boolean = false; // Para retrocompatibilidad
+  export let modoSlider: boolean = false; // Para el slider horizontal moderno
+  
+  // Estados internos para modo autosuficiente
+  let inscripcionesInternas: any[] = [];
+  let cargandoInterno = true;
+  let errorInterno: string | null = null;
+
+  // Variables reactivas que deciden qué datos usar
+  $: datosFinales = modoExterno ? inscripciones : inscripcionesInternas;
+  $: cargandoFinal = modoExterno ? isLoading : cargandoInterno;
+  $: errorFinal = modoExterno ? error : errorInterno;
+
+  // 🎯 FUNCIÓN PRINCIPAL QUE FUNCIONA PERFECTAMENTE (copiada de la página)
+  async function cargarInscripciones() {
+    if (!$usuario?.id) {
+      cargandoInterno = false;
+      return;
+    }
+
+    try {
+      cargandoInterno = true;
+      errorInterno = null;
+
+      console.log('🚀 [GridMisCursos] Cargando inscripciones para usuario:', $usuario.id);
+
+      // Primero obtener todas las inscripciones del usuario
+      const { data: inscripcionesData, error } = await supabase
+        .from('inscripciones')
+        .select('*')
+        .eq('usuario_id', $usuario.id)
+        .order('fecha_inscripcion', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!inscripcionesData || inscripcionesData.length === 0) {
+        console.log('📭 [GridMisCursos] No hay inscripciones');
+        inscripcionesInternas = [];
+        return;
+      }
+
+      console.log('📋 [GridMisCursos] Inscripciones encontradas:', inscripcionesData.length);
+
+      // Separar las inscripciones por tipo
+      const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
+      const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
+
+      console.log('🎯 [GridMisCursos] Cursos:', inscripcionesCursos.length, 'Tutoriales:', inscripcionesTutoriales.length);
+
+      // Obtener datos de cursos si hay inscripciones a cursos
+      let cursosData = [];
+      if (inscripcionesCursos.length > 0) {
+        const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
+        const { data: cursos, error: errorCursos } = await supabase
+          .from('cursos')
+          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
+          .in('id', cursoIds);
+        
+        if (errorCursos) {
+          console.error('❌ [GridMisCursos] Error cargando cursos:', errorCursos);
+        } else {
+          cursosData = cursos || [];
+          console.log('✅ [GridMisCursos] Cursos cargados:', cursosData.length);
+        }
+      }
+
+      // Obtener datos de tutoriales si hay inscripciones a tutoriales
+      let tutorialesData = [];
+      if (inscripcionesTutoriales.length > 0) {
+        const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
+        console.log('🔍 [GridMisCursos] Tutorial IDs a consultar:', tutorialIds);
+        
+        const { data: tutoriales, error: errorTutoriales } = await supabase
+          .from('tutoriales')
+          .select('id, titulo, imagen_url, descripcion, categoria')
+          .in('id', tutorialIds);
+        
+        if (errorTutoriales) {
+          console.error('❌ [GridMisCursos] Error cargando tutoriales:', errorTutoriales);
+        } else {
+          tutorialesData = tutoriales || [];
+          console.log('✅ [GridMisCursos] Tutoriales cargados:', tutorialesData.length);
+          console.log('🔍 [GridMisCursos] Datos completos de tutoriales:', tutorialesData);
+          
+          // Verificar títulos específicamente
+          tutorialesData.forEach((tut: any, index: number) => {
+            console.log(`📖 [GridMisCursos] Tutorial ${index + 1}:`, {
+              id: tut.id,
+              titulo: tut.titulo,
+              descripcion: tut.descripcion?.substring(0, 50) + '...',
+              imagen_url: tut.imagen_url,
+              categoria: tut.categoria
+            });
+          });
+        }
+      }
+
+      // Combinar todo - USANDO ESTRUCTURA ORIGINAL (SINGULAR)
+      inscripcionesInternas = [
+        // Inscripciones a cursos
+        ...inscripcionesCursos.map((inscripcion: any) => ({
+          ...inscripcion,
+          curso: cursosData.find((curso: any) => curso.id === inscripcion.curso_id)  // SINGULAR
+        })),
+        // Inscripciones a tutoriales
+        ...inscripcionesTutoriales.map((inscripcion: any) => {
+          const tutorialEncontrado = tutorialesData.find((tutorial: any) => tutorial.id === inscripcion.tutorial_id);
+          console.log(`🔗 [GridMisCursos] Mapeo tutorial ID ${inscripcion.tutorial_id}:`, {
+            inscripcion: inscripcion,
+            tutorialEncontrado: tutorialEncontrado,
+            titulo: tutorialEncontrado?.titulo || 'NO ENCONTRADO'
+          });
+          return {
+            ...inscripcion,
+            tutorial: tutorialEncontrado  // SINGULAR
+          };
+        })
+      ];
+
+      // Reordenar por fecha de inscripción
+      inscripcionesInternas.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
+
+      console.log('🎉 [GridMisCursos] Resultado final:', {
+        total: inscripcionesInternas.length,
+        cursos: inscripcionesInternas.filter(i => i.curso).length,
+        tutoriales: inscripcionesInternas.filter(i => i.tutorial).length,
+        items: inscripcionesInternas.map(i => ({
+          tipo: i.curso ? 'CURSO' : 'TUTORIAL',
+          titulo: i.curso?.titulo || i.tutorial?.titulo
+        }))
+      });
+
+    } catch (error: any) {
+      console.error('💥 [GridMisCursos] Error cargando inscripciones:', error);
+      errorInterno = error.message || 'Error desconocido al cargar los cursos';
+    } finally {
+      cargandoInterno = false;
+    }
+  }
+
+  onMount(() => {
+    if (!modoExterno) {
+      cargarInscripciones();
+    }
+  });
+
+  // Recargar cuando cambie el usuario (solo en modo interno)
+  $: if (!modoExterno && $usuario?.id) {
+    cargarInscripciones();
+  }
+
+  // Función para recargar manualmente
+  export function recargar() {
+    if (!modoExterno) {
+      cargarInscripciones();
+    }
+  }
 </script>
 
 <div class="contenedor-grid">
-  {#if isLoading}
+  {#if cargandoFinal}
     <div class="estado-carga">
       <div class="spinner"></div>
       <p>Cargando tus cursos...</p>
     </div>
-  {:else if error}
+  {:else if errorFinal}
     <div class="estado-error">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
@@ -21,31 +183,32 @@
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <h3>Oops! Algo salió mal</h3>
-      <p>{error}</p>
-      <button class="boton-reintentar" on:click={() => window.location.reload()}>
+      <p>{errorFinal}</p>
+      <button class="boton-reintentar" on:click={() => modoExterno ? window.location.reload() : cargarInscripciones()}>
         Reintentar
       </button>
     </div>
-  {:else if inscripciones.length === 0}
+  {:else if datosFinales.length === 0}
     <div class="estado-vacio">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="4" y="4" width="16" height="16" rx="2"/>
-        <path d="M8 9h8M8 14h5"/>
-      </svg>
-      <h3>¡Aún no tienes cursos!</h3>
-      <p>Explora nuestro catálogo y encuentra el curso perfecto para ti</p>
-      <a href="/cursos" class="boton-explorar">
-        Explorar Cursos
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </a>
+      <div class="icono-vacio">📚</div>
+      <h3>¡Empieza tu aventura!</h3>
+      <p>Aún no tienes cursos ni tutoriales inscritos.</p>
+      <p>Explora nuestro catálogo y comienza a aprender.</p>
     </div>
   {:else}
     <div class="grid-cursos">
-      {#each inscripciones as inscripcion (inscripcion.id)}
+      {#each datosFinales as inscripcion (inscripcion.id)}
         <TarjetaCurso {inscripcion} />
       {/each}
+    </div>
+  {/if}
+
+  <!-- Debug info solo si NO está en modo slider -->
+  {#if !modoSlider && datosFinales.length > 0}
+    <div class="debug-info">
+      📊 {datosFinales.length} elementos cargados 
+      ({datosFinales.filter(i => i.curso).length} cursos, 
+      {datosFinales.filter(i => i.tutorial).length} tutoriales)
     </div>
   {/if}
 </div>
@@ -200,5 +363,18 @@
     .grid-cursos {
       grid-template-columns: repeat(3, 1fr);
     }
+  }
+
+  /* Debug info */
+  .debug-info {
+    text-align: center;
+    background: #f8fafc;
+    color: #64748b;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
   }
 </style> 

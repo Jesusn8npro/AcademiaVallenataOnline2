@@ -12,9 +12,9 @@
   export let inscripcion: any;
   
   // Variables reactivas básicas
-  $: esCurso = !!inscripcion.cursos;
-  $: esTutorial = !!inscripcion.tutoriales;
-  $: contenido = esCurso ? inscripcion.cursos : inscripcion.tutoriales;
+  $: esCurso = !!inscripcion.curso;
+  $: esTutorial = !!inscripcion.tutorial;
+  $: contenido = esCurso ? inscripcion.curso : inscripcion.tutorial;
   $: titulo = contenido?.titulo || 'Sin título';
   $: imagen = contenido?.imagen_url || '/images/default-curso.jpg';
   $: slug = contenido?.slug || generateSlug(titulo);
@@ -22,6 +22,18 @@
   $: fechaInscripcion = inscripcion.fecha_inscripcion ? new Date(inscripcion.fecha_inscripcion).toLocaleDateString('es-ES') : '';
   $: contenidoId = esCurso ? inscripcion.curso_id : inscripcion.tutorial_id;
   $: tipoContenido = esCurso ? 'Curso' : 'Tutorial';
+
+  // Debug logging para diagnosticar el problema
+  $: if (titulo === 'Sin título') {
+    console.log('🚨 [TarjetaCurso] PROBLEMA - Sin título detectado:', {
+      inscripcion: inscripcion,
+      esCurso: esCurso,
+      esTutorial: esTutorial,
+      contenido: contenido,
+      contenidoId: contenidoId,
+      tipoContenido: tipoContenido
+    });
+  }
 
   // Variables de progreso
   let progresoData = { porcentaje: 0, completadas: 0, total: 0 };

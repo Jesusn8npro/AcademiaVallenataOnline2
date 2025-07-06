@@ -5,17 +5,12 @@
   import RankingComunidad from '$lib/components/Banners/RankingComunidad.svelte';
   import PorcentajePerfil from '$lib/components/Banners/PorcentajePerfil.svelte';
   import BannerSlider from '$lib/components/Banners/BannerSlider.svelte';
-  import MiniCursosComunidad from '$lib/components/MisCursos/GridMisCursos.svelte';
+  import SliderCursos from '$lib/components/Banners/SliderCursos.svelte';
   import { perfilStore } from '$lib/stores/perfilStore';
   import { onMount } from 'svelte';
 
   let publicaciones: any[] = [];
   let cargando = true;
-
-  // Props simuladas para MiniCursosComunidad (ajusta si tienes datos reales)
-  let inscripciones: any[] = [];
-  let cargandoCursos = false;
-  let errorCursos: string | null = null;
 
   // Usar datos del store para el perfil
   $: perfil = $perfilStore.perfil;
@@ -39,80 +34,8 @@
     }
   }
 
-  async function cargarInscripciones() {
-    if (!$usuario?.id) return;
-
-    try {
-      cargandoCursos = true;
-      
-      // Primero obtener todas las inscripciones del usuario
-      const { data: inscripcionesData, error } = await supabase
-        .from('inscripciones')
-        .select('*')
-        .eq('usuario_id', $usuario.id)
-        .order('fecha_inscripcion', { ascending: false })
-        .limit(3); // Solo mostrar 3 cursos en el sidebar
-
-      if (error) throw error;
-
-      if (!inscripcionesData || inscripcionesData.length === 0) {
-        inscripciones = [];
-        return;
-      }
-
-      // Separar las inscripciones por tipo
-      const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
-      const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
-
-      // Obtener datos de cursos si hay inscripciones a cursos
-      let cursosData = [];
-      if (inscripcionesCursos.length > 0) {
-        const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
-        const { data: cursos } = await supabase
-          .from('cursos')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
-          .in('id', cursoIds);
-        cursosData = cursos || [];
-      }
-
-      // Obtener datos de tutoriales si hay inscripciones a tutoriales
-      let tutorialesData = [];
-      if (inscripcionesTutoriales.length > 0) {
-        const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
-        const { data: tutoriales } = await supabase
-          .from('tutoriales')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad')
-          .in('id', tutorialIds);
-        tutorialesData = tutoriales || [];
-      }
-
-      // Combinar todo
-      inscripciones = [
-        // Inscripciones a cursos
-        ...inscripcionesCursos.map((inscripcion: any) => ({
-          ...inscripcion,
-          cursos: cursosData.find((curso: any) => curso.id === inscripcion.curso_id)
-        })),
-        // Inscripciones a tutoriales
-        ...inscripcionesTutoriales.map((inscripcion: any) => ({
-          ...inscripcion,
-          tutoriales: tutorialesData.find((tutorial: any) => tutorial.id === inscripcion.tutorial_id)
-        }))
-      ];
-
-      // Reordenar por fecha de inscripción
-      inscripciones.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
-    } catch (error: any) {
-      console.error('Error cargando inscripciones:', error);
-      errorCursos = error.message || 'Error al cargar los cursos';
-    } finally {
-      cargandoCursos = false;
-    }
-  }
-
   onMount(() => {
     cargarPublicaciones();
-    cargarInscripciones();
   });
 </script>
 
@@ -127,11 +50,9 @@
       <div class="bloque-ranking">
         <RankingComunidad />
       </div>
-      <MiniCursosComunidad 
-        {inscripciones}
-        isLoading={cargandoCursos}
-        error={errorCursos}
-      />
+      <div class="bloque-cursos">
+        <SliderCursos />
+      </div>
     </div>
     
     <div class="columna-timeline columna-central">
@@ -251,6 +172,22 @@
     background: linear-gradient(135deg, #1a1a2e 60%, #16213e 100%);
   }
 
+  .bloque-cursos {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .bloque-cursos > :global(.slider-contenedor) {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+
   .columna-derecha {
     flex: 1.5;
     min-width: 220px;
@@ -343,6 +280,107 @@
     .columna-izquierda,
     .columna-derecha {
       max-width: none;
+    }
+  }
+
+  /* Estilos mejorados */
+  .contenedor-publicaciones {
+    display: grid;
+    grid-template-columns: 350px 1fr 300px; /* Columna izquierda más ancha */
+    gap: 2rem;
+    min-height: 80vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .bloque-izquierdo {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center; /* Centrar componentes horizontalmente */
+    justify-content: flex-start;
+    padding: 1rem;
+    border-radius: 12px;
+    background: transparent;
+  }
+
+  .bloque-izquierdo > :global(div) {
+    width: 100%;
+    max-width: 320px; /* Límite de ancho como en comunidad */
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+  }
+
+  .bloque-cursos {
+    width: 100%;
+    max-width: 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    margin: 0 auto; /* Centrar explícitamente */
+  }
+
+  .bloque-principal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 0;
+  }
+
+  .contenedor-feed {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .bloque-derecho {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center; /* Centrar componentes */
+    justify-content: flex-start;
+    padding: 1rem;
+  }
+
+  .bloque-derecho > :global(div) {
+    width: 100%;
+    max-width: 280px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+  }
+
+  /* Responsivo */
+  @media (max-width: 1200px) {
+    .contenedor-publicaciones {
+      grid-template-columns: 1fr 300px;
+      gap: 1.5rem;
+    }
+    .bloque-izquierdo {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .contenedor-publicaciones {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      padding: 15px;
+    }
+    .bloque-izquierdo,
+    .bloque-derecho {
+      display: none;
+    }
+    .bloque-principal {
+      padding: 0;
     }
   }
 </style> 
