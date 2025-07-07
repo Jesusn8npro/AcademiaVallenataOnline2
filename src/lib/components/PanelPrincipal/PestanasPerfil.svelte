@@ -2,6 +2,9 @@
   // Iconos SVG inline para máxima personalización y rendimiento
   import { goto } from '$app/navigation';
 
+  // Props
+  export let modalAbierto = false;
+
   const pestañas = [
     { label: 'Perfil', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-3.5 8-3.5 8-3.5s8 0 8 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mi-perfil' },
     { label: 'Mis Cursos', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='4' y='4' width='16' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M8 9h8M8 14h5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mis-cursos' },
@@ -13,7 +16,6 @@
   ];
 
   import { page } from '$app/stores';
-  import { get } from 'svelte/store';
   import { onMount } from 'svelte';
 
   let indiceActivo = 0;
@@ -22,16 +24,29 @@
   let puedeScrollDerecha = false;
 
   $: {
-    const rutaActual = get(page).url.pathname;
-    // Encuentra la coincidencia más específica
-    const mejorCoincidencia = pestañas.reduce((mejor, pestaña, indice) => {
-      if (rutaActual.startsWith(pestaña.route) && pestaña.route.length > (mejor.longitud || 0)) {
-        return { indice, longitud: pestaña.route.length };
-      }
-      return mejor;
-    }, { indice: -1, longitud: 0 });
+    const rutaActual = $page.url.pathname;
     
-    indiceActivo = mejorCoincidencia.indice !== -1 ? mejorCoincidencia.indice : 0;
+    // Mapeo directo de rutas a índices para mejor precisión
+    const mapaRutas: { [key: string]: number } = {
+      '/mi-perfil': 0,
+      '/mis-cursos': 1,
+      '/comunidad': 2,
+      '/publicaciones': 3,
+      '/blog': 4,
+      '/configuracion': 5,
+      '/sesion_cerrada': 6
+    };
+    
+    // Buscar coincidencia exacta primero
+    if (mapaRutas.hasOwnProperty(rutaActual)) {
+      indiceActivo = mapaRutas[rutaActual];
+    } else {
+      // Fallback: encontrar la mejor coincidencia por prefijo
+      const mejorCoincidencia = pestañas.findIndex(pestaña => 
+        rutaActual.startsWith(pestaña.route) && pestaña.route !== '/'
+      );
+      indiceActivo = mejorCoincidencia !== -1 ? mejorCoincidencia : 0;
+    }
   }
 
   function actualizarEstadoScroll() {
@@ -63,7 +78,7 @@
   });
 </script>
 
-<div class="contenedor-pestañas-wrapper">
+<div class="contenedor-pestañas-wrapper" class:modal-abierto={modalAbierto}>
   <div class="nav-container-interno">
     <button
       class="boton-scroll izquierda"
@@ -87,8 +102,24 @@
           aria-label={pestaña.label}
           role="tab"
           on:click={(e) => {
-            if (!pestaña.route) e.preventDefault();
-            else goto(pestaña.route);
+            e.preventDefault(); // Prevenir navegación normal
+            
+            if (!pestaña.route) return;
+            
+            // Navegación sin scroll para rutas del perfil
+            const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+            
+            if (rutasPerfilSinScroll.includes(pestaña.route)) {
+              // Mantener posición del scroll para páginas del perfil
+              goto(pestaña.route, { 
+                keepFocus: true,
+                noScroll: true,
+                replaceState: false
+              });
+            } else {
+              // Navegación normal para otras páginas (como /comunidad, /blog, /sesion_cerrada)
+              goto(pestaña.route);
+            }
           }}
         >
           <div class="contenido-pestaña">
@@ -116,6 +147,14 @@
     width: 100%;
     margin-top: -60px;
     z-index: 20;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Ocultar suavemente cuando el modal está abierto */
+  .contenedor-pestañas-wrapper.modal-abierto {
+    transform: translateY(-20px);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .nav-container-interno {

@@ -160,7 +160,7 @@ export async function crearNotificacion(params: {
   entidad_id?: string;         // ID del curso, tutorial, etc.
   entidad_tipo?: string;       // 'curso', 'tutorial', 'articulo', etc.
   datos_adicionales?: any;
-  solo_roles?: ('admin' | 'estudiante')[];  // Solo para ciertos roles
+  solo_roles?: ('admin' | 'user')[];  // Solo para ciertos roles
   excluir_usuario?: string;    // Excluir al usuario que causó el evento
 }) {
   const config = CONFIGURACION_NOTIFICACIONES[params.tipo];
@@ -187,7 +187,7 @@ export async function crearNotificacion(params: {
       const { data: usuarios, error: errorUsuarios } = await supabase
         .from('perfiles')
         .select('id, rol')
-        .eq('activo', true);
+        .eq('eliminado', false);
 
       if (errorUsuarios) {
         console.error('Error al obtener usuarios:', errorUsuarios);
@@ -470,7 +470,7 @@ export async function notificarNuevaPublicacionComunidad(params: {
   const contenidoPreview = params.contenido.length > 100 
     ? params.contenido.substring(0, 100) + '...' 
     : params.contenido;
-
+  
   return await crearNotificacion({
     tipo: 'nueva_publicacion_comunidad',
     mensaje: `👥 ${params.autor_nombre} compartió:\n\n"${params.titulo_publicacion}"\n\n${contenidoPreview}\n\n💬 ¡Únete a la conversación!`,
@@ -568,7 +568,7 @@ export async function notificarPromocionEspecial(params: {
     tipo: 'promocion_especial',
     mensaje: `${params.descripcion}${params.codigo_descuento ? ` Código: ${params.codigo_descuento}` : ''}${params.fecha_limite ? ` Válido hasta: ${new Date(params.fecha_limite).toLocaleDateString('es-ES')}` : ''}`,
     url_accion: params.url_promocion || '/cursos',
-    solo_roles: params.solo_estudiantes ? ['estudiante'] : undefined,
+    solo_roles: params.solo_estudiantes ? ['user'] : undefined,
     datos_adicionales: {
       titulo_promocion: params.titulo_promocion,
       codigo_descuento: params.codigo_descuento,

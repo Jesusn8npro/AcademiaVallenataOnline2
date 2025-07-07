@@ -129,7 +129,18 @@
 
   <!-- Contenido de la publicación -->
   <div class="contenido-principal">
-    <p class="texto-publicacion">{contenido}</p>
+    <!-- Mostrar texto especial para publicaciones automáticas de fotos -->
+    {#if tipo === 'foto_perfil'}
+      <p class="texto-publicacion-automatica">
+        <span class="accion-automatica">Actualizó su foto de perfil</span>
+      </p>
+    {:else if tipo === 'foto_portada'}
+      <p class="texto-publicacion-automatica">
+        <span class="accion-automatica">Actualizó su foto de portada</span>
+      </p>
+    {:else}
+      <p class="texto-publicacion">{contenido}</p>
+    {/if}
     
     <!-- Media de la publicación -->
   {#if url_imagen}
@@ -423,7 +434,26 @@
     margin: 0 0 1rem 0;
     white-space: pre-line;
     word-wrap: break-word;
-}
+  }
+
+  /* Estilos para publicaciones automáticas de fotos */
+  .texto-publicacion-automatica {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+  }
+
+  .accion-automatica {
+    color: var(--color-texto-secundario);
+    font-weight: 600;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    display: inline-block;
+  }
 
   /* Media */
   .contenedor-media {

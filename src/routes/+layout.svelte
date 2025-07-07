@@ -23,6 +23,10 @@
   // Páginas que NO deben tener menú ni sidebar (PANTALLA COMPLETA)
   $: esPaginaSinMenu = rutaEsDetalleTutorial || rutaEsClaseTutorial || rutaEsDetalleCurso || rutaEsClaseCurso || rutaEsLeccionCurso;
 
+  // Detectar si es una página del perfil fijo
+  $: rutaActual = $page.url.pathname;
+  $: esPaginaPerfilFijo = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'].includes(rutaActual);
+  
   // Detectar si se debe ocultar la barra de progreso
   $: ocultarBarraProgreso = esPaginaSinMenu;
 
@@ -62,6 +66,12 @@
       window.removeEventListener('scroll', manejarScroll);
     };
   });
+
+  // Función para determinar si debe aplicar transición
+  function debeMostrarTransicion(ruta: string): boolean {
+    const rutasPerfilFijo = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+    return !rutasPerfilFijo.includes(ruta);
+  }
 </script>
 
 <!-- Banner de permisos de notificación -->
@@ -91,12 +101,18 @@
     
     <div class="layout-autenticado">
       <AdminSidebar />
-      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''}`}>
-        {#key $page.url.pathname}
-          <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-            <slot />
-          </div>
-        {/key}
+      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''}`}>
+        {#if esPaginaPerfilFijo}
+          <!-- 🔒 PÁGINAS DE PERFIL - SIN TRANSICIÓN NI KEY BLOCK PARA MÁXIMA ESTABILIDAD -->
+          <slot />
+        {:else}
+          <!-- 🔄 OTRAS PÁGINAS - CON TRANSICIÓN NORMAL -->
+          {#key $page.url.pathname}
+            <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
+              <slot />
+            </div>
+          {/key}
+        {/if}
       </main>
     </div>
     

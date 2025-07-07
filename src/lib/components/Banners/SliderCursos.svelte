@@ -13,16 +13,53 @@
 
   let currentIndex = 0;
   let carouselContainer: HTMLElement;
-  let itemWidth = 280;
 
-  onMount(async () => {
-    await cargarInscripcionesComunidad();
-    await cargarProgresoEnStore();
+  onMount(() => {
+    // Función async para cargar datos
+    const cargarDatos = async () => {
+      await cargarInscripcionesComunidad();
+      await cargarProgresoEnStore();
+    };
+    
+    // Ejecutar carga de datos
+    cargarDatos();
   });
 
   $: inscripciones = ($inscripcionesComunidad.inscripciones as any[]) || [];
   $: totalItems = inscripciones.length;
   $: maxIndex = Math.max(0, totalItems - 1);
+  
+  // 🐛 DEBUG: Console log para ver el estado
+  $: console.log('[SliderCursos] inscripciones:', inscripciones.length, 'currentIndex:', currentIndex, 'maxIndex:', maxIndex);
+  $: console.log('[SliderCursos] Estado navegación - totalItems:', totalItems, 'puedo navegar:', totalItems > 1);
+  
+  // 🧪 FUNCIÓN DE PRUEBA: Navegación automática para testing
+  function iniciarPruebaNavegacion() {
+    if (totalItems <= 1) {
+      console.log('[SliderCursos] ⚠️ No hay suficientes cursos para probar navegación');
+      return;
+    }
+    
+    console.log('[SliderCursos] 🧪 Iniciando prueba de navegación automática...');
+    let testIndex = 0;
+    
+    const interval = setInterval(() => {
+      if (testIndex >= totalItems) {
+        clearInterval(interval);
+        console.log('[SliderCursos] ✅ Prueba completada - navegación funcional');
+        return;
+      }
+      
+      console.log(`[SliderCursos] 🧪 Test ${testIndex + 1}/${totalItems} - Navegando a índice ${testIndex}`);
+      goToSlide(testIndex);
+      testIndex++;
+    }, 1500);
+  }
+  
+  // Exponer función para testing manual desde consola
+  if (typeof window !== 'undefined') {
+    (window as any).testSliderNavegacion = iniciarPruebaNavegacion;
+  }
 
   // Re-cargar progreso cuando cambien las inscripciones o el usuario
   $: if (inscripciones.length > 0 && $usuario?.id) {
@@ -79,23 +116,55 @@
   }
 
   function nextSlide() {
-    if (currentIndex < maxIndex) {
+    console.log('[SliderCursos] nextSlide - currentIndex:', currentIndex, 'maxIndex:', maxIndex);
+    if (currentIndex < maxIndex && totalItems > 1) {
       currentIndex++;
+      console.log('[SliderCursos] nextSlide - new currentIndex:', currentIndex);
     }
   }
 
   function prevSlide() {
-    if (currentIndex > 0) {
+    console.log('[SliderCursos] prevSlide - currentIndex:', currentIndex);
+    if (currentIndex > 0 && totalItems > 1) {
       currentIndex--;
+      console.log('[SliderCursos] prevSlide - new currentIndex:', currentIndex);
     }
   }
 
   function goToSlide(index: number) {
-    currentIndex = Math.max(0, Math.min(index, maxIndex));
+    console.log('[SliderCursos] goToSlide - index:', index, 'totalItems:', totalItems);
+    if (index >= 0 && index < totalItems) {
+      currentIndex = index;
+      console.log('[SliderCursos] goToSlide - new currentIndex:', currentIndex);
+    }
+  }
+
+  // Navegación con teclado
+  function handleKeydown(event: KeyboardEvent) {
+    if (totalItems <= 1) return;
+    
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        prevSlide();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        nextSlide();
+        break;
+      case 'Home':
+        event.preventDefault();
+        goToSlide(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        goToSlide(totalItems - 1);
+        break;
+    }
   }
 
   function determinarTextoBoton(inscripcion: any) {
-    const esCurso = !!inscripcion.curso;
+    const esCurso = !!inscripcion.cursos;
     const progresoReal = $progresoLecciones[esCurso ? inscripcion.curso_id : inscripcion.tutorial_id];
     const tieneProgreso = progresoReal && (progresoReal.partes_completadas || 0) > 0;
     
@@ -106,9 +175,9 @@
 
   // NAVEGACIÓN INTELIGENTE - COPIADA EXACTAMENTE DE TarjetaCurso.svelte
   async function navegarAContenido(inscripcion: any) {
-    const esCurso = !!inscripcion.curso;
-    const esTutorial = !!inscripcion.tutorial;
-    const contenido = esCurso ? inscripcion.curso : inscripcion.tutorial;
+    const esCurso = !!inscripcion.cursos;
+    const esTutorial = !!inscripcion.tutoriales;
+    const contenido = esCurso ? inscripcion.cursos : inscripcion.tutoriales;
     const progresoReal = $progresoLecciones[esCurso ? inscripcion.curso_id : inscripcion.tutorial_id];
     const tieneProgreso = progresoReal && (progresoReal.partes_completadas || 0) > 0;
 
@@ -262,11 +331,46 @@
   }
 </script>
 
-<div class="slider-container">
-  <h3 class="slider-title">
-    <span class="titulo-icono">🚀</span> Continúa tu aprendizaje
-  </h3>
+<div class="slider-container" on:keydown={handleKeydown} tabindex="0">
+  <!-- Header con título SOLAMENTE -->
+  <div class="slider-header">
+    <h3 class="slider-title">
+      <span class="titulo-icono">🚀</span> Continúa tu aprendizaje
+    </h3>
+  </div>
 
+  <!-- Botones de navegación ABAJO del título -->
+  {#if totalItems > 0}
+    <div class="nav-controls-below">
+      <button 
+        class="nav-btn nav-btn-prev" 
+        on:click={prevSlide}
+        disabled={currentIndex === 0 || totalItems <= 1}
+        aria-label="Curso anterior"
+        title="Curso anterior"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15,18 9,12 15,6"></polyline>
+        </svg>
+      </button>
+      
+      <span class="nav-indicator">{currentIndex + 1} / {totalItems}</span>
+      
+      <button 
+        class="nav-btn nav-btn-next" 
+        on:click={nextSlide}
+        disabled={currentIndex >= maxIndex || totalItems <= 1}
+        aria-label="Siguiente curso"
+        title="Siguiente curso"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9,6 15,12 9,18"></polyline>
+        </svg>
+      </button>
+    </div>
+  {/if}
+
+  <!-- Estados de carga y error -->
   {#if $inscripcionesComunidad.isLoading}
     <div class="loading-state">
       <div class="spinner"></div>
@@ -282,64 +386,52 @@
       <a href="/cursos" class="btn-explorar">Explorar cursos</a>
     </div>
   {:else}
+    <!-- Contenedor del carousel -->
     <div class="carousel-wrapper">
-      <!-- Botón anterior -->
-      {#if currentIndex > 0}
-        <button class="nav-btn nav-btn-prev" on:click={prevSlide}>
-          &#8249;
-        </button>
-      {/if}
-
-      <!-- Contenedor del carousel -->
       <div class="carousel-container" bind:this={carouselContainer}>
         <div 
           class="carousel-track" 
-          style="transform: translateX(-{currentIndex * (itemWidth + 16)}px)"
+          style="transform: translateX(-{currentIndex * 100}%)"
         >
           {#each inscripciones as inscripcion (inscripcion.id)}
-            <div class="curso-card">
-              <div class="imagen-container">
-                <img 
-                  src={inscripcion.curso?.imagen_url || inscripcion.tutorial?.imagen_url || '/images/default-curso.jpg'} 
-                  alt={inscripcion.curso?.titulo || inscripcion.tutorial?.titulo}
-                  class="curso-imagen"
-                />
-                <div class="badge-tipo">
-                  {inscripcion.curso ? 'Curso' : 'Tutorial'}
-                </div>
-              </div>
-
-              <div class="contenido-card">
-                <h4 class="titulo-curso">
-                  {inscripcion.curso?.titulo || inscripcion.tutorial?.titulo}
-                </h4>
-
-                <!-- Usar BarraProgresoGeneral que ya funciona -->
-                <div class="progreso-wrapper">
-                  <BarraProgresoGeneral 
-                    tipo={inscripcion.curso ? 'curso' : 'tutorial'}
-                    contenidoId={inscripcion.curso ? inscripcion.curso_id : inscripcion.tutorial_id}
+            <div class="curso-slide">
+              <div class="curso-card">
+                <div class="imagen-container">
+                  <img 
+                    src={inscripcion.cursos?.imagen_url || inscripcion.tutoriales?.imagen_url || '/images/default-curso.jpg'} 
+                    alt={inscripcion.cursos?.titulo || inscripcion.tutoriales?.titulo}
+                    class="curso-imagen"
                   />
+                  <div class="badge-tipo">
+                    {inscripcion.cursos ? 'Curso' : 'Tutorial'}
+                  </div>
                 </div>
 
-                <button 
-                  class="btn-accion {inscripcion.completado ? 'completado' : ''}"
-                  on:click={() => navegarAContenido(inscripcion)}
-                >
-                  {determinarTextoBoton(inscripcion)}
-                </button>
+                <div class="contenido-card">
+                  <h4 class="titulo-curso">
+                    {inscripcion.cursos?.titulo || inscripcion.tutoriales?.titulo}
+                  </h4>
+
+                  <!-- Usar BarraProgresoGeneral que ya funciona -->
+                  <div class="progreso-wrapper">
+                    <BarraProgresoGeneral 
+                      tipo={inscripcion.cursos ? 'curso' : 'tutorial'}
+                      contenidoId={inscripcion.cursos ? inscripcion.curso_id : inscripcion.tutorial_id}
+                    />
+                  </div>
+
+                  <button 
+                    class="btn-accion {inscripcion.completado ? 'completado' : ''}"
+                    on:click={() => navegarAContenido(inscripcion)}
+                  >
+                    {determinarTextoBoton(inscripcion)}
+                  </button>
+                </div>
               </div>
             </div>
           {/each}
         </div>
       </div>
-
-      <!-- Botón siguiente -->
-      {#if currentIndex < maxIndex}
-        <button class="nav-btn nav-btn-next" on:click={nextSlide}>
-          &#8250;
-        </button>
-      {/if}
     </div>
 
     <!-- Indicadores de página -->
@@ -349,6 +441,7 @@
           <button 
             class="dot {i === currentIndex ? 'active' : ''}"
             on:click={() => goToSlide(i)}
+            aria-label="Ir al curso {i + 1}"
           />
         {/each}
       </div>
@@ -357,47 +450,162 @@
 </div>
 
 <style>
+  /* CONTENEDOR PRINCIPAL */
   .slider-container {
     width: 100%;
-    max-width: 280px;
+    max-width: 100%;
     margin: 0 auto;
+    outline: none;
+    position: relative;
+  }
+
+  .slider-container:focus-visible {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    border-radius: 8px;
+  }
+
+  /* HEADER */
+  .slider-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    text-align: center;
   }
 
   .slider-title {
     font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 1rem;
     color: #1f2937;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin: 0;
   }
 
   .titulo-icono {
     font-size: 1.2rem;
   }
 
-  .carousel-wrapper {
-    position: relative;
+  /* CONTROLES DE NAVEGACIÓN - MEJORADOS Y MÁS VISIBLES */
+  .nav-controls-below {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 12px;
+    flex-shrink: 0;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(59, 130, 246, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #3b82f6;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    position: relative;
+    z-index: 10;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+    border-color: #2563eb;
+  }
+
+  .nav-btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+    animation: pulse 0.3s ease-out;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(0.98);
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.7);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: #d1d5db;
+    border-color: #9ca3af;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transform: none;
+  }
+
+  /* Estilos específicos para cada botón */
+  .nav-btn-prev {
+    border-radius: 10px 6px 6px 10px;
+  }
+
+  .nav-btn-next {
+    border-radius: 6px 10px 10px 6px;
+  }
+
+  .nav-indicator {
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  /* CAROUSEL WRAPPER */
+  .carousel-wrapper {
+    width: 100%;
+    max-width: 300px; /* Ancho fijo para las tarjetas */
+    margin: 0 auto;
   }
 
   .carousel-container {
-    flex: 1;
+    width: 100%;
     overflow: hidden;
     border-radius: 12px;
   }
 
   .carousel-track {
     display: flex;
-    gap: 16px;
     transition: transform 0.3s ease;
+    width: 100%;
   }
 
+  .curso-slide {
+    width: 100%;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* TARJETA DE CURSO */
   .curso-card {
-    min-width: 280px;
+    width: 100%;
+    max-width: 280px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -412,7 +620,7 @@
 
   .imagen-container {
     position: relative;
-    height: 120px;
+    height: 140px;
     overflow: hidden;
   }
 
@@ -436,13 +644,13 @@
   }
 
   .contenido-card {
-    padding: 12px;
+    padding: 16px;
   }
 
   .titulo-curso {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     color: #1f2937;
     line-height: 1.3;
     display: -webkit-box;
@@ -452,16 +660,16 @@
   }
 
   .progreso-wrapper {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   .btn-accion {
     width: 100%;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: none;
     border-radius: 8px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
@@ -481,59 +689,38 @@
     background: linear-gradient(135deg, #059669, #047857);
   }
 
-  .nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    color: #374151;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 10;
-    transition: all 0.2s ease;
-  }
-
-  .nav-btn:hover {
-    background: white;
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  .nav-btn-prev {
-    left: -16px;
-  }
-
-  .nav-btn-next {
-    right: -16px;
-  }
-
+  /* INDICADORES DE PÁGINA */
   .pagination-dots {
     display: flex;
     justify-content: center;
-    gap: 6px;
-    margin-top: 12px;
+    gap: 8px;
+    margin-top: 16px;
   }
 
   .dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border: none;
     border-radius: 50%;
     background: #d1d5db;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+  }
+
+  .dot:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
   }
 
   .dot.active {
-    background: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 
+  /* ESTADOS */
   .loading-state, .error-state, .empty-state {
     text-align: center;
     padding: 24px;
@@ -572,22 +759,103 @@
     background: #2563eb;
   }
 
-  /* Responsive */
+  /* RESPONSIVE DESIGN */
+  @media (max-width: 768px) {
+    .slider-header {
+      margin-bottom: 0.5rem;
+    }
+    
+    .nav-controls-below {
+      justify-content: center;
+      gap: 16px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .carousel-wrapper {
+      max-width: 260px;
+    }
+
+    .curso-card {
+      max-width: 240px;
+    }
+
+    .nav-btn {
+      width: 38px;
+      height: 38px;
+    }
+  }
+
   @media (max-width: 640px) {
-    .slider-container {
+    .carousel-wrapper {
       max-width: 240px;
     }
 
     .curso-card {
-      min-width: 240px;
+      max-width: 220px;
     }
 
-    .nav-btn-prev {
-      left: -12px;
+    .nav-btn {
+      width: 36px;
+      height: 36px;
+    }
+    
+    .nav-indicator {
+      font-size: 0.85rem;
+      min-width: 45px;
+      padding: 3px 6px;
+    }
+    
+    .slider-title {
+      font-size: 0.9rem;
+    }
+    
+    .titulo-icono {
+      font-size: 1rem;
     }
 
-    .nav-btn-next {
-      right: -12px;
+    .imagen-container {
+      height: 120px;
+    }
+
+    .contenido-card {
+      padding: 12px;
+    }
+
+    .titulo-curso {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .progreso-wrapper {
+      margin-bottom: 12px;
+    }
+
+    .btn-accion {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .slider-header {
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-controls-below {
+      gap: 10px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+
+    .nav-btn {
+      width: 34px;
+      height: 34px;
+    }
+
+    .nav-indicator {
+      font-size: 0.8rem;
+      min-width: 40px;
     }
   }
 </style> 

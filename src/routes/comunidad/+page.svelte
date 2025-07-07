@@ -31,10 +31,11 @@
     const desde = pagina * LIMITE;
     const hasta = desde + LIMITE - 1;
     
-    // Cargar publicaciones
+    // Cargar publicaciones (EXCLUIR publicaciones automáticas de fotos)
     const { data, error } = await supabase
       .from('comunidad_publicaciones')
       .select('*')
+      .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
       .order('fecha_creacion', { ascending: false })
       .range(desde, hasta);
       

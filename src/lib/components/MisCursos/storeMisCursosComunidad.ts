@@ -3,9 +3,9 @@ import { supabase } from '$lib/supabase/clienteSupabase';
 import { obtenerSesion } from '$lib/supabase/autenticacionSupabase';
 
 export const inscripcionesComunidad = writable({
-  inscripciones: [],
+  inscripciones: [] as any[],
   isLoading: true,
-  error: null
+  error: null as string | null
 });
 
 export async function cargarInscripcionesComunidad() {
@@ -18,15 +18,16 @@ export async function cargarInscripcionesComunidad() {
       return;
     }
 
-    // Obtener inscripciones básicas
-    const { data: inscripcionesData, error: err1 } = await supabase
+    // 🚀 USAR LA MISMA LÓGICA QUE FUNCIONA EN MIS-CURSOS
+    // Primero obtener todas las inscripciones del usuario
+    const { data: inscripcionesData, error } = await supabase
       .from('inscripciones')
-      .select(`id, curso_id, tutorial_id, usuario_id, progreso, completado, fecha_inscripcion`)
-      .eq('usuario_id', sesion.user.id);
+      .select('*')
+      .eq('usuario_id', sesion.user.id)
+      .order('fecha_inscripcion', { ascending: false });
 
-    if (err1) {
-      inscripcionesComunidad.set({ inscripciones: [], isLoading: false, error: 'Error al cargar tus inscripciones.' });
-      return;
+    if (error) {
+      throw error;
     }
 
     if (!inscripcionesData || inscripcionesData.length === 0) {
@@ -34,72 +35,67 @@ export async function cargarInscripcionesComunidad() {
       return;
     }
 
-    // Obtener datos de cursos
-    const cursoIds = inscripcionesData.map(insc => insc.curso_id).filter(id => !!id);
-    const tutorialIds = inscripcionesData.map(insc => insc.tutorial_id).filter(id => !!id);
+    // Separar las inscripciones por tipo
+    const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
+    const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
 
+    // Obtener datos de cursos si hay inscripciones a cursos
     let cursosData = [];
-    if (cursoIds.length) {
+    if (inscripcionesCursos.length > 0) {
+      const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
       const { data: cursos } = await supabase
         .from('cursos')
-        .select('id, slug, titulo, imagen_url')
+        .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
         .in('id', cursoIds);
       cursosData = cursos || [];
     }
 
+    // Obtener datos de tutoriales si hay inscripciones a tutoriales
     let tutorialesData = [];
-    if (tutorialIds.length) {
+    if (inscripcionesTutoriales.length > 0) {
+      const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
       const { data: tutoriales } = await supabase
         .from('tutoriales')
-        .select('id, slug, titulo, imagen_url')
+        .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad, slug')
         .in('id', tutorialIds);
       tutorialesData = tutoriales || [];
     }
 
-    // Mapear resultados
-    const cursosMap = new Map();
-    cursosData.forEach(curso => cursosMap.set(curso.id, curso));
-    
-    const tutorialesMap = new Map();
-    tutorialesData.forEach(tut => tutorialesMap.set(tut.id, tut));
+    // Combinar todo EXACTAMENTE como en mis-cursos
+    const inscripciones = [
+      // Inscripciones a cursos
+      ...inscripcionesCursos.map((inscripcion: any) => ({
+        ...inscripcion,
+        cursos: cursosData.find((curso: any) => curso.id === inscripcion.curso_id)
+      })),
+      // Inscripciones a tutoriales  
+      ...inscripcionesTutoriales.map((inscripcion: any) => ({
+        ...inscripcion,
+        tutoriales: tutorialesData.find((tutorial: any) => tutorial.id === inscripcion.tutorial_id)
+      }))
+    ];
 
-    const uniqueMap = new Map();
-    
-    for (const insc of inscripcionesData) {
-      let key = null;
-      let obj = null;
+    // Reordenar por fecha de inscripción
+    inscripciones.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
 
-      if (insc.curso_id && cursosMap.has(insc.curso_id)) {
-        key = `curso-${insc.curso_id}`;
-        obj = {
-          ...insc,
-          curso: cursosMap.get(insc.curso_id)
-        };
-      } else if (insc.tutorial_id && tutorialesMap.has(insc.tutorial_id)) {
-        key = `tutorial-${insc.tutorial_id}`;
-        obj = {
-          ...insc,
-          tutorial: tutorialesMap.get(insc.tutorial_id)
-        };
-      }
-
-      if (key && obj && !uniqueMap.has(key)) {
-        uniqueMap.set(key, obj);
-      }
-    }
+    // 🐛 DEBUG: Log para verificar cuántas inscripciones se encontraron
+    console.log('[storeMisCursosComunidad] 🧪 TOTAL inscripciones encontradas:', inscripciones.length);
+    console.log('[storeMisCursosComunidad] 📋 Inscripciones detalle:', inscripciones);
+    console.log('[storeMisCursosComunidad] 📋 Cursos encontrados:', inscripcionesCursos.length);
+    console.log('[storeMisCursosComunidad] 📋 Tutoriales encontrados:', inscripcionesTutoriales.length);
 
     inscripcionesComunidad.set({
-      inscripciones: Array.from(uniqueMap.values()),
+      inscripciones: inscripciones,
       isLoading: false,
       error: null
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error inesperado en cargarInscripcionesComunidad:', err);
     inscripcionesComunidad.set({
       inscripciones: [],
       isLoading: false,
-      error: 'Ocurrió un error inesperado.'
+      error: err.message || 'Ocurrió un error inesperado.'
     });
   }
 }

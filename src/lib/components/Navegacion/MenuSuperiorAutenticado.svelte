@@ -354,7 +354,7 @@
 .iconos-desktop {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 5rem;
 }
 
 .icono {
