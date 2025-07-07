@@ -1,18 +1,38 @@
 <script lang="ts">
-  // Iconos SVG inline para máxima personalización y rendimiento
   import { goto } from '$app/navigation';
 
   // Props
   export let modalAbierto = false;
+  export let modoPublico = false;
+  export let slugUsuario: string | null = null;
 
-  const pestañas = [
-    { label: 'Perfil', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-3.5 8-3.5 8-3.5s8 0 8 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mi-perfil' },
-    { label: 'Mis Cursos', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='4' y='4' width='16' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M8 9h8M8 14h5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/mis-cursos' },
-    { label: 'Comunidad', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/comunidad' },
-    { label: 'Publicaciones', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='6' y='4' width='12' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M9 9h6M9 13h6' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/publicaciones' },
-    { label: 'Blog', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20v2.5a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 4 19.5zM4 5.5A2.5 2.5 0 0 1 6.5 3H20v14H6.5A2.5 2.5 0 0 1 4 14.5v-9z' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/blog' },
-    { label: 'Configuración', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1 1.51V5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/configuracion' },
-    { label: 'Salir', icon: `<svg width='24' height='24' viewBox='0 0 24 24'><path d='M16 17l5-5-5-5M21 12H9' stroke='currentColor' stroke-width='1.5'/><path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' stroke='currentColor' stroke-width='1.5'/></svg>`, route: '/sesion_cerrada' }
+  // Iconos SVG
+  const iconos = {
+    perfil: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-3.5 8-3.5 8-3.5s8 0 8 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    cursos: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='4' y='4' width='16' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M8 9h8M8 14h5' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    comunidad: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    publicaciones: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='6' y='4' width='12' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M9 9h6M9 13h6' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    actividad: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    configuracion: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1 1.51V5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' stroke='currentColor' stroke-width='1.5'/></svg>`
+  };
+
+  // Icono para grabaciones
+  const iconoGrabaciones = `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.5'/><path d='M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='9' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>`;
+
+  // Pestañas dinámicas según el modo
+  $: pestañas = modoPublico && slugUsuario ? [
+    // Pestañas para perfil público
+    { label: 'Información', icon: iconos.perfil, route: `/usuarios/${slugUsuario}` },
+    { label: 'Publicaciones', icon: iconos.publicaciones, route: `/usuarios/${slugUsuario}/publicaciones` },
+    { label: 'Grabaciones', icon: iconoGrabaciones, route: `/usuarios/${slugUsuario}/grabaciones` },
+    { label: 'Actividad', icon: iconos.actividad, route: `/usuarios/${slugUsuario}/actividad` }
+  ] : [
+    // Pestañas para perfil privado
+    { label: 'Perfil', icon: iconos.perfil, route: '/mi-perfil' },
+    { label: 'Mis Cursos', icon: iconos.cursos, route: '/mis-cursos' },
+    { label: 'Publicaciones', icon: iconos.publicaciones, route: '/publicaciones' },
+    { label: 'Grabaciones', icon: iconoGrabaciones, route: '/grabaciones' },
+    { label: 'Configuración', icon: iconos.configuracion, route: '/configuracion' }
   ];
 
   import { page } from '$app/stores';
@@ -26,22 +46,13 @@
   $: {
     const rutaActual = $page.url.pathname;
     
-    // Mapeo directo de rutas a índices para mejor precisión
-    const mapaRutas: { [key: string]: number } = {
-      '/mi-perfil': 0,
-      '/mis-cursos': 1,
-      '/comunidad': 2,
-      '/publicaciones': 3,
-      '/blog': 4,
-      '/configuracion': 5,
-      '/sesion_cerrada': 6
-    };
-    
     // Buscar coincidencia exacta primero
-    if (mapaRutas.hasOwnProperty(rutaActual)) {
-      indiceActivo = mapaRutas[rutaActual];
+    const coincidenciaExacta = pestañas.findIndex(pestaña => pestaña.route === rutaActual);
+    
+    if (coincidenciaExacta !== -1) {
+      indiceActivo = coincidenciaExacta;
     } else {
-      // Fallback: encontrar la mejor coincidencia por prefijo
+      // Fallback: encontrar la mejor coincidencia por prefijo (más específica primero)
       const mejorCoincidencia = pestañas.findIndex(pestaña => 
         rutaActual.startsWith(pestaña.route) && pestaña.route !== '/'
       );
@@ -106,19 +117,27 @@
             
             if (!pestaña.route) return;
             
-            // Navegación sin scroll para rutas del perfil
-            const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
-            
-            if (rutasPerfilSinScroll.includes(pestaña.route)) {
-              // Mantener posición del scroll para páginas del perfil
+            // Navegación inteligente según el modo
+            if (modoPublico) {
+              // Para perfiles públicos, mantener scroll
               goto(pestaña.route, { 
                 keepFocus: true,
                 noScroll: true,
                 replaceState: false
               });
             } else {
-              // Navegación normal para otras páginas (como /comunidad, /blog, /sesion_cerrada)
-              goto(pestaña.route);
+              // Para perfil privado, navegación sin scroll para pestañas del perfil
+              const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+              
+              if (rutasPerfilSinScroll.includes(pestaña.route)) {
+                goto(pestaña.route, { 
+                  keepFocus: true,
+                  noScroll: true,
+                  replaceState: false
+                });
+              } else {
+                goto(pestaña.route);
+              }
             }
           }}
         >
@@ -167,8 +186,10 @@
     justify-content: center;
     background: #ffffff;
     border-radius: 16px;
-    padding: 0 12px;
+    padding: 0;
     box-shadow: 0 6px 32px -4px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    margin: 0;
   }
   .pestaña-item {
     display: flex;
@@ -281,7 +302,7 @@
       justify-content: flex-start;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
-      padding: 0 16px; /* Espacio para que no se peguen a los bordes */
+      padding: 0; /* Sin padding para que sea lado a lado */
       -ms-overflow-style: none; /* IE and Edge */
       scrollbar-width: none; /* Firefox */
     }
@@ -295,6 +316,16 @@
     }
     .boton-scroll {
       display: flex; /* Muestra los botones en móvil */
+    }
+    .contenedor-pestañas-wrapper {
+      margin-top: -30px;
+      z-index: 10;
+      width: 100%;
+    }
+    
+    .nav-container-interno {
+      width: 100%;
+      padding: 0;
     }
   }
 

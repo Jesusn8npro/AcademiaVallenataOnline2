@@ -2,10 +2,13 @@
   import ComunidadComentarios from './ComunidadComentarios.svelte';
   import EncuestaPublicacion from './EncuestaPublicacion.svelte';
   import { supabase } from '$lib/supabase/clienteSupabase';
+  import { goto } from '$app/navigation';
+  import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
   export let id: string = "";
   export let usuario_id: string = "";
   export let usuario_nombre: string = "Wall Oliveros";
   export let usuario_avatar: string = "https://tbijzvtyyewhtwgakgka.supabase.co/storage/v1/object/public/avatars/avatar-002a2282-8990-4ad2-9098-186e5edf359a-1749872362580.PNG";
+  export let usuario_slug: string = "";
   export let fecha: string = "14 de junio a las 11:43";
   export let contenido: string = "Esta es una publicación de ejemplo. ¡Puedes cambiar el texto!";
   export let url_imagen: string = "";
@@ -90,6 +93,28 @@
     // Necesario para que el cambio de false a true sea detectado si se hace varias veces seguidas
     setTimeout(() => { enfoqueAutomaticoComentario = true; }, 0);
   }
+
+  function navegarAlPerfil() {
+    console.log(`🔗 Intentando navegar al perfil: ${usuario_slug}`);
+    
+    if (usuario_slug && usuario_slug !== 'usuario') {
+      console.log(`✅ Navegando a: /usuarios/${usuario_slug}`);
+      goto(`/usuarios/${usuario_slug}`);
+    } else {
+      console.log('❌ Slug no válido, creando fallback usando utilidades');
+      // Crear slug usando función unificada
+      const datosUsuario = {
+        nombre_usuario: usuario_slug !== 'usuario' ? usuario_slug : null,
+        nombre: usuario_nombre,
+        usuario_nombre: usuario_nombre,
+        usuario_id: usuario_id
+      };
+      
+      const slugFallback = obtenerSlugUsuario(datosUsuario);
+      console.log(`🔧 Usando slug fallback: ${slugFallback}`);
+      goto(`/usuarios/${slugFallback}`);
+    }
+  }
 </script>
 
 <article class="tarjeta-publicacion" id="publicacion-{id}">
@@ -97,15 +122,29 @@
   <header class="encabezado-publicacion">
     <div class="info-usuario">
       <div class="contenedor-avatar">
-        <img 
-          class="avatar-usuario" 
-          src={usuario_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff`} 
-          alt={usuario_nombre} 
-        />
+        <button
+          class="avatar-button clickeable" 
+          on:click={navegarAlPerfil}
+          aria-label="Ver perfil de {usuario_nombre}"
+        >
+          <img 
+            class="avatar-usuario" 
+            src={usuario_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff`} 
+            alt={usuario_nombre}
+          />
+        </button>
         <div class="indicador-estado"></div>
       </div>
       <div class="detalles-usuario">
-        <h3 class="nombre-usuario">{usuario_nombre}</h3>
+        <button
+          class="nombre-usuario-button clickeable"
+          on:click={navegarAlPerfil}
+          aria-label="Ver perfil de {usuario_nombre}"
+        >
+          <h3 class="nombre-usuario">
+            {usuario_nombre}
+          </h3>
+        </button>
         <div class="metadatos-publicacion">
           <time class="fecha-publicacion">{fecha}</time>
           <span class="separador">·</span>
@@ -159,7 +198,11 @@
           controls 
           class="video-publicacion"
           preload="metadata"
-        ></video>
+          aria-label="Video de la publicación"
+        >
+          <track kind="captions" src="" label="Sin subtítulos disponibles" default>
+          Su navegador no soporta la reproducción de video.
+        </video>
     </div>
   {:else if url_gif}
       <div class="contenedor-media">
@@ -555,6 +598,22 @@
     font-weight: 500;
 }
 
+  /* Elementos clickeables para navegar al perfil */
+  .clickeable {
+    cursor: pointer;
+    transition: var(--transicion-rapida);
+  }
+
+  .clickeable:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+
+  .clickeable:focus {
+    outline: 2px solid var(--color-primario);
+    outline-offset: 2px;
+  }
+
   /* Barra de acciones */
   .barra-acciones {
     display: grid;
@@ -737,6 +796,52 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+
+  /* Botones de avatar y nombre de usuario */
+  .avatar-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: var(--transicion-rapida);
+  }
+
+  .avatar-button:hover {
+    transform: scale(1.05);
+  }
+
+  .avatar-button:focus {
+    outline: 2px solid var(--color-primario);
+    outline-offset: 2px;
+  }
+
+  .nombre-usuario-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: var(--transicion-rapida);
+  }
+
+  .nombre-usuario-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .nombre-usuario-button:focus {
+    outline: 2px solid var(--color-primario);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .nombre-usuario-button .nombre-usuario {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
   }
 
   /* Tema oscuro */

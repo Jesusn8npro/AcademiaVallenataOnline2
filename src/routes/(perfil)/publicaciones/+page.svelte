@@ -21,12 +21,20 @@
     try {
       const { data, error } = await supabase
         .from('comunidad_publicaciones')
-        .select('*')
+        .select(`
+          *,
+          perfiles!inner(nombre_usuario)
+        `)
         .eq('usuario_id', $usuario.id)
         .order('fecha_creacion', { ascending: false });
 
       if (error) throw error;
-      publicaciones = data || [];
+      
+      // Mapear los datos agregando el slug
+      publicaciones = (data || []).map((pub: any) => ({
+        ...pub,
+        usuario_slug: pub.perfiles?.nombre_usuario || ''
+      }));
     } catch (error) {
       console.error('Error cargando publicaciones:', error);
     } finally {
@@ -82,6 +90,7 @@
               usuario_id={pub.usuario_id}
               usuario_nombre={pub.usuario_nombre}
               usuario_avatar={pub.usuario_avatar}
+              usuario_slug={pub.usuario_slug}
               fecha={pub.fecha_creacion}
               contenido={pub.descripcion}
               url_imagen={pub.url_imagen}

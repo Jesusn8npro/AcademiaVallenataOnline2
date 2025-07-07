@@ -45,7 +45,7 @@ async function cargarRanking() {
         posicion: i + 1,
         id: r.usuario_id,
         nombre: perfil.nombre || perfil.nombre_usuario || 'Usuario',
-        avatar: perfil.url_foto_perfil || '/avatar_default.png',
+                  avatar: perfil.url_foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nombre || 'Usuario')}&background=667eea&color=fff`,
         publicaciones: r.publicaciones,
         comentarios: r.comentarios,
         likes: r.likes,

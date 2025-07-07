@@ -12,10 +12,16 @@
   export let urlPortada: string | undefined = undefined;
   export let urlAvatar: string | undefined = undefined;
   export let nombreCompleto = 'Usuario';
-  export let correoElectronico = 'correo@ejemplo.com';
+  export const correoElectronico = 'correo@ejemplo.com'; // No utilizado pero mantenido para compatibilidad
   export let posicionPortadaY = 50;
   export let userId: string | null = null;
   export let stats = { publicaciones: 0, cursos: 0, tutoriales: 0, ranking: 0 };
+  export let nivelUsuario = 1;
+  export let rolUsuario = 'Estudiante';
+  export let suscripcionUsuario = 'Free';
+  export let esPerfilPublico = false; // true cuando es perfil de otra persona
+  export let fechaCreacion: string | null = null;
+  export let slugUsuario: string | null = null; // Para navegación en perfil público
 
   // --- MANEJO DE ARCHIVOS ---
   let vistaPortadaTemporal: string | null = null;
@@ -322,6 +328,17 @@
     window.removeEventListener('touchstart', clickFueraMenuPortada);
     window.removeEventListener('mousedown', clickFueraMenuAvatar);
   });
+
+  // Función para formatear la fecha de registro
+  function formatearFechaRegistro(fecha: string | null): string {
+    if (!fecha) return `Miembro desde ${new Date().getFullYear()}`;
+    
+    const fechaRegistro = new Date(fecha);
+    const mes = fechaRegistro.toLocaleDateString('es-ES', { month: 'long' });
+    const año = fechaRegistro.getFullYear();
+    
+    return `Miembro desde ${mes} ${año}`;
+  }
 </script>
 
 <!--
@@ -447,18 +464,46 @@
   <div class="separador-vertical"></div>
   
   <div class="seccion-central">
-    <div class="nombre-usuario">{nombreCompleto}</div>
-    <div class="correo-usuario">{correoElectronico}</div>
-    <div class="estrellas">
-      {'★'.repeat(4)}{'☆'.repeat(1)}
-    </div>
+          <div class="info-usuario-principal">
+        <div class="nombre-usuario">{nombreCompleto}</div>
+        <div class="estrellas-rating">
+          <div class="estrellas">
+            {'★'.repeat(4)}{'☆'.repeat(1)}
+          </div>
+          <div class="nivel-usuario">Nivel {nivelUsuario}</div>
+        </div>
+      </div>
+      <div class="badges-usuario">
+        <span class="badge badge-rol">{rolUsuario}</span>
+        <span class="badge badge-suscripcion">{suscripcionUsuario}</span>
+      </div>
   </div>
   
   <div class="seccion-accion">
-    <div class="saludo-accion">¡Sigue así, {nombreCompleto ? nombreCompleto.split(' ')[0] : 'crack'}!</div>
-    <button class="boton-accion-principal" on:click={() => window.location.href = '/mis-cursos'}>
-      🎹 Ir a mi aprendizaje
-    </button>
+    {#if esPerfilPublico}
+      <!-- Contenido para perfil de otra persona -->
+      <div class="info-perfil-publico">
+        <div class="fecha-registro">{formatearFechaRegistro(fechaCreacion)}</div>
+        <!-- Información eliminada como solicitó el usuario -->
+      </div>
+      <div class="acciones-perfil-publico">
+        <button class="boton-mensaje" on:click={() => alert('Función de mensajes próximamente')}>
+          ✉️ Mensaje
+        </button>
+        <button class="boton-seguir" on:click={() => alert('Función de seguir próximamente')}>
+          ➕ Seguir
+        </button>
+        <button class="boton-publicaciones" on:click={() => slugUsuario && (window.location.href = `/usuarios/${slugUsuario}/publicaciones`)}>
+          📝 Publicaciones
+        </button>
+      </div>
+    {:else}
+      <!-- Contenido para perfil propio -->
+      <div class="saludo-accion">¡Sigue así, {nombreCompleto ? nombreCompleto.split(' ')[0] : 'crack'}!</div>
+      <button class="boton-accion-principal" on:click={() => window.location.href = '/mis-cursos'}>
+        🎹 Ir a mi aprendizaje
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -482,12 +527,12 @@
   .contenedor-portada {
     position: relative;
     width: 100%;
-    height: 350px;
+    height: 370px;
     overflow: visible;
     border-radius: var(--borde-radius) var(--borde-radius) 0 0;
     z-index: 1;
     padding: 0;
-    margin-top: 30px;
+    margin-top: 0;
   }
 
   .imagen-portada {
@@ -635,27 +680,71 @@
   .separador-vertical { width: 1px; background-color: var(--gris-claro); align-self: stretch; }
   
   .seccion-central {
-    text-align: center;
+    text-align: left;
     flex: 1;
     margin-top: 10px;
+    padding-left: 20px;
+  }
+
+  .info-usuario-principal {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .nombre-usuario {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
     color: var(--gris-oscuro);
-    margin: 2px 0;
+    margin: 0;
+    line-height: 1.2;
   }
-  .correo-usuario {
-    color: var(--color-primario);
-    font-weight: 500;
-    font-size: 0.88rem;
-    margin: 0 0 4px 0;
+
+  .estrellas-rating {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
+
   .estrellas {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     color: var(--color-secundario);
-    margin-bottom: 2px;
+    letter-spacing: 2px;
+  }
+
+  .nivel-usuario {
+    font-size: 0.85rem;
+    color: var(--gris-medio);
+    font-weight: 600;
+    background: var(--gris-claro);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+
+  .badges-usuario {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: capitalize;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-rol {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+  }
+
+  .badge-suscripcion {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
   }
 
   .seccion-accion {
@@ -687,6 +776,102 @@
   .boton-accion-principal:hover { 
     transform: translateY(-2px); 
     box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3); 
+  }
+
+  /* === ESTILOS PERFIL PÚBLICO === */
+  .info-perfil-publico {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .fecha-registro {
+    font-size: 0.85rem;
+    color: var(--gris-medio);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .logros-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .logro {
+    font-size: 0.8rem;
+    color: var(--gris-oscuro);
+    font-weight: 600;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+  }
+
+  .acciones-perfil-publico {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .boton-mensaje {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+    flex: 1;
+    max-width: 80px;
+  }
+
+  .boton-mensaje:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  }
+
+  .boton-seguir {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+    flex: 1;
+    max-width: 80px;
+  }
+
+  .boton-seguir:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .boton-publicaciones {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    flex: 1;
+    max-width: 80px;
+  }
+
+  .boton-publicaciones:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
 
   /* === ICONOS Y MENÚS === */
@@ -818,7 +1003,8 @@
     }
     
     .contenedor-portada { 
-      height: 200px; 
+      height:240px;
+      margin-top: 15px;
       border-radius: 0; /* Sin border-radius - estilo Facebook */
       width: 100vw; /* Ancho completo de la ventana */
       margin-left: calc(-50vw + 50%); /* Compensar el centrado del contenedor */
@@ -896,20 +1082,52 @@
   .seccion-central {
     flex: 1;
     margin-top: -15px;
-    font-size: 1.2rem;
+    text-align: center;
+    padding-left: 0;
+  }
+
+  .info-usuario-principal {
+    align-items: center;
+    text-align: center;
   }
 
   .nombre-usuario {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
     color: var(--gris-oscuro);
-    margin: 2px 20px -20px 20px;
+    margin: 0 auto;
+    text-align: center;
+    line-height: 1.2;
+    padding: 0 10px;
   }
-  .correo-usuario {
-   display: none;
+
+  .estrellas-rating {
+    justify-content: center;
+    margin-bottom: 8px;
+    margin-top: 6px;
   }
+
   .estrellas {
-    font-size: 2rem;
+    font-size: 1.4rem;
+  }
+
+  .nivel-usuario {
+    font-size: 0.8rem;
+  }
+
+  .badges-usuario {
+    justify-content: center;
+  }
+
+  .acciones-perfil-publico {
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .boton-mensaje,
+  .boton-seguir {
+    font-size: 0.75rem;
+    padding: 6px 8px;
   }
 
   .seccion-accion {
@@ -961,6 +1179,37 @@
       left: 50%;
     }
     .menu-flotante-avatar { min-width: 95vw; }
+
+    .nombre-usuario {
+      font-size: 1.6rem;
+      margin: 0 10px;
+    }
+
+    .estrellas {
+      font-size: 1.2rem;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+    }
+
+    .acciones-perfil-publico {
+      flex-direction: row;
+      gap: 4px;
+      justify-content: center;
+      max-width: 160px;
+      margin: 0 auto;
+    }
+
+    .boton-mensaje,
+    .boton-seguir,
+    .boton-publicaciones {
+      font-size: 0.65rem;
+      padding: 5px 6px;
+      flex: 1;
+      max-width: 65px;
+    }
   }
 
   /* Móvil pequeño (menos de 480px) - Estilo Facebook */

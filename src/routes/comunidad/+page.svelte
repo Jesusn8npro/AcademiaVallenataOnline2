@@ -8,6 +8,7 @@
   import { onMount, afterUpdate } from 'svelte';
   import { obtenerSesion, obtenerPerfil } from '$lib/supabase/autenticacionSupabase';
   import { supabase } from '$lib/supabase/clienteSupabase';
+  import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
 
   // Estado reactivo para el perfil del usuario
   let perfil: any = {};
@@ -31,10 +32,13 @@
     const desde = pagina * LIMITE;
     const hasta = desde + LIMITE - 1;
     
-    // Cargar publicaciones (EXCLUIR publicaciones automáticas de fotos)
+    // Cargar publicaciones CON JOIN para obtener más datos del perfil
     const { data, error } = await supabase
       .from('comunidad_publicaciones')
-      .select('*')
+      .select(`
+        *,
+        perfiles(nombre_usuario, nombre, apellido, nombre_completo)
+      `)
       .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
       .order('fecha_creacion', { ascending: false })
       .range(desde, hasta);
@@ -44,7 +48,7 @@
     } else {
       if (!data || data.length < LIMITE) fin = true;
       
-      // Para cada publicación, cargar sus likes de forma más robusta
+      // Para cada publicación, cargar sus likes (slug ya viene del JOIN)
       const publicacionesConLikes = await Promise.all((data || []).map(async (pub: any) => {
         // Cargar IDs de usuarios que dieron like
         const { data: likesData, error: likesError } = await supabase
@@ -53,6 +57,19 @@
           .eq('publicacion_id', pub.id);
           
         const likesUsuarios = likesError ? [] : (likesData || []).map((like: any) => like.usuario_id);
+        
+        // 🔍 Obtener slug usando función unificada
+        const datosUsuario = {
+          nombre_usuario: pub.perfiles?.nombre_usuario,
+          nombre: pub.perfiles?.nombre || pub.usuario_nombre,
+          apellido: pub.perfiles?.apellido,
+          nombre_completo: pub.perfiles?.nombre_completo,
+          usuario_nombre: pub.usuario_nombre
+        };
+        
+        const usuarioSlug = obtenerSlugUsuario(datosUsuario);
+        
+        console.log(`✅ Usuario: ${pub.usuario_nombre}, Slug generado: ${usuarioSlug}`);
         
         // Log para debugging
         if (likesUsuarios.length > 0) {
@@ -64,6 +81,7 @@
           usuario_id: pub.usuario_id,
           usuario_nombre: pub.usuario_nombre || 'Usuario',
           usuario_avatar: pub.usuario_avatar || '',
+          usuario_slug: usuarioSlug, // ✅ Slug del JOIN o fallback
           contenido: pub.descripcion || '',
           fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
           url_imagen: pub.url_imagen || '',
@@ -228,6 +246,7 @@
           usuario_id={pub.usuario_id}
           usuario_nombre={pub.usuario_nombre}
           usuario_avatar={pub.usuario_avatar}
+          usuario_slug={pub.usuario_slug}
           fecha={pub.fecha_creacion}
           contenido={pub.descripcion}
           url_imagen={pub.url_imagen}
