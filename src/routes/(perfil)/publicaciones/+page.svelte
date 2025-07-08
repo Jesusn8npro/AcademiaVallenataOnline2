@@ -23,17 +23,19 @@
         .from('comunidad_publicaciones')
         .select(`
           *,
-          perfiles!inner(nombre_usuario)
+          perfiles!inner(nombre_usuario, nombre_completo, url_foto_perfil)
         `)
         .eq('usuario_id', $usuario.id)
         .order('fecha_creacion', { ascending: false });
 
       if (error) throw error;
       
-      // Mapear los datos agregando el slug
+      // Mapear los datos agregando el slug y avatar
       publicaciones = (data || []).map((pub: any) => ({
         ...pub,
-        usuario_slug: pub.perfiles?.nombre_usuario || ''
+        usuario_slug: pub.perfiles?.nombre_usuario || '',
+        usuario_nombre: pub.perfiles?.nombre_completo || pub.usuario_nombre || 'Usuario',
+        usuario_avatar: pub.perfiles?.url_foto_perfil || pub.usuario_avatar || ''
       }));
     } catch (error) {
       console.error('Error cargando publicaciones:', error);
@@ -89,7 +91,7 @@
               id={pub.id}
               usuario_id={pub.usuario_id}
               usuario_nombre={pub.usuario_nombre}
-              usuario_avatar={pub.usuario_avatar}
+              url_foto_perfil={pub.usuario_avatar}
               usuario_slug={pub.usuario_slug}
               fecha={pub.fecha_creacion}
               contenido={pub.descripcion}
@@ -284,9 +286,6 @@
   }
 
   @media (max-width: 768px) {
-    .contenido-publicaciones {
-      padding: 1rem;
-    }
     
     .columna-central {
       padding: 0 1rem;

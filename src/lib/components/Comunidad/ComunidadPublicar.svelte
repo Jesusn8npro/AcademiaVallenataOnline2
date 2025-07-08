@@ -16,6 +16,10 @@
   let texto = '';
   let titulo = '';
 
+  // Estados de publicación
+  let publicando = false;
+  let publicandoMensaje = '';
+
   // Estados de archivos
   let fotoFile: File | null = null;
   let fotoPreview: string | null = null;
@@ -84,6 +88,8 @@
     showEmojiPicker = false;
     mostrarModalEncuesta = false;
     datosEncuesta = null;
+    publicando = false;
+    publicandoMensaje = '';
   };
 
   // Funciones de pickers
@@ -118,7 +124,11 @@
   };
 
   const publicarEncuesta = async () => {
-    if (!datosEncuesta) return;
+    if (!datosEncuesta || publicando) return;
+
+    // Protección contra clics múltiples
+    publicando = true;
+    publicandoMensaje = 'Publicando encuesta...';
 
     try {
       const insertData = {
@@ -177,14 +187,30 @@
       }
 
       dispatch('publicar');
-    cerrarModal();
+      cerrarModal();
     } catch (error: any) {
+      console.error('💥 ERROR EN PUBLICACIÓN DE ENCUESTA:', error);
       alert(`Error al publicar encuesta: ${error.message || error}`);
+    } finally {
+      // Siempre resetear estado de publicación
+      publicando = false;
+      publicandoMensaje = '';
     }
   };
 
   // Función principal de publicación
   const publicar = async () => {
+    // Protección contra clics múltiples
+    if (publicando) {
+      console.log('🛑 YA SE ESTÁ PUBLICANDO, IGNORANDO CLIC');
+      return;
+    }
+
+    publicando = true;
+    publicandoMensaje = tipo === 'foto' ? 'Subiendo imagen...' : 
+                      tipo === 'video' ? 'Subiendo video...' : 
+                      'Publicando...';
+
     console.log('🚀 INICIANDO PUBLICACIÓN');
     console.log('👤 Usuario:', usuario);
     try {
@@ -280,6 +306,10 @@
       console.error('💥 ERROR EN PUBLICACIÓN:', error);
       console.error('💥 ERROR COMPLETO:', JSON.stringify(error, null, 2));
       alert(`Error al publicar: ${error.message || error}`);
+    } finally {
+      // Siempre resetear estado de publicación
+      publicando = false;
+      publicandoMensaje = '';
     }
   };
 
@@ -567,8 +597,18 @@
             </button>
           </div>
 
-          <button type="submit" class="publish-btn">
-            Publicar
+          <button 
+            type="submit" 
+            class="publish-btn"
+            class:publicando
+            disabled={publicando}
+          >
+            {#if publicando}
+              <div class="loading-spinner"></div>
+              <span>{publicandoMensaje}</span>
+            {:else}
+              Publicar
+            {/if}
           </button>
         </div>
       </form>
@@ -1254,6 +1294,35 @@
     transform: translateY(0);
   }
 
+  .publish-btn:disabled,
+  .publish-btn.publicando {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(148, 163, 184, 0.2);
+  }
+
+  .publish-btn.publicando {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
   /* Responsive Design */
   @media (max-width: 768px) {
     .publisher-container {
@@ -1424,6 +1493,12 @@
     .publish-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 8px 32px rgba(59, 130, 246, 0.45);
+    }
+
+    .publish-btn:disabled:hover,
+    .publish-btn.publicando:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(148, 163, 184, 0.2);
     }
   }
 

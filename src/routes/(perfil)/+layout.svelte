@@ -28,7 +28,7 @@
   // Interceptar navegaciones para mantener scroll
   beforeNavigate(({ from, to }) => {
     // Solo para navegaciones dentro del perfil
-    const rutasPerfil = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+    const rutasPerfil = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'];
     
     if (from && to && 
         rutasPerfil.some(ruta => from.url.pathname.includes(ruta)) &&
@@ -40,7 +40,7 @@
 
   afterNavigate(({ from, to }) => {
     // Solo para navegaciones dentro del perfil
-    const rutasPerfil = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+    const rutasPerfil = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'];
     
     if (from && to && 
         rutasPerfil.some(ruta => from.url.pathname.includes(ruta)) &&

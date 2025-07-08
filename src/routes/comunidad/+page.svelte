@@ -37,7 +37,7 @@
       .from('comunidad_publicaciones')
       .select(`
         *,
-        perfiles(nombre_usuario, nombre, apellido, nombre_completo)
+        perfiles(nombre_usuario, nombre, apellido, nombre_completo, url_foto_perfil)
       `)
       .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
       .order('fecha_creacion', { ascending: false })
@@ -80,7 +80,7 @@
           ...pub,
           usuario_id: pub.usuario_id,
           usuario_nombre: pub.usuario_nombre || 'Usuario',
-          usuario_avatar: pub.usuario_avatar || '',
+          url_foto_perfil: pub.perfiles?.url_foto_perfil || '',
           usuario_slug: usuarioSlug, // ✅ Slug del JOIN o fallback
           contenido: pub.descripcion || '',
           fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
@@ -184,103 +184,120 @@
   };
 </script>
 
-<div class="contenedor-comunidad">
-  <!-- Banner Superior -->
-  <div class="contenedor-banner">
-    <div class="contenido-banner">
-      <div class="texto-banner">
-        <h1 class="titulo-banner">🎵 Comunidad de Acordeonistas</h1>
-        <p class="subtitulo-banner">Comparte tus grabaciones, conecta con otros músicos y aprende juntos</p>
-        <div class="caracteristicas-banner">
-          <div class="elemento-caracteristica">
-            <span class="icono-caracteristica">🎥</span>
-            <span class="texto-caracteristica">Videos</span>
-          </div>
-          <div class="elemento-caracteristica">
-            <span class="icono-caracteristica">🎼</span>
-            <span class="texto-caracteristica">Grabaciones</span>
-          </div>
-          <div class="elemento-caracteristica">
-            <span class="icono-caracteristica">💬</span>
-            <span class="texto-caracteristica">Preguntas</span>
-          </div>
-          <div class="elemento-caracteristica">
-            <span class="icono-caracteristica">📊</span>
-            <span class="texto-caracteristica">Encuestas</span>
-          </div>
+<!-- Banner Superior -->
+<div class="contenedor-banner">
+  <div class="contenido-banner">
+    <div class="texto-banner">
+      <h1 class="titulo-banner">🎵 Comunidad de Acordeonistas</h1>
+      <p class="subtitulo-banner">Comparte tus grabaciones, conecta con otros músicos y aprende juntos</p>
+      <div class="caracteristicas-banner">
+        <div class="elemento-caracteristica">
+          <span class="icono-caracteristica">🎥</span>
+          <span class="texto-caracteristica">Videos</span>
         </div>
-      </div>
-      <div class="visual-banner">
-        <div class="onda-musical">
-          <div class="barra-onda"></div>
-          <div class="barra-onda"></div>
-          <div class="barra-onda"></div>
-          <div class="barra-onda"></div>
-          <div class="barra-onda"></div>
+        <div class="elemento-caracteristica">
+          <span class="icono-caracteristica">🎼</span>
+          <span class="texto-caracteristica">Grabaciones</span>
+        </div>
+        <div class="elemento-caracteristica">
+          <span class="icono-caracteristica">💬</span>
+          <span class="texto-caracteristica">Preguntas</span>
+        </div>
+        <div class="elemento-caracteristica">
+          <span class="icono-caracteristica">📊</span>
+          <span class="texto-caracteristica">Encuestas</span>
         </div>
       </div>
     </div>
+    <div class="visual-banner">
+      <div class="onda-musical">
+        <div class="barra-onda"></div>
+        <div class="barra-onda"></div>
+        <div class="barra-onda"></div>
+        <div class="barra-onda"></div>
+        <div class="barra-onda"></div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- Contenido Principal de 3 Columnas -->
-  <div class="grilla-contenido-principal">
+<!-- Contenido Principal con misma estructura que Publicaciones -->
+<div class="contenido-comunidad">
+  <div class="timeline-grid">
     <!-- Columna Izquierda -->
-    <div class="columna-izquierda">
-      <PorcentajePerfil {perfil} />
+    <div class="columna-timeline columna-izquierda">
+      <div class="bloque-ranking">
+        <PorcentajePerfil {perfil} />
+      </div>
       <UltimosArticulosBlog />
     </div>
 
     <!-- Columna Central -->
-    <div class="columna-central">
+    <div class="columna-timeline columna-central">
       <div class="contenedor-publicar">
         <ComunidadPublicar {usuario} on:publicar={manejarPublicar} />
       </div>
       
       <!-- Feed de Publicaciones -->
-      {#if publicaciones.length === 0 && !cargandoPublicaciones}
-        <div class="cargando-feed">No hay publicaciones aún.</div>
-      {/if}
-      {#each publicaciones as pub (pub.id)}
-        <FeedPublicaciones
-          id={pub.id}
-          usuario_id={pub.usuario_id}
-          usuario_nombre={pub.usuario_nombre}
-          usuario_avatar={pub.usuario_avatar}
-          usuario_slug={pub.usuario_slug}
-          fecha={pub.fecha_creacion}
-          contenido={pub.descripcion}
-          url_imagen={pub.url_imagen}
-          url_video={pub.url_video}
-          url_gif={pub.url_gif}
-          tipo={pub.tipo}
-          encuesta={pub.encuesta}
-          me_gusta={pub.me_gusta}
-          total_comentarios={pub.total_comentarios}
-          total_compartidos={pub.total_compartidos}
-          usuario={usuario}
-        />
-      {/each}
+      <div class="feed-publicaciones">
+        {#if publicaciones.length === 0 && !cargandoPublicaciones}
+          <div class="estado-vacio">
+            <div class="icono-vacio">🎵</div>
+            <h3>No hay publicaciones aún</h3>
+            <p>¡Sé el primero en compartir algo con la comunidad!</p>
+          </div>
+        {/if}
+        {#each publicaciones as pub (pub.id)}
+          <FeedPublicaciones
+            id={pub.id}
+            usuario_id={pub.usuario_id}
+            usuario_nombre={pub.usuario_nombre}
+            url_foto_perfil={pub.url_foto_perfil}
+            usuario_slug={pub.usuario_slug}
+            fecha={pub.fecha_creacion}
+            contenido={pub.descripcion}
+            url_imagen={pub.url_imagen}
+            url_video={pub.url_video}
+            url_gif={pub.url_gif}
+            tipo={pub.tipo}
+            encuesta={pub.encuesta}
+            me_gusta={pub.me_gusta}
+            total_comentarios={pub.total_comentarios}
+            total_compartidos={pub.total_compartidos}
+            usuario={usuario}
+          />
+        {/each}
 
-      <!-- Estados del scroll infinito -->
-      {#if cargandoPublicaciones && publicaciones.length > 0}
-        <div class="cargando-feed">Cargando más publicaciones...</div>
-      {/if}
+        <!-- Estados del scroll infinito -->
+        {#if cargandoPublicaciones && publicaciones.length > 0}
+          <div class="estado-carga">
+            <div class="spinner"></div>
+            <p>Cargando más publicaciones...</p>
+          </div>
+        {/if}
 
-      {#if !fin && !cargandoPublicaciones && publicaciones.length > 0}
-        <div bind:this={centinela} style="height: 1px;"></div>
-      {/if}
+        {#if !fin && !cargandoPublicaciones && publicaciones.length > 0}
+          <div bind:this={centinela} style="height: 1px;"></div>
+        {/if}
 
-      {#if fin && publicaciones.length > 0}
-        <div class="cargando-feed">Fin de las publicaciones</div>
-      {/if}
+        {#if fin && publicaciones.length > 0}
+          <div class="estado-carga">
+            <p>Fin de las publicaciones</p>
+          </div>
+        {/if}
 
-      {#if !cargandoPublicaciones && publicaciones.length === 0}
-        <div class="cargando-feed">Sé el primero en publicar algo.</div>
-      {/if}
+        {#if !cargandoPublicaciones && publicaciones.length === 0}
+          <div class="estado-vacio">
+            <div class="icono-vacio">📝</div>
+            <h3>Sé el primero en publicar</h3>
+            <p>¡Comparte algo increíble con la comunidad!</p>
+          </div>
+        {/if}
+      </div>
     </div>
 
     <!-- Columna Derecha -->
-    <div class="columna-derecha">
+    <div class="columna-timeline columna-derecha">
       <RankingComunidad />
       <SliderCursos />
     </div>
@@ -288,22 +305,14 @@
 </div>
 
 <style>
-  /* --- Contenedor Principal --- */
-  .contenedor-comunidad {
-    padding: 1rem;
-    max-width: 1700px;
-    margin: 0 auto;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    margin-top: 30px;
-  }
-
-  /* --- Banner Superior --- */
+  /* --- BANNER SUPERIOR --- */
   .contenedor-banner {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 2.5rem 2rem;
     border-radius: 16px;
-    margin-bottom: 2rem;
+    margin: 2rem;
+    margin-bottom: 0;
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
     overflow: hidden;
     position: relative;
@@ -416,41 +425,74 @@
     50% { transform: scaleY(1.5); opacity: 1; }
   }
 
-  /* --- Grilla de 3 Columnas --- */
-  .grilla-contenido-principal {
-    display: grid;
-    grid-template-columns: 280px 1fr 320px; /* Columna derecha más ancha */
-    gap: 2rem;
+  /* --- LAYOUT PRINCIPAL (IGUAL QUE PUBLICACIONES) --- */
+  .contenido-comunidad {
+    padding: 0;
   }
 
-  /* --- Estilos de las Columnas --- */
-  .columna-izquierda,
-  .columna-central,
-  .columna-derecha {
+  .timeline-grid {
+    display: flex;
+    width: 100%;
+    gap: 24px;
+    padding: 2rem;
+  }
+
+  .columna-timeline {
+    background: #fff;
     border-radius: 12px;
-    min-height: 600px; /* Para que se vea el esqueleto */
+    min-height: 300px;
+    box-shadow: 0 4px 24px 0 rgba(0,0,0,0.04);
+    padding: 18px 10px;
   }
 
   .columna-izquierda {
-    padding: 0; /* Sin padding para que el componente se ajuste perfectamente */
-    overflow: hidden; /* Para mantener el border-radius */
+    flex: 1.5;
+    max-width: 350px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    border: 1.5px solid #f3f3f3;
+    padding: 14px 10px 18px 10px;
     display: flex;
     flex-direction: column;
-    gap: 30px; /* Sin gap para que se vean integrados */
+    gap: 18px;
+    align-items: stretch;
   }
 
-  .columna-izquierda :global(.banner-articulos) {
-    border-radius:12px; /* Solo esquinas inferiores redondeadas */
-    margin: 0; /* Quitamos el margin del componente */
+  .bloque-ranking {
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 18px;
+  }
+
+  .bloque-ranking > :global(.ranking-gamer) {
+    margin-bottom: 0;
+    border-radius: 22px;
+    box-shadow: 0 6px 24px 0 rgba(0,0,0,0.45);
+    background: linear-gradient(135deg, #1a1a2e 60%, #16213e 100%);
+  }
+
+  .columna-derecha {
+    flex: 1.5;
+    min-width: 220px;
+    max-width: 350px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    border: 1.5px solid #f3f3f3;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: center;
+    justify-content: flex-start;
   }
 
   .columna-central {
+    flex: 5;
     padding: 0;
-    background-color: transparent;
-    box-shadow: none;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
   }
 
   .contenedor-publicar {
@@ -461,94 +503,90 @@
     margin-bottom: 1rem;
   }
 
-  .columna-derecha {
-    padding: 1.5rem 1rem; /* Padding uniforme para ambos componentes */
-    overflow-y: auto; /* Permite scroll si el contenido es muy alto */
+  .feed-publicaciones {
+    width: 100%;
+  }
+
+  .estado-carga {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centra los componentes */
-    justify-content: flex-start;
-    gap: 1.5rem; /* Espaciado entre ranking y mini cursos */
+    align-items: center;
+    padding: 3rem 1rem;
+    gap: 1rem;
   }
 
-  .columna-derecha > :global(div) {
-    background: white;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
 
-  .columna-derecha > :global(div:not(:last-child)) {
-    margin-bottom: 1.5rem;
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
-  .cargando-feed {
+  .estado-vacio {
     text-align: center;
-    padding: 2rem;
+    padding: 4rem 2rem;
+  }
+
+  .icono-vacio {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .estado-vacio h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+
+  .estado-vacio p {
     color: #6b7280;
-    font-weight: 500;
+    margin-bottom: 2rem;
   }
 
-  /* Ajustes específicos para el ranking */
-  .columna-derecha :global(.ranking-gamer) {
-    margin-bottom: 0; /* Quitamos el margin del componente */
-    width: 100%; /* Ocupa todo el ancho disponible */
-    max-width: 300px; /* Se ajusta al nuevo ancho de la columna */
-  }
-
-  /* Ajustes específicos para slider de cursos */
-  .columna-derecha :global(.slider-cursos-wrapper) {
-    margin: 0; /* Quitamos el margin del componente */
-    width: 100%; /* Ocupa todo el ancho disponible */
-    max-width: 300px; /* Se ajusta al nuevo ancho de la columna */
-  }
-
-  /* Scrollbar personalizado para la columna derecha */
-  .columna-derecha::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .columna-derecha::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-  }
-
-  .columna-derecha::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-  }
-
-  .columna-derecha::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
-  /* --- Diseño Responsivo --- */
-  @media (max-width: 1400px) {
-    .grilla-contenido-principal {
-      grid-template-columns: 1fr; /* Solo columna central */
+  /* --- RESPONSIVE (IGUAL QUE PUBLICACIONES) --- */
+  @media (max-width: 1350px) {
+    .columna-izquierda,
+    .columna-derecha {
+      display: none;
     }
-    .columna-izquierda, .columna-derecha {
-      display: none; /* Ocultar columnas laterales */
+    
+    .timeline-grid {
+      justify-content: center;
+      padding: 2rem;
     }
+    
     .columna-central {
+      flex: 1;
+      max-width: 800px;
+      margin: 0 auto;
       padding: 0;
-      width: 100%; /* Ocupa el 100% del ancho disponible */
-      max-width: none; /* Sin límite de ancho máximo */
     }
   }
 
-  @media (max-width: 992px) {
-    .contenedor-comunidad {
+  @media (max-width: 768px) {
+    .timeline-grid {
       padding: 1rem;
     }
-    .grilla-contenido-principal {
-      grid-template-columns: 1fr; /* Una sola columna */
-    }
-    .columna-izquierda, .columna-derecha {
-      display: none; /* Ocultar todas las columnas laterales */
-    }
+    
     .columna-central {
-      width: 100%; /* Asegurar 100% de ancho */
+      padding: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .timeline-grid {
+      padding: 0.5rem;
+    }
+    
+    .columna-central {
+      padding: 0;
     }
   }
 

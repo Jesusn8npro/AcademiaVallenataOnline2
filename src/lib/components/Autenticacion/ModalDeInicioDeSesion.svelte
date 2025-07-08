@@ -21,6 +21,27 @@
   // Recuperar contraseña
   let correoRecuperar = '';
   let mensajeRecuperar = '';
+  
+  // Estados para mostrar/ocultar contraseñas
+  let mostrarContrasena = false;
+  let mostrarContrasenaRegistro = false;
+  
+  // Selector de país para WhatsApp
+  let codigoPais = '+57'; // Colombia por defecto
+  
+  // Lista de países comunes
+  const paises = [
+    { codigo: '+57', nombre: 'Colombia', bandera: '🇨🇴' },
+    { codigo: '+52', nombre: 'México', bandera: '🇲🇽' },
+    { codigo: '+1', nombre: 'Estados Unidos', bandera: '🇺🇸' },
+    { codigo: '+34', nombre: 'España', bandera: '🇪🇸' },
+    { codigo: '+54', nombre: 'Argentina', bandera: '🇦🇷' },
+    { codigo: '+56', nombre: 'Chile', bandera: '🇨🇱' },
+    { codigo: '+51', nombre: 'Perú', bandera: '🇵🇪' },
+    { codigo: '+58', nombre: 'Venezuela', bandera: '🇻🇪' },
+    { codigo: '+593', nombre: 'Ecuador', bandera: '🇪🇨' },
+    { codigo: '+507', nombre: 'Panamá', bandera: '🇵🇦' }
+  ];
 
   function cerrarModal() {
     onCerrar();
@@ -32,6 +53,15 @@
     cargando = false;
     correoRecuperar = '';
     mensajeRecuperar = '';
+    mostrarContrasena = false;
+    mostrarContrasenaRegistro = false;
+    codigoPais = '+57';
+    // Limpiar campos de registro
+    nombre = '';
+    apellido = '';
+    whatsapp = '';
+    correoRegistro = '';
+    contrasenaRegistro = '';
   }
   function detenerPropagacion(e: Event) {
     e.stopPropagation();
@@ -74,7 +104,7 @@
     const { usuario, error } = await registrarUsuario(
       correoRegistro,
       contrasenaRegistro,
-      { nombre, apellido, whatsapp }
+      { nombre, apellido, whatsapp: `${codigoPais}${whatsapp}` }
     );
     cargando = false;
     if (error) {
@@ -113,10 +143,16 @@
 {#if abierto}
   <div class="fondo-modal" on:click={cerrarModal} on:keydown={(e) => e.key === 'Escape' && cerrarModal()} role="presentation">
     <div class="modal-inicio-sesion" on:click={detenerPropagacion} role="dialog" aria-modal="true" tabindex="-1">
-      <button class="boton-cerrar" aria-label="Cerrar" on:click={cerrarModal}>
-        &times;
-      </button>
-      <img src="/logo academia vallenata.png" alt="Logo Academia Vallenata" class="logo-modal" />
+      <div class="modal-header">
+        <div class="logo-container">
+          <img src="/logo academia vallenata.png" alt="Logo Academia Vallenata" class="logo-modal" />
+        </div>
+        <button class="boton-cerrar" aria-label="Cerrar" on:click={cerrarModal}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
       {#if vistaRecuperar}
         <h2 class="titulo-modal">Recuperar contraseña</h2>
         <p class="login-desc">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
@@ -124,7 +160,7 @@
           <div class="campo-formulario">
             <label for="recuperarCorreo">Correo electrónico</label>
             <div class="input-icono">
-              <input id="recuperarCorreo" type="email" bind:value={correoRecuperar} placeholder="Tu correo" required />
+              <input id="recuperarCorreo" type="email" bind:value={correoRecuperar} placeholder="ejemplo@correo.com" required />
               <span class="icono-input">📧</span>
             </div>
           </div>
@@ -145,15 +181,28 @@
           <div class="campo-formulario">
             <label for="usuario">Correo electrónico o usuario</label>
             <div class="input-icono">
-              <input id="usuario" type="text" bind:value={usuario} placeholder="Tu correo o usuario" required />
+              <input id="usuario" type="text" bind:value={usuario} placeholder="ejemplo@correo.com o usuario" required />
               <span class="icono-input">📧</span>
             </div>
           </div>
           <div class="campo-formulario">
             <label for="contrasena">Contraseña</label>
             <div class="input-icono">
-              <input id="contrasena" type="password" bind:value={contrasena} placeholder="Tu contraseña" required />
-              <span class="icono-input">🔒</span>
+              <input 
+                id="contrasena" 
+                type={mostrarContrasena ? 'text' : 'password'} 
+                bind:value={contrasena} 
+                placeholder="Tu contraseña" 
+                required 
+              />
+              <button 
+                type="button" 
+                class="boton-mostrar-contrasena"
+                on:click={() => mostrarContrasena = !mostrarContrasena}
+                aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {mostrarContrasena ? '👁️' : '🙈'}
+              </button>
             </div>
           </div>
           {#if errorLogin}
@@ -174,38 +223,74 @@
           <div class="fila-nombre-apellido">
             <div class="campo-formulario">
               <label for="nombre">Nombre</label>
-              <input id="nombre" type="text" bind:value={nombre} placeholder="Tu nombre" required />
+              <div class="input-icono">
+                <input id="nombre" type="text" bind:value={nombre} placeholder="Tu nombre" required />
+                <span class="icono-input">👤</span>
+              </div>
             </div>
             <div class="campo-formulario">
               <label for="apellido">Apellido</label>
-              <input id="apellido" type="text" bind:value={apellido} placeholder="Tu apellido" required />
+              <div class="input-icono">
+                <input id="apellido" type="text" bind:value={apellido} placeholder="Tu apellido" required />
+                <span class="icono-input">👤</span>
+              </div>
             </div>
           </div>
           <div class="campo-formulario">
             <label for="whatsapp">WhatsApp</label>
-            <div class="input-icono">
-              <input id="whatsapp" type="tel" bind:value={whatsapp} placeholder="Tu número de WhatsApp" required />
-              <span class="icono-input">📱</span>
+            <div class="input-whatsapp">
+              <select class="selector-pais" bind:value={codigoPais}>
+                {#each paises as pais}
+                  <option value={pais.codigo}>
+                    {pais.bandera} {pais.codigo}
+                  </option>
+                {/each}
+              </select>
+              <div class="input-numero">
+                <input 
+                  id="whatsapp" 
+                  type="tel" 
+                  bind:value={whatsapp} 
+                  placeholder="Número sin código de país" 
+                  required 
+                />
+                <span class="icono-input">📱</span>
+              </div>
             </div>
           </div>
           <div class="campo-formulario">
             <label for="correoRegistro">Correo electrónico</label>
             <div class="input-icono">
-              <input id="correoRegistro" type="email" bind:value={correoRegistro} placeholder="Tu correo electrónico" required />
+              <input id="correoRegistro" type="email" bind:value={correoRegistro} placeholder="ejemplo@correo.com" required />
               <span class="icono-input">📧</span>
             </div>
           </div>
           <div class="campo-formulario">
             <label for="contrasenaRegistro">Contraseña</label>
             <div class="input-icono">
-              <input id="contrasenaRegistro" type="password" bind:value={contrasenaRegistro} placeholder="Crea una contraseña" required />
-              <span class="icono-input">🔒</span>
+              <input 
+                id="contrasenaRegistro" 
+                type={mostrarContrasenaRegistro ? 'text' : 'password'} 
+                bind:value={contrasenaRegistro} 
+                placeholder="Crea una contraseña segura" 
+                required 
+              />
+              <button 
+                type="button" 
+                class="boton-mostrar-contrasena"
+                on:click={() => mostrarContrasenaRegistro = !mostrarContrasenaRegistro}
+                aria-label={mostrarContrasenaRegistro ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {mostrarContrasenaRegistro ? '👁️' : '🙈'}
+              </button>
             </div>
           </div>
           {#if errorLogin}
             <div class="mensaje-error">{errorLogin}</div>
           {/if}
-          <button type="submit" class="boton-enviar">Registrarme</button>
+          <button type="submit" class="boton-enviar" disabled={cargando}>
+            {cargando ? 'Registrando...' : 'Registrarme'}
+          </button>
         </form>
         <div class="enlaces-extra">
           <button type="button" class="enlace-olvido" on:click={() => vistaRegistro = false}>¿Ya tienes cuenta? <b>Inicia sesión</b></button>
@@ -216,120 +301,434 @@
 {/if}
 
 <style>
-.fondo-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.2s;
-  padding: 0 12px;
-}
-.modal-inicio-sesion {
-  width: 100%;
-  max-width: 370px;
-  margin: 24px auto;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, #fff 80%, #ffe5d0 100%);
-  border-radius: 2rem;
-  box-shadow: 0 8px 40px #0002;
-  padding: 2.5rem 2rem 2rem 2rem;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  animation: aparecerModal 0.26s cubic-bezier(.4,1.2,.6,1) both;
-  text-align: center;
-}
-@media (max-width: 600px) {
-  .modal-inicio-sesion {
-    padding: 1.2rem .5rem 1.5rem .5rem;
-    max-width: 97vw;
-    margin: 12px 4px;
+  /* === VARIABLES CSS === */
+  :root {
+    --modal-primary: #ff6600;
+    --modal-primary-hover: #e55a00;
+    --modal-secondary: #1a73e8;
+    --modal-bg: #ffffff;
+    --modal-bg-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --modal-shadow-hover: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
+    --modal-border-radius: 24px;
+    --input-bg: #f8fafc;
+    --input-border: #e2e8f0;
+    --input-focus: #3b82f6;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --error-bg: #fef2f2;
+    --error-color: #dc2626;
+    --success-bg: #f0fdf4;
+    --success-color: #16a34a;
   }
-}
-.login-logo, .logo-modal {
-  width: 70px; margin-bottom: 1rem; display: block; margin-left: auto; margin-right: auto;
-}
-.titulo-modal {
-  font-size: 1.5rem; font-weight: 900; color: #ff6600; margin-bottom: .5rem; text-align: center;
-}
-.login-desc {
-  color: #444; font-size: 1rem; margin-bottom: 1.5rem; text-align: center;
-}
-.formulario-inicio-sesion {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-.fila-nombre-apellido {
-  display: flex;
-  gap: 0.4rem;
-}
-.fila-nombre-apellido .campo-formulario {
-  flex: 1 1 0;
-  min-width: 0;
-}
-.campo-formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  text-align: left;
-}
-.campo-formulario label {
-  font-size: 1rem;
-  color: #23235b;
-  font-weight: 600;
-}
-.input-icono {
-  display: flex;
-  align-items: center;
-  background: #f7f7f7;
-  border-radius: 10px;
-  border: 1.5px solid #eee;
-  padding: .5rem 1rem;
-  margin-top: .3rem;
-}
-.input-icono input {
-  border: none;
-  background: transparent;
-  flex: 1;
-  font-size: 1rem;
-  padding: .5rem 0;
-}
-.input-icono input:focus {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-.icono-input { font-size: 1.2rem; color: #ff6600; margin-left: .5rem; }
-.boton-enviar {
-  background: linear-gradient(90deg, #ff6600, #ff8c42);
-  color: #fff; border: none; border-radius: 30px; padding: 1rem; font-size: 1.1rem; font-weight: 700;
-  margin-top: .5rem; cursor: pointer; box-shadow: 0 2px 12px #ff660033; transition: background .2s;
-}
-.boton-enviar:hover { background: linear-gradient(90deg, #ff8c42, #ff6600); }
-.mensaje-error {
-  color: #e74c3c; background: #fff3f0; border-radius: 8px; padding: .5rem .7rem; font-size: .98rem; margin-bottom: .2rem; text-align: center;
-}
-.enlaces-extra {
-  margin-top: 1.2rem; display: flex; flex-direction: column; gap: .5rem; align-items: center;
-}
-.enlace-olvido, .enlace-registrarse {
-  background: none; border: none; color: #1a73e8; font-size: .97rem; text-decoration: underline; cursor: pointer; transition: color .2s; padding: 0; font-family: inherit;
-}
-.enlace-olvido:hover, .enlace-registrarse:hover { color: #ff6600; }
-.boton-cerrar {
-  position: absolute; top: 1.2rem; right: 1.2rem;
-  background: none; border: none; font-size: 2rem; color: #ff6600; cursor: pointer; transition: color .2s;
-}
-.boton-cerrar:hover { color: #d35400; }
-@media (max-width: 500px) {
-  .modal-inicio-sesion { padding: 1.2rem .5rem 1.5rem .5rem; }
-}
+
+  /* === FONDO MODAL === */
+  .fondo-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-out forwards;
+    padding: 16px;
+  }
+
+  /* === MODAL PRINCIPAL === */
+  .modal-inicio-sesion {
+    width: 100%;
+    max-width: 420px;
+    background: var(--modal-bg-gradient);
+    border-radius: var(--modal-border-radius);
+    box-shadow: var(--modal-shadow);
+    padding: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(30px);
+    opacity: 0;
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* === HEADER DEL MODAL === */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px 16px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+    background: linear-gradient(135deg, rgba(255, 102, 0, 0.03) 0%, rgba(255, 102, 0, 0.08) 100%);
+  }
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-modal {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.2);
+    transition: transform 0.3s ease;
+  }
+
+  .logo-modal:hover {
+    transform: scale(1.05);
+  }
+
+  .boton-cerrar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 102, 0, 0.1);
+    color: var(--modal-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .boton-cerrar:hover {
+    background: var(--modal-primary);
+    color: white;
+    transform: scale(1.05);
+  }
+
+  /* === CONTENIDO DEL MODAL === */
+  .titulo-modal {
+    font-size: 1.875rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--modal-primary) 0%, #ff8c42 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 24px 32px 8px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .login-desc {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0 32px 32px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* === FORMULARIO === */
+  .formulario-inicio-sesion {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 32px 32px;
+  }
+
+  .fila-nombre-apellido {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .campo-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .campo-formulario label {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  /* === INPUTS MEJORADOS === */
+  .input-icono {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    padding: 0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .input-icono:focus-within {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: white;
+  }
+
+  .input-icono input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 16px 16px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    outline: none;
+  }
+
+  .input-icono input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .icono-input {
+    padding: 0 16px;
+    font-size: 1.25rem;
+    color: var(--modal-primary);
+  }
+
+  /* === BOTÓN MOSTRAR CONTRASEÑA === */
+  .boton-mostrar-contrasena {
+    background: none;
+    border: none;
+    padding: 16px;
+    cursor: pointer;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .boton-mostrar-contrasena:hover {
+    color: var(--modal-primary);
+  }
+
+  /* === SELECTOR DE PAÍS WHATSAPP === */
+  .input-whatsapp {
+    display: flex;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .input-whatsapp:focus-within {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: white;
+  }
+
+  .selector-pais {
+    background: rgba(255, 102, 0, 0.05);
+    border: none;
+    padding: 16px 12px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+    min-width: 110px;
+    border-right: 1px solid var(--input-border);
+  }
+
+  .input-numero {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-numero input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 16px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    outline: none;
+  }
+
+  /* === BOTÓN PRINCIPAL === */
+  .boton-enviar {
+    background: linear-gradient(135deg, var(--modal-primary) 0%, #ff8c42 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .boton-enviar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 102, 0, 0.4);
+  }
+
+  .boton-enviar:active {
+    transform: translateY(0);
+  }
+
+  .boton-enviar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* === MENSAJES === */
+  .mensaje-error {
+    background: var(--error-bg);
+    color: var(--error-color);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    text-align: center;
+    margin: -8px 0 8px;
+  }
+
+  /* === ENLACES EXTRA === */
+  .enlaces-extra {
+    padding: 0 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    border-top: 1px solid rgba(226, 232, 240, 0.3);
+    margin-top: 8px;
+    padding-top: 24px;
+  }
+
+  .enlace-olvido,
+  .enlace-registrarse {
+    background: none;
+    border: none;
+    color: var(--modal-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    text-decoration: none;
+  }
+
+  .enlace-olvido:hover,
+  .enlace-registrarse:hover {
+    color: var(--modal-primary);
+    background: rgba(255, 102, 0, 0.05);
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .modal-inicio-sesion {
+      max-width: 95vw;
+      margin: 8px;
+    }
+
+    .modal-header,
+    .formulario-inicio-sesion,
+    .enlaces-extra {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .titulo-modal,
+    .login-desc {
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+
+    .fila-nombre-apellido {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .titulo-modal {
+      font-size: 1.5rem;
+    }
+
+    .login-desc {
+      font-size: 0.875rem;
+    }
+
+    .selector-pais {
+      min-width: 90px;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .fondo-modal {
+      padding: 8px;
+    }
+
+    .modal-header {
+      padding: 16px 16px 12px;
+    }
+
+    .logo-modal {
+      width: 48px;
+      height: 48px;
+    }
+
+    .titulo-modal {
+      font-size: 1.25rem;
+      margin: 16px 16px 8px;
+    }
+
+    .login-desc {
+      margin: 0 16px 24px;
+    }
+
+    .formulario-inicio-sesion {
+      padding: 0 16px 24px;
+      gap: 16px;
+    }
+
+    .enlaces-extra {
+      padding: 0 16px 24px;
+      padding-top: 16px;
+    }
+
+    .input-icono input,
+    .boton-mostrar-contrasena,
+    .selector-pais,
+    .input-numero input {
+      padding: 14px 12px;
+    }
+
+    .boton-enviar {
+      padding: 14px 20px;
+    }
+  }
 </style>

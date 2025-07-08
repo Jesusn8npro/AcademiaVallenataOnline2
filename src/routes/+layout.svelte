@@ -12,6 +12,7 @@
   import { page } from '$app/stores';
   import { fade, fly } from 'svelte/transition';
   import BannerPermisosNotificacion from '$lib/components/NotificacionesRealTime/BannerPermisosNotificacion.svelte';
+  import { inicializarTema } from '$lib/stores/temaStore';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -25,7 +26,7 @@
 
   // Detectar si es una página del perfil fijo
   $: rutaActual = $page.url.pathname;
-  $: esPaginaPerfilFijo = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'].includes(rutaActual);
+  $: esPaginaPerfilFijo = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'].includes(rutaActual);
   
   // Detectar si se debe ocultar la barra de progreso
   $: ocultarBarraProgreso = esPaginaSinMenu;
@@ -44,6 +45,9 @@
   }
 
   onMount(() => {
+    // Inicializar tema al cargar
+    inicializarTema();
+    
     // Sesión usuario
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -62,6 +66,7 @@
 
     // Barra de progreso global
     window.addEventListener('scroll', manejarScroll, { passive: true });
+
     return () => {
       window.removeEventListener('scroll', manejarScroll);
     };
@@ -140,5 +145,104 @@
     z-index: 9999;
     transition: width 0.2s ease;
     width: 0%;
+  }
+
+  /* === REFUERZO GLOBAL CONTRA CURSOR DE TEXTO === */
+  /* Aplicar a toda la aplicación para prevenir cursor de texto molesto */
+  
+  :global(*) {
+    /* Prevenir cursor de texto por defecto en todos los elementos */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  :global(div):not(:global(.texto-seleccionable)):not(:global(.contenido-editable)):not(:global([contenteditable="true"])) {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default;
+  }
+  
+  /* Aplicar a elementos específicos de SvelteKit */
+  :global(.svelte-*) {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+  
+  /* Asegurar que elementos de la academia no muestren cursor de texto */
+  :global(.academia-vallenata) *:not(input):not(textarea):not([contenteditable="true"]):not(.texto-seleccionable) {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    cursor: default !important;
+  }
+  
+  /* Layout containers específicos */
+  :global(.layout-autenticado),
+  :global(.main-content),
+  :global(.admin-sidebar-container) {
+    user-select: none;
+    cursor: default;
+  }
+  
+  /* Componentes específicos de la academia */
+  :global(.modal-inicio-sesion) :global(.modal-header),
+  :global(.modal-inicio-sesion) :global(.logo-container),
+  :global(.encabezado-perfil),
+  :global(.pestanas-perfil),
+  :global(.menu-superior),
+  :global(.menu-lateral),
+  :global(.banner-slider),
+  :global(.ranking-comunidad),
+  :global(.curso-grid),
+  :global(.tutorial-grid),
+  :global(.eventos-grid) {
+    user-select: none !important;
+    cursor: default !important;
+  }
+  
+  /* Solo permitir cursor de texto en inputs y contenido editable */
+  :global(input),
+  :global(textarea),
+  :global([contenteditable="true"]),
+  :global(.ql-editor),
+  :global(.editor-contenido),
+  :global(.comentario-input),
+  :global(.busqueda-input) {
+    user-select: text !important;
+    cursor: text !important;
+  }
+  
+  /* Solo permitir cursor pointer en elementos clickeables */
+  :global(button),
+  :global(a),
+  :global([role="button"]),
+  :global(.btn),
+  :global(.boton),
+  :global(.clickeable),
+  :global(.tarjeta-curso),
+  :global(.tarjeta-tutorial),
+  :global(.tarjeta-evento),
+  :global(.menu-item),
+  :global(.pestana),
+  :global(.tab) {
+    cursor: pointer !important;
+    user-select: none !important;
+  }
+  
+  /* Refuerzo para móviles */
+  @media (max-width: 768px) {
+    :global(*):not(input):not(textarea):not([contenteditable="true"]) {
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+    
+    :global(input),
+    :global(textarea) {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
   }
 </style>

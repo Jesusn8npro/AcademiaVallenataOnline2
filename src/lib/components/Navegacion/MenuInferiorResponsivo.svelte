@@ -32,11 +32,11 @@
       badge: null
     },
     {
-      id: 'crear',
-      icono: 'crear',
-      texto: 'Crear',
-      ruta: '/administrador/crear-contenido',
-      badge: 'Nuevo'
+      id: 'mensajes',
+      icono: 'mensajes',
+      texto: 'Mensajes',
+      ruta: '/mensajes',
+      badge: '5'
     },
     {
       id: 'comunidad',
@@ -71,11 +71,11 @@
       badge: '75%'
     },
     {
-      id: 'tutoriales',
-      icono: 'tutoriales',
-      texto: 'Tutoriales',
-      ruta: '/tutoriales',
-      badge: null
+      id: 'mensajes',
+      icono: 'mensajes',
+      texto: 'Mensajes',
+      ruta: '/mensajes',
+      badge: '2'
     },
     {
       id: 'comunidad',
@@ -136,6 +136,9 @@
       perfil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
+      </svg>`,
+      mensajes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>`
     };
     return iconos[tipo] || iconos.dashboard;

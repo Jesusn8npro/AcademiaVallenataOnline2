@@ -1,9 +1,11 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="%sveltekit.theme%">
 	<head>
 		<meta charset="utf-8" />
+		<!-- Compatibilidad navegadores antiguos -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
 		<!-- SEO Meta Tags -->
 		<meta name="description" content="Aprende a tocar acordeón vallenato con la Academia Vallenata Online. Cursos profesionales, simulador interactivo y comunidad de estudiantes." />
@@ -27,12 +29,51 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		
+		<!-- Polyfill básico para navegadores antiguos -->
+		<script>
+			// Solo funciones esenciales que pueden faltar
+			if (!window.Promise) {
+				document.write('<script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"><\/script>');
+			}
+			if (!Array.prototype.includes) {
+				Array.prototype.includes = function(searchElement) {
+					return this.indexOf(searchElement) !== -1;
+				};
+			}
+		</script>
+		
 		<!-- ePayco SDK -->
 		<script src="https://checkout.epayco.co/checkout.js"></script>
 		
 		%sveltekit.head%
+		
+		<!-- Script para inicializar tema antes de la carga -->
+		<script>
+			// Prevenir parpadeo del tema - Compatible con navegadores antiguos
+			(function() {
+				try {
+					var tema = localStorage ? localStorage.getItem('tema-oscuro') : null;
+					var modoOscuro = false;
+					
+					if (tema) {
+						modoOscuro = JSON.parse(tema);
+					} else if (window.matchMedia) {
+						modoOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
+					}
+					
+					if (modoOscuro && document.documentElement.classList) {
+						document.documentElement.classList.add('dark');
+					} else if (modoOscuro && document.documentElement.className !== undefined) {
+						// Fallback para navegadores sin classList
+						document.documentElement.className += ' dark';
+					}
+				} catch (e) {
+					// Fallback silencioso para cualquier error
+				}
+			})();
+		</script>
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="hover" class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

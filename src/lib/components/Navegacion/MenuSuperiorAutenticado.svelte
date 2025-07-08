@@ -116,6 +116,12 @@
       </span>
       <span>Notificaciones</span>
     </a>
+    <a href="/mensajes" class="enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </span>
+      <span>Mensajes</span>
+    </a>
   </div>
 
   <!-- Área Derecha -->
@@ -207,7 +213,7 @@
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  padding: 0.7rem 3rem;
+  padding: 2.3rem 2rem;
   position: fixed;
   top: 0;
   left: 0;
@@ -215,13 +221,14 @@
   z-index: 1200;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 60px;
 }
 
 /* Lado Izquierdo */
 .lado-izquierdo {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .logo {
@@ -230,7 +237,8 @@
 }
 
 .logo-img {
-  max-width: 100px;
+  max-width: 90px;
+  height: auto;
   object-fit: contain;
 }
 
@@ -238,20 +246,20 @@
 .boton-hamburguesa-lujo {
   display: none;
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.25);
   overflow: hidden;
 }
 
 .boton-hamburguesa-lujo:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
 }
 
 .boton-hamburguesa-lujo:active {
@@ -282,12 +290,12 @@
   align-items: center;
   width: 100%;
   height: 100%;
-  gap: 4px;
+  gap: 3px;
 }
 
 .hamburguesa-linea {
-  width: 22px;
-  height: 3px;
+  width: 20px;
+  height: 2.5px;
   background: #fff;
   border-radius: 2px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -298,12 +306,12 @@
 }
 
 .linea-2 {
-  width: 18px;
+  width: 16px;
   opacity: 0.9;
 }
 
 .linea-3 {
-  width: 20px;
+  width: 18px;
   transform-origin: center;
 }
 
@@ -312,7 +320,7 @@
 }
 
 .boton-hamburguesa-lujo:hover .linea-2 {
-  width: 22px;
+  width: 20px;
   opacity: 1;
 }
 
@@ -322,7 +330,7 @@
 
 .menu-central {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .enlace {
@@ -333,36 +341,39 @@
   color: #374151;
   font-weight: 500;
   transition: color 0.2s;
+  padding: 0.3rem 0.4rem;
+  border-radius: 8px;
 }
 
 .enlace:hover {
   color: #ff6d1a;
+  background: rgba(255, 109, 26, 0.05);
 }
 
 .enlace svg {
-  width: 24px;
-  height: 24px;
-  margin-bottom: 0.5rem;
+  width: 20px;
+  height: 20px;
+  margin-bottom: 0.2rem;
 }
 
 .area-derecha {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .iconos-desktop {
   display: flex;
   align-items: center;
-  gap: 5rem;
+  gap: 0.6rem;
 }
 
 .icono {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: transparent;
   border: none;
@@ -378,21 +389,21 @@
 }
 
 .icono svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .badge .num {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -4px;
+  right: -4px;
   background: #ff6d1a;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -404,9 +415,9 @@
   display: none;
   align-items: center;
   justify-content: center;
-  width: 45px;
-  height: 45px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   cursor: pointer;
@@ -422,21 +433,21 @@
 }
 
 .icono-movil svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .num-movil {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -6px;
+  right: -6px;
   background: #ef4444;
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,10 +465,10 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  border-radius: 2rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 1.5rem;
   transition: background 0.15s;
-  gap: 0.7rem;
+  gap: 0.5rem;
 }
 
 .boton-usuario:hover {
@@ -467,11 +478,12 @@
 .nombre {
   font-weight: 600;
   color: #374151;
+  font-size: 0.9rem;
 }
 
 .avatar {
-  width: 38px;
-  height: 38px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #e5e7eb;
@@ -479,9 +491,9 @@
 
 .desplegable {
   position: absolute;
-  top: 120%;
+  top: 110%;
   right: 0;
-  min-width: 280px;
+  min-width: 260px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -492,16 +504,16 @@
 .header {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.8rem;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
   border-radius: 12px 12px 0 0;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .avatar-grande {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -509,25 +521,27 @@
 .nombre-completo {
   font-weight: 600;
   color: #111827;
+  font-size: 0.95rem;
 }
 
 .rol {
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
 }
 
 .links {
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
 }
 
 .link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.8rem;
   color: #374151;
   text-decoration: none;
   transition: background 0.15s;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  font-size: 0.9rem;
 }
 
 .link:hover {
@@ -535,22 +549,22 @@
 }
 
 .link svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   color: #6b7280;
 }
 
 .separador {
   height: 1px;
   background: #e5e7eb;
-  margin: 0.5rem 0;
+  margin: 0.3rem 0;
 }
 
 .boton-salir {
   width: 100%;
   background: none;
   border: none;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.8rem;
   color: #dc2626;
   cursor: pointer;
   transition: background 0.15s;
@@ -558,7 +572,8 @@
   border-radius: 0 0 12px 12px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  font-size: 0.9rem;
 }
 
 .boton-salir:hover {
@@ -571,8 +586,8 @@
 }
 
 .boton-salir svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 @keyframes pulso {
@@ -584,25 +599,26 @@
 /* Responsive */
 @media (max-width: 1100px) {
   .menu-central {
-    gap: 2px;
+    gap: 0.6rem;
   }
   .enlace {
-    min-width: 60px;
-    max-width: 80px;
-    padding: 6px 2px;
+    min-width: 55px;
+    max-width: 75px;
+    padding: 0.3rem 0.2rem;
   }
   .icono-enlace-nav svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
   .enlace span {
-    font-size: 0.89rem;
+    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 900px) {
   .menu-superior {
-    padding: 0.7rem 1rem;
+    padding: 2.4rem 0.8rem;
+    height: 56px;
   }
   .boton-hamburguesa-lujo {
     display: flex;
@@ -620,10 +636,13 @@
     display: none;
   }
   .avatar {
-    width: 48px;
-    height: 48px;
-    border: 3px solid #e5e7eb;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 60px;
+    height: 60px;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+  .logo-img {
+    max-width: 90px;
   }
 }
 
@@ -631,20 +650,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 0 0.2rem 0;
+  margin: 0 0 0.1rem 0;
 }
+
 .enlace {
   flex-direction: column;
   align-items: center;
   gap: 0.1rem;
-  min-width: 90px;
-  max-width: 120px;
-  padding: 10px 8px;
+  min-width: 80px;
+  max-width: 100px;
 }
+
 .enlace span {
-  font-size: 1.01rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #222;
-  margin-top: 0.1rem;
+  margin-top: 0;
+  line-height: 1.2;
 }
 </style>

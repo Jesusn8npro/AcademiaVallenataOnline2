@@ -337,7 +337,7 @@
        justify-content: center;
        align-items: center;
        text-align: center;
-       background: url('/acordeon PRO MAX.png') no-repeat center center;
+       background: url('') no-repeat center center;
        background-size: contain;
        width: 95vh;
        height: 95vh;

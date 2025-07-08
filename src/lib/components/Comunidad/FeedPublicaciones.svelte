@@ -7,7 +7,7 @@
   export let id: string = "";
   export let usuario_id: string = "";
   export let usuario_nombre: string = "Wall Oliveros";
-  export let usuario_avatar: string = "https://tbijzvtyyewhtwgakgka.supabase.co/storage/v1/object/public/avatars/avatar-002a2282-8990-4ad2-9098-186e5edf359a-1749872362580.PNG";
+  export let url_foto_perfil: string = "";
   export let usuario_slug: string = "";
   export let fecha: string = "14 de junio a las 11:43";
   export let contenido: string = "Esta es una publicación de ejemplo. ¡Puedes cambiar el texto!";
@@ -21,6 +21,10 @@
 
   // Estado local para el total de comentarios
   let contadorComentarios: number = total_comentarios;
+
+  // Imagen de perfil con prioridad correcta
+  $: imagenPerfil = url_foto_perfil || 
+                   `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff&size=128`;
 
   import { onMount } from 'svelte';
   // Al montar, cargar contador de comentarios y likes reales desde Supabase
@@ -129,8 +133,16 @@
         >
           <img 
             class="avatar-usuario" 
-            src={usuario_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff`} 
+            src={imagenPerfil} 
             alt={usuario_nombre}
+            loading="lazy"
+            on:error={(event) => {
+              // Fallback si falla cargar la imagen
+              const img = event.target as HTMLImageElement;
+              if (img && !img.src.includes('ui-avatars.com')) {
+                img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff&size=128`;
+              }
+            }}
           />
         </button>
         <div class="indicador-estado"></div>
@@ -348,23 +360,24 @@
   display: flex;
     align-items: center;
   justify-content: space-between;
-    padding: 1.25rem 1.5rem 1rem;
+    padding: 1.25rem 1rem 1rem;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
 }
 
   .info-usuario {
   display: flex;
   align-items: center;
-    gap: 0.875rem;
+    gap: 1rem;
   }
 
   .contenedor-avatar {
     position: relative;
+    margin-left: 1px;
   }
 
   .avatar-usuario {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #ffffff;
@@ -716,9 +729,15 @@
     }
 
     .avatar-usuario {
-      width: 42px;
-      height: 42px;
-}
+      width: 52px;
+      height: 52px;
+      margin-left: 0;
+    }
+    
+    /* SOLO en páginas de perfil (como Publicaciones) agregar margin-left */
+    :global(.layout-perfil-fijo) .avatar-usuario {
+      margin-left: 30px;
+    }
 
     .nombre-usuario {
       font-size: 1rem;
@@ -762,32 +781,7 @@
     }
   }
 
-  @media (max-width: 480px) {
-    .encabezado-publicacion {
-      padding: 0.875rem 0.875rem 0.5rem;
-    }
 
-    .contenido-principal {
-      padding: 0 0.875rem 0.5rem;
-    }
-
-    .barra-estadisticas {
-      padding: 0.5rem 0.875rem;
-    }
-
-    .barra-acciones {
-      padding: 0.5rem 0.875rem 0.875rem;
-    }
-
-    .imagen-publicacion,
-    .gif-publicacion {
-      max-height: 300px;
-    }
-
-    .video-publicacion {
-      max-height: 300px;
-    }
-  }
 
   /* Mejoras de accesibilidad */
   @media (prefers-reduced-motion: reduce) {

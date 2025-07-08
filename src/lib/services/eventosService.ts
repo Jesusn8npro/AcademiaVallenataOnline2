@@ -1,639 +1,464 @@
-import { supabase } from '$lib/supabase/clienteSupabase';
-import type { Database } from '$lib/types/database.types';
+import { supabase } from '../supabase/clienteSupabase';
 
-// Tipos de datos para eventos
-export interface Evento {
+export interface EventoCompleto {
   id: string;
   titulo: string;
-  descripcion?: string;
-  descripcion_corta?: string;
+  descripcion: string;
+  descripcion_corta: string;
   slug: string;
-  tipo_evento: 'masterclass' | 'workshop' | 'concierto' | 'concurso' | 'webinar' | 'reunion';
   fecha_inicio: string;
-  fecha_fin?: string;
-  es_todo_el_dia?: boolean;
-  zona_horaria?: string;
-  modalidad: 'online' | 'presencial' | 'hibrido';
-  ubicacion_fisica?: string;
-  link_transmision?: string;
-  enlace_grabacion?: string;
-  codigo_acceso?: string;
-  instructor_id?: string;
-  instructor_nombre?: string;
-  instructor_avatar?: string;
-  capacidad_maxima?: number;
-  participantes_inscritos: number;
+  fecha_fin: string | null;
+  es_todo_el_dia: boolean;
+  tipo_evento: string;
+  modalidad: string;
+  ubicacion_fisica: string | null;
+  link_transmision: string | null;
+  enlace_grabacion: string | null;
+  codigo_acceso: string | null;
   precio: number;
-  precio_rebajado?: number;
-  moneda?: string;
-  es_gratuito?: boolean;
-  imagen_portada?: string;
-  imagen_banner?: string;
-  video_promocional?: string;
-  categoria?: string;
-  nivel_dificultad?: 'principiante' | 'intermedio' | 'avanzado' | 'profesional';
-  tags?: string[];
-  requiere_inscripcion?: boolean;
-  acepta_invitados?: boolean;
-  es_publico?: boolean;
-  es_destacado?: boolean;
-  permite_grabacion?: boolean;
-  estado: 'borrador' | 'programado' | 'en_vivo' | 'finalizado' | 'cancelado' | 'pospuesto';
-  created_at: string;
-  updated_at: string;
-  creado_por?: string;
-  fecha_publicacion?: string;
+  precio_rebajado: number | null;
+  es_gratuito: boolean;
+  moneda: string;
+  capacidad_maxima: number;
+  participantes_inscritos: number;
+  requiere_inscripcion: boolean;
+  es_publico: boolean;
+  es_destacado: boolean;
+  permite_grabacion: boolean;
+  estado: string;
+  categoria: string | null;
+  nivel_dificultad: string | null;
+  tags: string[] | null;
+  imagen_portada: string | null;
+  imagen_banner: string | null;
+  video_promocional: string | null;
+  instructor_id: string | null;
+  instructor_nombre: string | null;
+  instructor_avatar: string | null;
+  creado_por: string | null;
+  fecha_publicacion: string | null;
+  zona_horaria: string;
   total_visualizaciones: number;
   calificacion_promedio: number;
   total_calificaciones: number;
-}
-
-export interface EventoInscripcion {
-  id: string;
-  evento_id: string;
-  usuario_id: string;
-  fecha_inscripcion: string;
-  estado_inscripcion: 'pendiente' | 'confirmado' | 'cancelado' | 'asistio' | 'no_asistio';
-  pago_id?: string;
-  monto_pagado?: number;
-  fecha_pago?: string;
-  fecha_ultima_conexion?: string;
-  tiempo_total_conectado: number;
-  calificacion?: number;
-  comentario_calificacion?: string;
-  fecha_calificacion?: string;
-  notas_usuario?: string;
-  notificaciones_habilitadas?: boolean;
+  acepta_invitados: boolean;
   created_at: string;
   updated_at: string;
+  inscrito: boolean;
+  fecha_inscripcion: string | null;
 }
 
-export interface EventoComentario {
-  id: string;
-  evento_id: string;
-  usuario_id: string;
-  mensaje: string;
-  tipo_mensaje: 'comentario' | 'pregunta' | 'respuesta';
-  mensaje_padre_id?: string;
-  es_destacado?: boolean;
-  es_aprobado?: boolean;
-  moderado_por?: string;
-  minuto_stream?: number;
-  created_at: string;
-  updated_at: string;
-  // Datos del usuario (join)
-  usuario?: {
-    nombre?: string;
-    apellido?: string;
-    url_foto_perfil?: string;
-  };
-}
-
-export interface EventoMaterial {
-  id: string;
-  evento_id: string;
-  titulo: string;
-  descripcion?: string;
-  tipo_material: 'pdf' | 'video' | 'audio' | 'imagen' | 'enlace' | 'partitura';
-  url_archivo?: string;
-  nombre_archivo?: string;
-  tamano_archivo?: number;
-  es_publico?: boolean;
-  requiere_inscripcion?: boolean;
-  disponible_antes_evento?: boolean;
-  disponible_despues_evento?: boolean;
-  orden_visualizacion: number;
-  created_at: string;
-  subido_por?: string;
+export interface FiltrosEventos {
+  estado?: string;
+  categoria?: string;
+  modalidad?: string;
+  es_gratuito?: boolean;
+  tipo_evento?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  busqueda?: string;
+  limit?: number;
+  offset?: number;
 }
 
 class EventosService {
-  // ========== GESTIÓN DE EVENTOS ==========
-
   /**
-   * Obtener todos los eventos públicos con paginación
+   * Obtiene todos los eventos (para admin y calendario público)
    */
-  async obtenerEventos(filtros: {
-    categoria?: string;
-    tipo_evento?: string;
-    nivel_dificultad?: string;
-    estado?: string;
-    es_gratuito?: boolean;
-    fecha_desde?: string;
-    fecha_hasta?: string;
-    busqueda?: string;
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<{ eventos: Evento[]; total: number; error: string | null }> {
+  async obtenerEventos(filtros?: FiltrosEventos): Promise<{ eventos: EventoCompleto[]; total: number; error?: string }> {
     try {
       let query = supabase
         .from('eventos')
         .select('*', { count: 'exact' })
-        .eq('es_publico', true)
-        .order('fecha_inicio', { ascending: true });
+        .order('fecha_inicio', { ascending: false });
 
       // Aplicar filtros
-      if (filtros.categoria) {
+      if (filtros?.estado) {
+        if (filtros.estado === 'proximos') {
+          query = query.gte('fecha_inicio', new Date().toISOString());
+        } else if (filtros.estado === 'pasados') {
+          query = query.lt('fecha_inicio', new Date().toISOString());
+        } else {
+          query = query.eq('estado', filtros.estado);
+        }
+      }
+
+      if (filtros?.categoria) {
         query = query.eq('categoria', filtros.categoria);
       }
-      if (filtros.tipo_evento) {
-        query = query.eq('tipo_evento', filtros.tipo_evento);
+
+      if (filtros?.modalidad) {
+        query = query.eq('modalidad', filtros.modalidad);
       }
-      if (filtros.nivel_dificultad) {
-        query = query.eq('nivel_dificultad', filtros.nivel_dificultad);
-      }
-      if (filtros.estado) {
-        query = query.eq('estado', filtros.estado);
-      }
-      if (filtros.es_gratuito !== undefined) {
+
+      if (filtros?.es_gratuito !== undefined) {
         query = query.eq('es_gratuito', filtros.es_gratuito);
       }
-      if (filtros.fecha_desde) {
+
+      if (filtros?.tipo_evento) {
+        query = query.eq('tipo_evento', filtros.tipo_evento);
+      }
+
+      if (filtros?.fecha_desde) {
         query = query.gte('fecha_inicio', filtros.fecha_desde);
       }
-      if (filtros.fecha_hasta) {
+
+      if (filtros?.fecha_hasta) {
         query = query.lte('fecha_inicio', filtros.fecha_hasta);
       }
-      if (filtros.busqueda) {
-        query = query.or(`titulo.ilike.%${filtros.busqueda}%,descripcion.ilike.%${filtros.busqueda}%`);
+
+      if (filtros?.busqueda) {
+        query = query.or(`titulo.ilike.%${filtros.busqueda}%,descripcion.ilike.%${filtros.busqueda}%,descripcion_corta.ilike.%${filtros.busqueda}%`);
       }
 
       // Paginación
-      if (filtros.limit) {
+      if (filtros?.limit) {
         query = query.limit(filtros.limit);
       }
-      if (filtros.offset) {
+
+      if (filtros?.offset) {
         query = query.range(filtros.offset, filtros.offset + (filtros.limit || 10) - 1);
       }
 
-      const { data, error, count } = await query;
+      const { data, count, error } = await query;
 
       if (error) {
-        console.error('Error obteniendo eventos:', error);
-        return { eventos: [], total: 0, error: error.message };
+        console.error('Error al obtener todos los eventos:', error);
+        return { eventos: [], total: 0, error: 'Error al cargar eventos' };
       }
 
-      return { eventos: data || [], total: count || 0, error: null };
-    } catch (error: any) {
+      // Mapear datos a EventoCompleto
+      const eventos = data.map((evento: any) => ({
+        ...evento,
+        inscrito: false, // Para eventos públicos no sabemos si el usuario está inscrito
+        fecha_inscripcion: null,
+        // Valores por defecto para campos que pueden ser null
+        precio: evento.precio || 0,
+        capacidad_maxima: evento.capacidad_maxima || 100,
+        participantes_inscritos: evento.participantes_inscritos || 0,
+        es_todo_el_dia: evento.es_todo_el_dia || false,
+        es_gratuito: evento.es_gratuito || false,
+        requiere_inscripcion: evento.requiere_inscripcion || true,
+        es_publico: evento.es_publico || true,
+        es_destacado: evento.es_destacado || false,
+        permite_grabacion: evento.permite_grabacion || true,
+        acepta_invitados: evento.acepta_invitados || false,
+        total_visualizaciones: evento.total_visualizaciones || 0,
+        calificacion_promedio: evento.calificacion_promedio || 0,
+        total_calificaciones: evento.total_calificaciones || 0,
+        zona_horaria: evento.zona_horaria || 'America/Bogota',
+        moneda: evento.moneda || 'COP',
+        estado: evento.estado || 'programado',
+        tipo_evento: evento.tipo_evento || 'masterclass',
+        modalidad: evento.modalidad || 'online'
+      }));
+
+      return { eventos, total: count || 0 };
+    } catch (error) {
       console.error('Error en obtenerEventos:', error);
-      return { eventos: [], total: 0, error: error.message };
+      return { eventos: [], total: 0, error: 'Error al cargar eventos' };
     }
   }
 
   /**
-   * Obtener eventos próximos (los más cercanos)
+   * Obtiene todos los eventos del usuario actual con sus inscripciones
    */
-  async obtenerEventosProximos(limite: number = 5): Promise<{ eventos: Evento[]; error: string | null }> {
+  async obtenerEventosUsuario(usuarioId: string, filtros?: FiltrosEventos): Promise<EventoCompleto[]> {
     try {
-      const { data, error } = await supabase
-        .rpc('obtener_eventos_proximos', { limite });
-
-      if (error) {
-        console.error('Error obteniendo eventos próximos:', error);
-        return { eventos: [], error: error.message };
-      }
-
-      return { eventos: data || [], error: null };
-    } catch (error: any) {
-      console.error('Error en obtenerEventosProximos:', error);
-      return { eventos: [], error: error.message };
-    }
-  }
-
-  /**
-   * Obtener evento por slug
-   */
-  async obtenerEventoPorSlug(slug: string): Promise<{ evento: Evento | null; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos')
-        .select('*')
-        .eq('slug', slug)
-        .eq('es_publico', true)
-        .single();
-
-      if (error) {
-        console.error('Error obteniendo evento por slug:', error);
-        return { evento: null, error: error.message };
-      }
-
-      return { evento: data, error: null };
-    } catch (error: any) {
-      console.error('Error en obtenerEventoPorSlug:', error);
-      return { evento: null, error: error.message };
-    }
-  }
-
-  /**
-   * Crear un nuevo evento (solo admin/instructor)
-   */
-  async crearEvento(eventoData: Partial<Evento>): Promise<{ evento: Evento | null; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos')
-        .insert([eventoData])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error creando evento:', error);
-        return { evento: null, error: error.message };
-      }
-
-      return { evento: data, error: null };
-    } catch (error: any) {
-      console.error('Error en crearEvento:', error);
-      return { evento: null, error: error.message };
-    }
-  }
-
-  /**
-   * Actualizar evento
-   */
-  async actualizarEvento(id: string, eventoData: Partial<Evento>): Promise<{ evento: Evento | null; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos')
-        .update(eventoData)
-        .eq('id', id)
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error actualizando evento:', error);
-        return { evento: null, error: error.message };
-      }
-
-      return { evento: data, error: null };
-    } catch (error: any) {
-      console.error('Error en actualizarEvento:', error);
-      return { evento: null, error: error.message };
-    }
-  }
-
-  /**
-   * Eliminar evento
-   */
-  async eliminarEvento(id: string): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('eventos')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error eliminando evento:', error);
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error: any) {
-      console.error('Error en eliminarEvento:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // ========== GESTIÓN DE INSCRIPCIONES ==========
-
-  /**
-   * Inscribirse a un evento
-   */
-  async inscribirseEvento(eventoId: string, usuarioId: string): Promise<{ inscripcion: EventoInscripcion | null; error: string | null }> {
-    try {
-      // Primero verificar disponibilidad
-      const { data: disponibilidad, error: errorDisponibilidad } = await supabase
-        .rpc('verificar_disponibilidad_evento', { 
-          evento_uuid: eventoId, 
-          usuario_uuid: usuarioId 
-        });
-
-      if (errorDisponibilidad) {
-        return { inscripcion: null, error: errorDisponibilidad.message };
-      }
-
-      if (!disponibilidad.puede_inscribirse) {
-        return { inscripcion: null, error: disponibilidad.mensaje };
-      }
-
-      // Proceder con la inscripción
-      const { data, error } = await supabase
+      // 1. Primero obtener los IDs de eventos en los que está inscrito
+      const { data: inscripciones } = await supabase
         .from('eventos_inscripciones')
-        .insert([{
-          evento_id: eventoId,
-          usuario_id: usuarioId,
-          estado_inscripcion: 'confirmado'
-        }])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error en inscripción:', error);
-        return { inscripcion: null, error: error.message };
-      }
-
-      return { inscripcion: data, error: null };
-    } catch (error: any) {
-      console.error('Error en inscribirseEvento:', error);
-      return { inscripcion: null, error: error.message };
-    }
-  }
-
-  /**
-   * Cancelar inscripción
-   */
-  async cancelarInscripcion(eventoId: string, usuarioId: string): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('eventos_inscripciones')
-        .update({ estado_inscripcion: 'cancelado' })
-        .eq('evento_id', eventoId)
+        .select('evento_id')
         .eq('usuario_id', usuarioId);
 
-      if (error) {
-        console.error('Error cancelando inscripción:', error);
-        return { success: false, error: error.message };
+      if (!inscripciones || inscripciones.length === 0) {
+        return [];
       }
 
-      return { success: true, error: null };
-    } catch (error: any) {
-      console.error('Error en cancelarInscripcion:', error);
-      return { success: false, error: error.message };
-    }
-  }
+      const eventosIds = inscripciones.map((i: any) => i.evento_id);
 
-  /**
-   * Obtener inscripciones del usuario
-   */
-  async obtenerInscripcionesUsuario(usuarioId: string): Promise<{ inscripciones: (EventoInscripcion & { evento: Evento })[]; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos_inscripciones')
-        .select(`
-          *,
-          evento:eventos(*)
-        `)
-        .eq('usuario_id', usuarioId)
-        .order('fecha_inscripcion', { ascending: false });
-
-      if (error) {
-        console.error('Error obteniendo inscripciones del usuario:', error);
-        return { inscripciones: [], error: error.message };
-      }
-
-      return { inscripciones: data || [], error: null };
-    } catch (error: any) {
-      console.error('Error en obtenerInscripcionesUsuario:', error);
-      return { inscripciones: [], error: error.message };
-    }
-  }
-
-  /**
-   * Verificar si el usuario está inscrito en un evento
-   */
-  async verificarInscripcion(eventoId: string, usuarioId: string): Promise<{ inscrito: boolean; inscripcion: EventoInscripcion | null; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos_inscripciones')
+      // 2. Obtener los eventos usando solo la tabla eventos
+      let query = supabase
+        .from('eventos')
         .select('*')
+        .in('id', eventosIds)
+        .order('fecha_inicio', { ascending: false });
+
+      // Aplicar filtros
+      if (filtros?.estado) {
+        if (filtros.estado === 'proximos') {
+          query = query.gte('fecha_inicio', new Date().toISOString());
+        } else if (filtros.estado === 'pasados') {
+          query = query.lt('fecha_inicio', new Date().toISOString());
+        }
+      }
+
+      if (filtros?.categoria) {
+        query = query.eq('categoria', filtros.categoria);
+      }
+
+      if (filtros?.modalidad) {
+        query = query.eq('modalidad', filtros.modalidad);
+      }
+
+      if (filtros?.es_gratuito !== undefined) {
+        query = query.eq('es_gratuito', filtros.es_gratuito);
+      }
+
+      if (filtros?.tipo_evento) {
+        query = query.eq('tipo_evento', filtros.tipo_evento);
+      }
+
+      if (filtros?.fecha_desde) {
+        query = query.gte('fecha_inicio', filtros.fecha_desde);
+      }
+
+      if (filtros?.fecha_hasta) {
+        query = query.lte('fecha_inicio', filtros.fecha_hasta);
+      }
+
+      if (filtros?.busqueda) {
+        query = query.or(`titulo.ilike.%${filtros.busqueda}%,descripcion.ilike.%${filtros.busqueda}%,descripcion_corta.ilike.%${filtros.busqueda}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error al obtener eventos del usuario:', error);
+        throw error;
+      }
+
+      // Mapear datos a EventoCompleto
+      return data.map((evento: any) => ({
+        ...evento,
+        inscrito: true, // Si está aquí es porque está inscrito
+        fecha_inscripcion: null, // Por simplicidad
+        // Valores por defecto para campos que pueden ser null
+        precio: evento.precio || 0,
+        capacidad_maxima: evento.capacidad_maxima || 100,
+        participantes_inscritos: evento.participantes_inscritos || 0,
+        es_todo_el_dia: evento.es_todo_el_dia || false,
+        es_gratuito: evento.es_gratuito || false,
+        requiere_inscripcion: evento.requiere_inscripcion || true,
+        es_publico: evento.es_publico || true,
+        es_destacado: evento.es_destacado || false,
+        permite_grabacion: evento.permite_grabacion || true,
+        acepta_invitados: evento.acepta_invitados || false,
+        total_visualizaciones: evento.total_visualizaciones || 0,
+        calificacion_promedio: evento.calificacion_promedio || 0,
+        total_calificaciones: evento.total_calificaciones || 0,
+        zona_horaria: evento.zona_horaria || 'America/Bogota',
+        moneda: evento.moneda || 'COP',
+        estado: evento.estado || 'programado',
+        tipo_evento: evento.tipo_evento || 'masterclass',
+        modalidad: evento.modalidad || 'online'
+      }));
+    } catch (error) {
+      console.error('Error en obtenerEventosUsuario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene un evento específico por su ID
+   */
+  async obtenerEventoPorId(eventoId: string): Promise<EventoCompleto | null> {
+    try {
+      const { data, error } = await supabase
+        .from('eventos')
+        .select('*')
+        .eq('id', eventoId)
+        .single();
+
+      if (error) {
+        console.error('Error al obtener evento:', error);
+        return null;
+      }
+
+      return {
+        ...data,
+        inscrito: false,
+        fecha_inscripcion: null,
+        // Valores por defecto
+        precio: data.precio || 0,
+        capacidad_maxima: data.capacidad_maxima || 100,
+        participantes_inscritos: data.participantes_inscritos || 0,
+        es_todo_el_dia: data.es_todo_el_dia || false,
+        es_gratuito: data.es_gratuito || false,
+        requiere_inscripcion: data.requiere_inscripcion || true,
+        es_publico: data.es_publico || true,
+        es_destacado: data.es_destacado || false,
+        permite_grabacion: data.permite_grabacion || true,
+        acepta_invitados: data.acepta_invitados || false,
+        total_visualizaciones: data.total_visualizaciones || 0,
+        calificacion_promedio: data.calificacion_promedio || 0,
+        total_calificaciones: data.total_calificaciones || 0,
+        zona_horaria: data.zona_horaria || 'America/Bogota',
+        moneda: data.moneda || 'COP',
+        estado: data.estado || 'programado',
+        tipo_evento: data.tipo_evento || 'masterclass',
+        modalidad: data.modalidad || 'online'
+      };
+    } catch (error) {
+      console.error('Error en obtenerEventoPorId:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Inscribe a un usuario en un evento
+   */
+  async inscribirseEnEvento(eventoId: string, usuarioId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('eventos_inscripciones')
+        .insert({
+          evento_id: eventoId,
+          usuario_id: usuarioId
+        });
+
+      if (error) {
+        console.error('Error al inscribirse en evento:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error en inscribirseEnEvento:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verifica si un usuario está inscrito en un evento
+   */
+  async verificarInscripcion(eventoId: string, usuarioId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('eventos_inscripciones')
+        .select('evento_id')
         .eq('evento_id', eventoId)
         .eq('usuario_id', usuarioId)
-        .eq('estado_inscripcion', 'confirmado')
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error verificando inscripción:', error);
-        return { inscrito: false, inscripcion: null, error: error.message };
+        console.error('Error al verificar inscripción:', error);
+        return false;
       }
 
-      return { inscrito: !!data, inscripcion: data || null, error: null };
-    } catch (error: any) {
+      return !!data;
+    } catch (error) {
       console.error('Error en verificarInscripcion:', error);
-      return { inscrito: false, inscripcion: null, error: error.message };
+      return false;
     }
   }
 
   /**
-   * Calificar un evento
+   * Obtiene las categorías disponibles de eventos
    */
-  async calificarEvento(eventoId: string, usuarioId: string, calificacion: number, comentario?: string): Promise<{ success: boolean; error: string | null }> {
-    try {
-      const { error } = await supabase
-        .from('eventos_inscripciones')
-        .update({
-          calificacion,
-          comentario_calificacion: comentario,
-          fecha_calificacion: new Date().toISOString()
-        })
-        .eq('evento_id', eventoId)
-        .eq('usuario_id', usuarioId);
-
-      if (error) {
-        console.error('Error calificando evento:', error);
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error: any) {
-      console.error('Error en calificarEvento:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // ========== GESTIÓN DE COMENTARIOS ==========
-
-  /**
-   * Obtener comentarios de un evento
-   */
-  async obtenerComentariosEvento(eventoId: string): Promise<{ comentarios: EventoComentario[]; error: string | null }> {
+  async obtenerCategorias(): Promise<string[]> {
     try {
       const { data, error } = await supabase
-        .from('eventos_comentarios')
-        .select(`
-          *,
-          usuario:perfiles!eventos_comentarios_usuario_id_fkey(nombre, apellido, url_foto_perfil)
-        `)
-        .eq('evento_id', eventoId)
-        .order('created_at', { ascending: true });
+        .from('eventos')
+        .select('categoria')
+        .not('categoria', 'is', null);
 
       if (error) {
-        console.error('Error obteniendo comentarios:', error);
-        return { comentarios: [], error: error.message };
+        console.error('Error al obtener categorías:', error);
+        return [];
       }
 
-      return { comentarios: data || [], error: null };
-    } catch (error: any) {
-      console.error('Error en obtenerComentariosEvento:', error);
-      return { comentarios: [], error: error.message };
+      const categorias = [...new Set(data.map((item: any) => item.categoria).filter(Boolean))] as string[];
+      return categorias;
+    } catch (error) {
+      console.error('Error en obtenerCategorias:', error);
+      return [];
     }
   }
 
   /**
-   * Agregar comentario a un evento
+   * Obtiene los tipos de evento disponibles
    */
-  async agregarComentario(
-    eventoId: string, 
-    usuarioId: string, 
-    mensaje: string, 
-    tipoMensaje: 'comentario' | 'pregunta' = 'comentario',
-    mensajePadreId?: string
-  ): Promise<{ comentario: EventoComentario | null; error: string | null }> {
+  async obtenerTiposEvento(): Promise<string[]> {
     try {
       const { data, error } = await supabase
-        .from('eventos_comentarios')
-        .insert([{
-          evento_id: eventoId,
-          usuario_id: usuarioId,
-          mensaje,
-          tipo_mensaje: tipoMensaje,
-          mensaje_padre_id: mensajePadreId
-        }])
-        .select(`
-          *,
-          usuario:perfiles!eventos_comentarios_usuario_id_fkey(nombre, apellido, url_foto_perfil)
-        `)
-        .single();
+        .from('eventos')
+        .select('tipo_evento')
+        .not('tipo_evento', 'is', null);
 
       if (error) {
-        console.error('Error agregando comentario:', error);
-        return { comentario: null, error: error.message };
+        console.error('Error al obtener tipos de evento:', error);
+        return [];
       }
 
-      return { comentario: data, error: null };
-    } catch (error: any) {
-      console.error('Error en agregarComentario:', error);
-      return { comentario: null, error: error.message };
-    }
-  }
-
-  // ========== GESTIÓN DE MATERIALES ==========
-
-  /**
-   * Obtener materiales de un evento
-   */
-  async obtenerMaterialesEvento(eventoId: string): Promise<{ materiales: EventoMaterial[]; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos_materiales')
-        .select('*')
-        .eq('evento_id', eventoId)
-        .order('orden_visualizacion', { ascending: true });
-
-      if (error) {
-        console.error('Error obteniendo materiales:', error);
-        return { materiales: [], error: error.message };
-      }
-
-      return { materiales: data || [], error: null };
-    } catch (error: any) {
-      console.error('Error en obtenerMaterialesEvento:', error);
-      return { materiales: [], error: error.message };
+      const tipos = [...new Set(data.map((item: any) => item.tipo_evento).filter(Boolean))] as string[];
+      return tipos;
+    } catch (error) {
+      console.error('Error en obtenerTiposEvento:', error);
+      return [];
     }
   }
 
   /**
-   * Subir material a un evento
+   * Formatea la fecha de un evento para mostrar
    */
-  async subirMaterial(materialData: Partial<EventoMaterial>): Promise<{ material: EventoMaterial | null; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .from('eventos_materiales')
-        .insert([materialData])
-        .select('*')
-        .single();
+  formatearFechaEvento(fecha: string, esFinalizacion: boolean = false): string {
+    const fechaObj = new Date(fecha);
+    const ahora = new Date();
+    
+    const opciones: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Bogota'
+    };
 
-      if (error) {
-        console.error('Error subiendo material:', error);
-        return { material: null, error: error.message };
-      }
-
-      return { material: data, error: null };
-    } catch (error: any) {
-      console.error('Error en subirMaterial:', error);
-      return { material: null, error: error.message };
+    const fechaFormateada = fechaObj.toLocaleDateString('es-CO', opciones);
+    
+    if (esFinalizacion) {
+      return `Finaliza: ${fechaFormateada}`;
     }
-  }
-
-  // ========== UTILIDADES ==========
-
-  /**
-   * Verificar disponibilidad de evento
-   */
-  async verificarDisponibilidad(eventoId: string, usuarioId: string): Promise<{ disponibilidad: any; error: string | null }> {
-    try {
-      const { data, error } = await supabase
-        .rpc('verificar_disponibilidad_evento', { 
-          evento_uuid: eventoId, 
-          usuario_uuid: usuarioId 
-        });
-
-      if (error) {
-        console.error('Error verificando disponibilidad:', error);
-        return { disponibilidad: null, error: error.message };
-      }
-
-      return { disponibilidad: data, error: null };
-    } catch (error: any) {
-      console.error('Error en verificarDisponibilidad:', error);
-      return { disponibilidad: null, error: error.message };
+    
+    if (fechaObj < ahora) {
+      return `Finalizó: ${fechaFormateada}`;
     }
+    
+    return fechaFormateada;
   }
 
   /**
-   * Obtener estadísticas de evento
+   * Obtiene el estado visual del evento
    */
-  async obtenerEstadisticasEvento(eventoId: string): Promise<{ 
-    estadisticas: { 
-      total_inscritos: number; 
-      total_asistentes: number; 
-      calificacion_promedio: number; 
-      total_comentarios: number 
-    } | null; 
-    error: string | null 
-  }> {
-    try {
-      const [
-        { count: totalInscritos },
-        { count: totalAsistentes },
-        { data: evento },
-        { count: totalComentarios }
-      ] = await Promise.all([
-        supabase
-          .from('eventos_inscripciones')
-          .select('*', { count: 'exact', head: true })
-          .eq('evento_id', eventoId)
-          .eq('estado_inscripcion', 'confirmado'),
-        supabase
-          .from('eventos_inscripciones')
-          .select('*', { count: 'exact', head: true })
-          .eq('evento_id', eventoId)
-          .eq('estado_inscripcion', 'asistio'),
-        supabase
-          .from('eventos')
-          .select('calificacion_promedio')
-          .eq('id', eventoId)
-          .single(),
-        supabase
-          .from('eventos_comentarios')
-          .select('*', { count: 'exact', head: true })
-          .eq('evento_id', eventoId)
-          .eq('es_aprobado', true)
-      ]);
+  obtenerEstadoEvento(fecha_inicio: string, fecha_fin: string | null, estado: string): {
+    texto: string;
+    clase: string;
+    color: string;
+  } {
+    const ahora = new Date();
+    const fechaInicio = new Date(fecha_inicio);
+    const fechaFin = fecha_fin ? new Date(fecha_fin) : null;
 
-      return {
-        estadisticas: {
-          total_inscritos: totalInscritos || 0,
-          total_asistentes: totalAsistentes || 0,
-          calificacion_promedio: evento?.calificacion_promedio || 0,
-          total_comentarios: totalComentarios || 0
-        },
-        error: null
-      };
-    } catch (error: any) {
-      console.error('Error obteniendo estadísticas:', error);
-      return { estadisticas: null, error: error.message };
+    if (estado === 'cancelado') {
+      return { texto: 'Cancelado', clase: 'cancelado', color: 'text-red-500' };
     }
+
+    if (fechaFin && ahora > fechaFin) {
+      return { texto: 'Finalizado', clase: 'finalizado', color: 'text-gray-500' };
+    }
+
+    if (ahora >= fechaInicio && (!fechaFin || ahora <= fechaFin)) {
+      return { texto: 'En vivo', clase: 'en-vivo', color: 'text-green-500' };
+    }
+
+    if (ahora < fechaInicio) {
+      return { texto: 'Próximo', clase: 'proximo', color: 'text-blue-500' };
+    }
+
+    return { texto: 'Programado', clase: 'programado', color: 'text-yellow-500' };
   }
 }
 
-// Exportar instancia singleton
 export const eventosService = new EventosService(); 

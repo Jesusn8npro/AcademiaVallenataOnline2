@@ -235,6 +235,16 @@
             <span>Comunidad</span>
             <span class="badge-nav">12</span>
           </button>
+
+          <button class="enlace-nav con-badge" on:click={() => navegarA('/mensajes')}>
+            <div class="icono-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <span>Mensajes</span>
+            <span class="badge-nav nuevo">2</span>
+          </button>
         </div>
 
         <!-- Sección Personal para Estudiantes -->
@@ -296,6 +306,13 @@
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>
             </div>
             <span>Contenido</span>
+          </button>
+          <button class="enlace-nav con-badge" on:click={() => navegarA('/mensajes')}>
+            <div class="icono-nav">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span>Mensajes</span>
+            <span class="badge-nav nuevo">5</span>
           </button>
           <button class="enlace-nav" on:click={() => navegarA('/administrador/cursos')}>
             <div class="icono-nav">

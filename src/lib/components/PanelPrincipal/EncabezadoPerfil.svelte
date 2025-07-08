@@ -4,6 +4,8 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import ModalVisorImagenPerfil from './ModalVisorImagenPerfil.svelte';
   import { crearPublicacionAutomaticaSegura } from '$lib/services/publicacionesAutoService';
+  import { goto } from '$app/navigation';
+  import { mensajeriaService } from '$lib/services/mensajeriaService';
 
   // Crear dispatcher para comunicar el estado del modal
   const dispatch = createEventDispatcher();
@@ -40,6 +42,7 @@
   let refMenuAvatar: HTMLElement | null = null;
   let refInputPortada: HTMLInputElement | null = null;
   let refInputAvatar: HTMLInputElement | null = null;
+  let enviandoMensaje = false;
 
   // --- ESTADO MODAL ESTILO FACEBOOK ---
   let modalAbierto = false;
@@ -194,6 +197,82 @@
       mensaje = '';
       tipoMensaje = null;
     }, 3000);
+  }
+
+  // ============================================
+  // FUNCIÓN PARA ENVIAR MENSAJE
+  // ============================================
+  async function enviarMensajeAlUsuario() {
+    console.log('💬 Iniciando proceso para enviar mensaje al usuario');
+    
+    // Verificar que tenemos el ID del usuario del perfil
+    if (!userId) {
+      alert('Error: No se puede identificar al usuario');
+      return;
+    }
+
+    enviandoMensaje = true;
+
+    try {
+      // Obtener usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Debes iniciar sesión para enviar mensajes');
+        goto('/auth/login');
+        return;
+      }
+
+      // No permitir enviarse mensajes a sí mismo
+      if (user.id === userId) {
+        alert('No puedes enviarte un mensaje a ti mismo');
+        return;
+      }
+
+      console.log('👤 Usuario destino (userId):', userId);
+      console.log('👤 Usuario actual:', user.id);
+
+      // Buscar si ya existe un chat privado entre estos usuarios
+      const { chats } = await mensajeriaService.obtenerChatsUsuario();
+      
+      let chatExistente = chats.find((chat: any) => {
+        if (chat.es_grupal) return false;
+        
+        // Verificar si el chat tiene exactamente 2 miembros y uno de ellos es el usuario destino
+        const tieneUsuarioDestino = chat.miembros?.some((m: any) => m.usuario_id === userId);
+        const tieneUsuarioActual = chat.miembros?.some((m: any) => m.usuario_id === user.id);
+        const esChatPrivado = chat.miembros?.length === 2;
+        
+        return tieneUsuarioDestino && tieneUsuarioActual && esChatPrivado;
+      });
+
+      if (chatExistente) {
+        console.log('💬 Chat existente encontrado, navegando...', chatExistente.id);
+        goto(`/mensajes/${chatExistente.id}`);
+      } else {
+        console.log('📝 Creando nuevo chat privado...');
+        
+        // Crear nuevo chat privado
+        const { chat: nuevoChat, error: errorCreacion } = await mensajeriaService.crearChat({
+          es_grupal: false,
+          miembros_ids: [user.id, userId]
+        });
+
+        if (errorCreacion || !nuevoChat) {
+          console.error('Error creando chat:', errorCreacion);
+          alert('Error al crear la conversación: ' + errorCreacion);
+          return;
+        }
+
+        console.log('✅ Nuevo chat creado:', nuevoChat.id);
+        goto(`/mensajes/${nuevoChat.id}`);
+      }
+      
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      alert('Error inesperado al crear la conversación');
+    } finally {
+      enviandoMensaje = false;
+    }
   }
 
   function abrirMenuPortada(e: any) {
@@ -487,9 +566,13 @@
         <!-- Información eliminada como solicitó el usuario -->
       </div>
       <div class="acciones-perfil-publico">
-        <button class="boton-mensaje" on:click={() => alert('Función de mensajes próximamente')}>
-          ✉️ Mensaje
-        </button>
+                    <button class="boton-mensaje" on:click={enviarMensajeAlUsuario} disabled={enviandoMensaje}>
+              {#if enviandoMensaje}
+                <span class="spinner-pequeño"></span> Enviando...
+              {:else}
+                ✉️ Mensaje
+              {/if}
+            </button>
         <button class="boton-seguir" on:click={() => alert('Función de seguir próximamente')}>
           ➕ Seguir
         </button>
@@ -834,6 +917,33 @@
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
   }
 
+  .boton-mensaje:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .boton-mensaje:disabled:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  }
+
+  .spinner-pequeño {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 2px solid white;
+    animation: spin 1s linear infinite;
+    margin-right: 4px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
   .boton-seguir {
     background: linear-gradient(135deg, #10b981, #059669);
     color: white;
@@ -996,11 +1106,7 @@
 
   /* Tablet (600px - 900px) - Estilo Facebook */
   @media (max-width: 900px) {
-    .contenedor-encabezado-perfil {
-      border-radius: 0; /* Sin border-radius - estilo Facebook */
-      margin: 0; /* Sin márgenes - estilo Facebook */
-      box-shadow: none; /* Sin sombra - estilo Facebook */
-    }
+
     
     .contenedor-portada { 
       height:240px;
@@ -1016,33 +1122,18 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      
     }
     .info-usuario { 
       flex-direction: column; 
-      align-items: center; 
-      gap: 20px; 
-      margin-top: 100px;
-      padding: 0 1rem;
       width: 100vw; /* Ancho completo - estilo Facebook */
       margin-left: calc(-50vw + 50%); /* Compensar el centrado del contenedor */
       border-radius: 0; /* Sin border-radius - estilo Facebook */
-      box-shadow: none; /* Sin sombra - estilo Facebook */
     }
     .seccion-estadisticas, .seccion-central, .seccion-accion { 
       width: 100%; 
       flex: none; 
-    }
-    .seccion-estadisticas { justify-content: space-around; }
-    .separador-vertical { display: none; }
-    .icono-camara-portada { padding: 6px; border-radius: 50%; }
-    .menu-flotante-avatar {
-      bottom: 150px;
-      min-width: 95vw;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0,0,0,0.1);
-      left: 50%;
-      transform: translateX(-50%, 0);
+      margin-bottom: 15px;
     }
     .avatar-interactivo {
     position: relative;
@@ -1062,20 +1153,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 2px;
     }
     /* === SECCIONES INFO === */
     .seccion-estadisticas {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 10px;
     margin-top: 10px;
-    padding: 0 10px;
+    padding: 20px 10px;
   }
 
   .estadistica {
     flex: 1;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     gap: 2px;
   }
 
@@ -1091,24 +1182,16 @@
     text-align: center;
   }
 
-  .nombre-usuario {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--gris-oscuro);
-    margin: 0 auto;
-    text-align: center;
-    line-height: 1.2;
-    padding: 0 10px;
-  }
 
   .estrellas-rating {
     justify-content: center;
     margin-bottom: 8px;
-    margin-top: 6px;
+    margin-top: -10px;
   }
 
   .estrellas {
     font-size: 1.4rem;
+    color: #0c0c08
   }
 
   .nivel-usuario {
@@ -1117,11 +1200,7 @@
 
   .badges-usuario {
     justify-content: center;
-  }
-
-  .acciones-perfil-publico {
-    flex-direction: row;
-    gap: 4px;
+    margin-top: -15px;
   }
 
   .boton-mensaje,

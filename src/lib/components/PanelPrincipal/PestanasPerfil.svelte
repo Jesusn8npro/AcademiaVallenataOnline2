@@ -13,7 +13,8 @@
     comunidad: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='8' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><circle cx='16' cy='8' r='3.5' stroke='currentColor' stroke-width='1.5'/><path d='M2 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5M10 20c0-3.5 6-3.5 6-3.5s6 0 6 3.5' stroke='currentColor' stroke-width='1.5'/></svg>`,
     publicaciones: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='6' y='4' width='12' height='16' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M9 9h6M9 13h6' stroke='currentColor' stroke-width='1.5'/></svg>`,
     actividad: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24' stroke='currentColor' stroke-width='1.5'/></svg>`,
-    configuracion: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1 1.51V5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' stroke='currentColor' stroke-width='1.5'/></svg>`
+    configuracion: `<svg width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='2.5' stroke='currentColor' stroke-width='1.5'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1 1.51V5a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' stroke='currentColor' stroke-width='1.5'/></svg>`,
+    eventos: `<svg width='24' height='24' viewBox='0 0 24 24'><rect x='3' y='4' width='18' height='18' rx='2' ry='2' stroke='currentColor' stroke-width='1.5' fill='none'/><line x1='16' y1='2' x2='16' y2='6' stroke='currentColor' stroke-width='1.5'/><line x1='8' y1='2' x2='8' y2='6' stroke='currentColor' stroke-width='1.5'/><line x1='3' y1='10' x2='21' y2='10' stroke='currentColor' stroke-width='1.5'/><circle cx='8' cy='14' r='1.5' fill='currentColor'/><circle cx='12' cy='18' r='1.5' fill='currentColor'/><circle cx='16' cy='14' r='1.5' fill='currentColor'/></svg>`
   };
 
   // Icono para grabaciones
@@ -30,6 +31,7 @@
     // Pestañas para perfil privado
     { label: 'Perfil', icon: iconos.perfil, route: '/mi-perfil' },
     { label: 'Mis Cursos', icon: iconos.cursos, route: '/mis-cursos' },
+    { label: 'Eventos', icon: iconos.eventos, route: '/mis-eventos' },
     { label: 'Publicaciones', icon: iconos.publicaciones, route: '/publicaciones' },
     { label: 'Grabaciones', icon: iconoGrabaciones, route: '/grabaciones' },
     { label: 'Configuración', icon: iconos.configuracion, route: '/configuracion' }
@@ -127,7 +129,7 @@
               });
             } else {
               // Para perfil privado, navegación sin scroll para pestañas del perfil
-              const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
+              const rutasPerfilSinScroll = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'];
               
               if (rutasPerfilSinScroll.includes(pestaña.route)) {
                 goto(pestaña.route, { 
@@ -164,7 +166,7 @@
   .contenedor-pestañas-wrapper {
     position: relative;
     width: 100%;
-    margin-top: -60px;
+    margin-top: -20px;
     z-index: 20;
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
@@ -178,7 +180,7 @@
 
   .nav-container-interno {
     position: relative;
-    margin-top: 50px;
+    margin-top: 25px;
   }
 
   .navegacion-pestañas {
@@ -194,22 +196,22 @@
   .pestaña-item {
     display: flex;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 6px 8px;
     color: #4b5563; /* Gris más oscuro para mejor lectura */
     text-decoration: none;
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex: 1; /* Distribución equitativa en escritorio */
-    min-width: 80px;
+    min-width: 70px;
     text-align: center;
   }
   .contenido-pestaña {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 8px 4px;
-    border-radius: 12px;
+    gap: 3px;
+    padding: 6px 3px;
+    border-radius: 10px;
     width: 100%;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -226,11 +228,11 @@
   }
 
   .icono {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
   }
   .etiqueta {
-    font-size: 0.7rem; /* 11.2px */
+    font-size: 0.65rem; /* 10.4px */
     font-weight: 600;
     letter-spacing: 0.02em;
   }
@@ -238,12 +240,12 @@
   .pestaña-item::after {
     content: '';
     position: absolute;
-    bottom: 4px;
-    left: 20%;
-    width: 60%;
-    height: 4px;
+    bottom: 2px;
+    left: 25%;
+    width: 50%;
+    height: 3px;
     background: #2563eb;
-    border-radius: 10px;
+    border-radius: 6px;
     transform: scaleX(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: center;
@@ -260,14 +262,14 @@
     background-color: #2563eb; /* Azul primario */
     border: none;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     display: none; /* Ocultos por defecto */
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 25;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
     transition: all 0.2s ease;
     opacity: 0;
     pointer-events: none;
@@ -281,14 +283,14 @@
     transform: translateY(-50%) scale(1.1);
   }
   .boton-scroll.izquierda {
-    left: -18px;
+    left: -15px;
   }
   .boton-scroll.derecha {
-    right: -18px;
+    right: -15px;
   }
   .boton-scroll svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     stroke: #ffffff; /* Blanco */
     stroke-width: 2.5;
     fill: none;
@@ -311,14 +313,26 @@
     }
     .pestaña-item {
       flex: 0 0 auto; /* No crecen, no se encogen, tamaño automático */
-      width: 30%; /* Muestra ~3 pestañas */
+      width: 32%; /* Muestra ~3 pestañas */
       scroll-snap-align: center;
+      padding: 4px 6px;
+    }
+    .contenido-pestaña {
+      padding: 4px 2px;
+      gap: 2px;
+    }
+    .icono {
+      width: 20px;
+      height: 20px;
+    }
+    .etiqueta {
+      font-size: 0.6rem;
     }
     .boton-scroll {
       display: flex; /* Muestra los botones en móvil */
     }
     .contenedor-pestañas-wrapper {
-      margin-top: -30px;
+      margin-top: -20px;
       z-index: 10;
       width: 100%;
     }
@@ -326,12 +340,31 @@
     .nav-container-interno {
       width: 100%;
       padding: 0;
+      margin-top: 15px;
     }
   }
 
   @media (max-width: 480px) {
     .pestaña-item {
-      width: 40%; /* Muestra ~2.5 pestañas */
+      width: 35%; /* Muestra ~2.8 pestañas */
+      padding: 3px 4px;
+    }
+    .contenido-pestaña {
+      padding: 10px 1px;
+    }
+    .icono {
+      width: 18px;
+      height: 18px;
+    }
+    .etiqueta {
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+    .contenedor-pestañas-wrapper {
+      margin-top: -30px;
+    }
+    .nav-container-interno {
+      margin-top: 10px;
     }
   }
 </style>

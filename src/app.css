@@ -34,6 +34,12 @@ html, body {
 #svelte {
   background: #fff !important;
   min-height: 100vh;
+  /* Prevenir cursor de texto en el contenedor principal */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default;
 }
 
 .layout-autenticado {
@@ -146,4 +152,319 @@ html, body {
 .pagina-blog,
 .pagina-articulo-blog {
   margin-left: 0 !important;
+}
+
+/* FALLBACKS PARA NAVEGADORES ANTIGUOS */
+/* Soporte para navegadores sin CSS Variables */
+html {
+  color: #1f2937; /* Fallback para navegadores sin variables CSS */
+  background-color: #ffffff;
+}
+
+/* Fallbacks para navegadores sin soporte de variables CSS */
+.main-content {
+  width: 100%; /* Fallback para navegadores sin vw */
+}
+
+/* Fallbacks para propiedades modernas */
+.flex {
+  display: -webkit-box; /* Fallback para webkit antiguo */
+  display: -webkit-flex; /* Fallback para webkit */
+  display: flex;
+}
+
+/* Prevenir zoom automático en iOS */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Fallback para navegadores sin soporte de object-fit */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ========== PREVENIR CURSOR DE TEXTO EN ELEMENTOS NO EDITABLES ========== */
+/* Aplicar a elementos comunes que NO deberían mostrar cursor de texto */
+
+/* Elementos que NUNCA deben mostrar cursor de texto */
+img, 
+svg, 
+canvas, 
+video, 
+audio,
+button, 
+[role="button"],
+.btn,
+.boton,
+.card,
+.tarjeta,
+nav,
+header,
+footer,
+aside,
+.sidebar,
+.menu,
+.navbar,
+.icon,
+.icono,
+.logo,
+.banner,
+.hero,
+.modal,
+.dropdown,
+.tooltip,
+.tab,
+.badge,
+.chip,
+.avatar,
+.thumbnail,
+.preview,
+/* Elementos específicos que comúnmente causan problemas */
+div,
+span:not(.texto-seleccionable),
+section,
+article:not(.contenido-articulo),
+main,
+figure,
+picture,
+.container,
+.wrapper,
+.layout,
+.grid,
+.flex,
+.component,
+.widget {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  cursor: default !important;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Regla más específica para elementos problemáticos */
+* {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Aplicar por defecto a todos los elementos excepto inputs */
+*:not(input):not(textarea):not([contenteditable="true"]):not(.texto-seleccionable):not(.contenido-articulo):not(p):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default;
+}
+
+/* Elementos clickeables que deben mostrar pointer */
+button,
+[role="button"],
+.btn,
+.boton,
+.link,
+.enlace,
+a,
+.clickeable,
+.cursor-pointer,
+[onclick],
+[tabindex]:not([tabindex="-1"]),
+select,
+summary,
+.menu-item,
+.nav-item,
+.card.clickeable,
+.tarjeta.clickeable {
+  cursor: pointer !important;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Elementos de formulario que SÍ deben mantener cursor de texto */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea,
+[contenteditable="true"],
+.editor,
+.input-text {
+  cursor: text !important;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+/* Aplicar a clases específicas de la academia */
+.academia-logo,
+.perfil-avatar,
+.curso-card,
+.tutorial-card,
+.evento-card,
+.publicacion-card,
+.notificacion,
+.banner-slider,
+.menu-lateral,
+.pestana,
+.tab-button,
+.social-button,
+.play-button,
+.video-thumbnail,
+.imagen-curso,
+.miniatura,
+.portada,
+.header-perfil,
+.info-usuario,
+.estadisticas,
+.contador,
+.progreso,
+.ranking,
+.badge-membresia,
+.tag,
+.categoria,
+.filtro {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  cursor: default !important;
+}
+
+/* Elementos clickeables específicos de la academia */
+.curso-card,
+.tutorial-card,
+.evento-card,
+.publicacion-card,
+.avatar-clickeable,
+.perfil-link,
+.menu-item,
+.tab-button,
+.filtro-button,
+.social-button,
+.play-button,
+.like-button,
+.share-button,
+.comment-button,
+.follow-button,
+.subscribe-button {
+  cursor: pointer !important;
+}
+
+/* Texto seleccionable solo donde tiene sentido */
+p, 
+h1, h2, h3, h4, h5, h6,
+.texto-seleccionable,
+.contenido-articulo,
+.descripcion-curso,
+.comentario-texto,
+.mensaje-texto,
+.post-content,
+.bio-usuario {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  cursor: text;
+}
+
+/* Prevenir arrastre de imágenes */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  pointer-events: auto;
+}
+
+/* Aplicar globalmente a divs que contienen solo imágenes/iconos */
+div:has(> img:only-child),
+div:has(> svg:only-child),
+div:has(> .icon:only-child),
+div:has(> .icono:only-child),
+.imagen-container,
+.icon-container,
+.logo-container,
+.avatar-container,
+.thumbnail-container {
+  user-select: none !important;
+  cursor: default !important;
+}
+
+/* Mejorar experiencia táctil en móviles */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  .btn,
+  .boton,
+  a,
+  .clickeable,
+  .card.clickeable,
+  .tarjeta.clickeable {
+    -webkit-tap-highlight-color: rgba(255, 102, 0, 0.1);
+    tap-highlight-color: rgba(255, 102, 0, 0.1);
+  }
+  
+  /* Prevenir zoom en inputs en iOS */
+  input, select, textarea {
+    font-size: 16px;
+    transform-origin: left top;
+  }
+}
+
+/* === REGLAS DE EMERGENCIA PARA CASOS EXTREMOS === */
+/* Si aún hay problemas, estas reglas los solucionarán */
+
+/* Aplicar a elementos raíz comunes */
+html * {
+  -webkit-touch-callout: none;
+}
+
+/* Aplicar específicamente a elementos de Svelte */
+[class*="svelte-"] {
+  user-select: none !important;
+  cursor: default !important;
+}
+
+/* Aplicar a elementos con data attributes */
+[data-*]:not(input):not(textarea):not([contenteditable]) {
+  user-select: none !important;
+  cursor: default !important;
+}
+
+/* Regla catch-all para elementos problemáticos */
+body *:not(input):not(textarea):not([contenteditable="true"]):not(p):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(.texto-seleccionable):not(.contenido-articulo):not(.comentario-texto):not(.mensaje-texto):not(.post-content):not(.bio-usuario) {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: default !important;
+}
+
+/* Forzar cursor pointer solo en elementos que lo necesitan */
+body button,
+body a,
+body [role="button"],
+body [onclick],
+body .btn,
+body .boton,
+body .clickeable,
+body .link,
+body .enlace {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+/* Asegurar que inputs mantengan cursor de texto */
+body input,
+body textarea,
+body [contenteditable="true"] {
+  cursor: text !important;
+  user-select: text !important;
 }

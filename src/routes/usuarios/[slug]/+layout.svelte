@@ -119,7 +119,7 @@
         nombreCompleto={perfilAdaptado.nombre_completo}
         correoElectronico={perfilAdaptado.correo_electronico || ''}
         posicionPortadaY={perfilAdaptado.posicion_img_portada}
-        userId={null}
+        userId={perfilAdaptado.id}
         stats={statsAdaptadas}
         nivelUsuario={usuarioPublico?.nivel_usuario || 1}
         rolUsuario={(() => {
