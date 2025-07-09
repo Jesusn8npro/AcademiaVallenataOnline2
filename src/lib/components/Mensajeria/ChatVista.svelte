@@ -29,14 +29,6 @@
 	let mostrarInfoPanel = false;
 	let mostrarConfiguracion = false;
 	let buscandoMiembros = '';
-	
-	// ============================================
-	// ESTADOS PARA TIEMPO REAL Y SONIDOS
-	// ============================================
-	let audioMensaje: HTMLAudioElement;
-	let audioEnvio: HTMLAudioElement;
-	let sonidosHabilitados = true;
-	let tablaVisible = true; // Para detectar si la pestaña está activa
 
 	// ============================================
 	// INFORMACIÓN DEL OTRO USUARIO
@@ -124,20 +116,7 @@
 	// ============================================
 	// CICLO DE VIDA
 	// ============================================
-	// Variable para controlar si ya se configuró el tiempo real
-	let tiempoRealConfigurado = false;
-	let chatActualId = '';
-
 	onMount(async () => {
-		// Inicializar sonidos
-		inicializarSonidos();
-		
-		// Detectar visibilidad de la pestaña
-		configurarDeteccionVisibilidad();
-		
-		// Solicitar permisos de notificación
-		await solicitarPermisosNotificacion();
-		
 		// Obtener usuario actual
 		const { data: { user } } = await supabase.auth.getUser();
 		if (user) {
@@ -148,36 +127,23 @@
 				.single();
 			usuarioActual = perfil;
 		}
+
+		if (chat) {
+			await cargarMensajes();
+			await configurarTiempoReal();
+		}
 	});
 
 	onDestroy(async () => {
-		console.log('🔄 Destruyendo componente ChatVista...');
-		
-		// Desuscribirse de todas las suscripciones
-		await mensajeriaService.desuscribirseDeTodosLosChats();
-		
-		console.log('✅ Componente ChatVista destruido correctamente');
+		if (chat) {
+			await mensajeriaService.desuscribirseDeChat(chat.id);
+		}
 	});
 
-	// Reactividad para cambios de chat - MEJORADA
-	$: if (chat && usuarioActual && chat.id !== chatActualId) {
-		console.log(`🔄 Chat cambiado de [${chatActualId}] a [${chat.id}], recargando mensajes y configurando tiempo real...`);
-		
-		// Actualizar chat actual
-		chatActualId = chat.id;
-		
-		// Resetear estado
-		tiempoRealConfigurado = false;
-		
-		// Cargar mensajes y configurar tiempo real con un pequeño delay
-		setTimeout(async () => {
-			await cargarMensajes();
-			
-			if (!tiempoRealConfigurado && chat.id === chatActualId) {
-				await configurarTiempoReal();
-				tiempoRealConfigurado = true;
-			}
-		}, 100);
+	// Reactividad para cambios de chat
+	$: if (chat && usuarioActual) {
+		cargarMensajes();
+		configurarTiempoReal();
 	}
 
 	// ============================================
@@ -190,8 +156,6 @@
 	async function cargarMensajes() {
 		if (!chat || !usuarioActual) return;
 
-		console.log(`📥 Cargando mensajes para chat ${chat.id}...`);
-
 		try {
 				cargando = true;
 			error = '';
@@ -201,7 +165,6 @@
 
 			if (errorObtenido) {
 				error = errorObtenido;
-				console.log('❌ Error cargando mensajes:', errorObtenido);
 			} else {
 				// Marcar mensajes como propios y agregar información de usuario
 				const mensajesConOwnership = mensajesObtenidos.map(mensaje => ({
@@ -215,7 +178,6 @@
 					}
 				} as any));
 				
-				console.log(`✅ ${mensajesConOwnership.length} mensajes cargados correctamente`);
 				mensajes.set(mensajesConOwnership);
 					setTimeout(scrollAlFinal, 100);
 			}
@@ -298,9 +260,6 @@
 					} as any : m
 				)
 			);
-			
-			// 🔊 Reproducir sonido de envío exitoso
-			reproducirSonidoMensaje(true);
 		}
 
 		// Limpiar respuesta
@@ -317,143 +276,17 @@
 	}
 
 	/**
-	 * 🔊 Inicializar sonidos de mensajería
-	 */
-	function inicializarSonidos() {
-		// Sonido de mensaje recibido
-		audioMensaje = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBj2a2/LDcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LDcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LBcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LBcicEKoHS8tiJOQcZabvt');
-		
-		// Sonido de mensaje enviado  
-		audioEnvio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBj2a2/LDcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LDcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LBcicEKoHS8tiJOQcZabvt559NEAhSp+PwtmAcBzya2/LBcicEKoHS8tiJOQcZabvt');
-		
-		// Configurar volumen
-		if (audioMensaje) audioMensaje.volume = 0.7;
-		if (audioEnvio) audioEnvio.volume = 0.5;
-	}
-
-	/**
-	 * 👁️ Configurar detección de visibilidad de pestaña
-	 */
-	function configurarDeteccionVisibilidad() {
-		// Detectar cuando la pestaña cambia de visibilidad
-		function manejarCambioVisibilidad() {
-			tablaVisible = !document.hidden;
-		}
-		
-		document.addEventListener('visibilitychange', manejarCambioVisibilidad);
-		
-		// Limpiar al destruir componente
-		return () => {
-			document.removeEventListener('visibilitychange', manejarCambioVisibilidad);
-		};
-	}
-
-	/**
-	 * 🔊 Reproducir sonido de mensaje
-	 */
-	function reproducirSonidoMensaje(esPropio: boolean = false) {
-		if (!sonidosHabilitados) return;
-		
-		try {
-			if (esPropio && audioEnvio) {
-				audioEnvio.currentTime = 0;
-				audioEnvio.play().catch(e => console.log('No se pudo reproducir sonido de envío'));
-			} else if (!esPropio && audioMensaje) {
-				audioMensaje.currentTime = 0;
-				audioMensaje.play().catch(e => console.log('No se pudo reproducir sonido de mensaje'));
-			}
-		} catch (error) {
-			console.log('Error reproduciendo sonido:', error);
-		}
-	}
-
-	/**
-	 * 🔔 Solicitar permisos de notificación
-	 */
-	async function solicitarPermisosNotificacion() {
-		// Verificar si las notificaciones están disponibles
-		if (!('Notification' in window)) {
-			console.log('Este navegador no soporta notificaciones');
-			return;
-		}
-		
-		// Si ya tenemos permisos, no hacer nada
-		if (Notification.permission === 'granted') {
-			console.log('Permisos de notificación ya concedidos');
-			return;
-		}
-		
-		// Si están denegados, no insistir
-		if (Notification.permission === 'denied') {
-			console.log('Permisos de notificación denegados');
-			return;
-		}
-		
-		// Solicitar permisos silenciosamente
-		try {
-			const permission = await Notification.requestPermission();
-			console.log('Permisos de notificación:', permission);
-		} catch (error) {
-			console.log('Error solicitando permisos de notificación:', error);
-		}
-	}
-
-	/**
-	 * 📱 Mostrar notificación del sistema (si está disponible)
-	 */
-	function mostrarNotificacionSistema(mensaje: Mensaje) {
-		// Solo mostrar si la pestaña no está visible
-		if (tablaVisible) return;
-		
-		// Verificar permisos de notificación
-		if (Notification.permission === 'granted') {
-			const nombreRemitente = obtenerNombreUsuario(mensaje.usuario_id);
-			const contenido = mensaje.contenido || 'Nuevo mensaje';
-			
-			const notificacion = new Notification(`${nombreRemitente}`, {
-				body: contenido.length > 50 ? contenido.substring(0, 50) + '...' : contenido,
-				icon: obtenerAvatarUsuario(mensaje.usuario_id),
-				tag: `chat-${chat?.id}`, // Evitar duplicados
-				requireInteraction: false
-			});
-			
-			// Auto-cerrar después de 4 segundos
-			setTimeout(() => notificacion.close(), 4000);
-			
-			// Hacer foco en la ventana al hacer clic
-			notificacion.onclick = () => {
-				window.focus();
-				notificacion.close();
-			};
-		}
-	}
-
-	/**
 	 * 🔴 Configurar tiempo real
 	 */
 	async function configurarTiempoReal() {
-		if (!chat || !usuarioActual) {
-			console.log('❌ No se puede configurar tiempo real: chat o usuarioActual faltante');
-			return;
-		}
+		if (!chat || !usuarioActual) return;
 
-		console.log(`⚡ Configurando tiempo real para chat ${chat.id}...`);
-
-		// Primero desuscribirse del chat anterior si existe
-		await mensajeriaService.desuscribirseDeChat(chat.id);
-
-		// Configurar nueva suscripción
 		await mensajeriaService.suscribirseAChat(chat.id, {
 			onNuevoMensaje: (mensaje: Mensaje) => {
-				console.log('📥 Nuevo mensaje recibido en tiempo real:', mensaje);
-				
 				// Evitar duplicados y marcar ownership
 				mensajes.update(mensajesActuales => {
 					const existe = mensajesActuales.some(m => m.id === mensaje.id);
-					if (existe) {
-						console.log('⚠️ Mensaje duplicado, ignorando...');
-						return mensajesActuales;
-					}
+					if (existe) return mensajesActuales;
 					
 					const mensajeConOwnership = {
 						...mensaje,
@@ -466,26 +299,12 @@
 						}
 					} as any;
 					
-					console.log('✅ Agregando mensaje al chat:', mensajeConOwnership);
-					
-					// 🔊 REPRODUCIR SONIDO Y MOSTRAR NOTIFICACIÓN
-					const esPropio = mensaje.usuario_id === usuarioActual.id;
-					
-					// Solo sonido y notificación si NO es nuestro mensaje
-					if (!esPropio) {
-						console.log('🔊 Reproduciendo sonido y notificación...');
-						reproducirSonidoMensaje(false);
-						mostrarNotificacionSistema(mensajeConOwnership);
-					}
-					
 					const nuevaLista = [...mensajesActuales, mensajeConOwnership];
 					setTimeout(scrollAlFinal, 100);
 					return nuevaLista;
 				});
 			}
 		});
-		
-		console.log(`✅ Tiempo real configurado para chat ${chat.id}`);
 	}
 
 	/**
@@ -605,24 +424,6 @@
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
 					</svg>
 							{/if}
-				</button>
-				
-				<!-- Botón control de sonidos -->
-				<button
-					class="btn-sonidos"
-					on:click={() => sonidosHabilitados = !sonidosHabilitados}
-					title="{sonidosHabilitados ? 'Silenciar sonidos' : 'Activar sonidos'}"
-				>
-					{#if sonidosHabilitados}
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M12 4l-3 3H6v6h3l3 3V4z"/>
-						</svg>
-					{:else}
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1V10a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m0 0L9 11.414"/>
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
-						</svg>
-					{/if}
 				</button>
 				
 						<!-- Botón panel de información -->
@@ -979,7 +780,7 @@
 		flex-shrink: 0;
 	}
 
-	.btn-tema, .btn-info, .btn-sonidos {
+	.btn-tema, .btn-info {
 		background: rgba(255, 255, 255, 0.1);
 		border: none;
 		color: white;
@@ -990,24 +791,9 @@
 		backdrop-filter: blur(10px);
 	}
 
-	.btn-tema:hover, .btn-info:hover, .btn-sonidos:hover {
+	.btn-tema:hover, .btn-info:hover {
 		background: rgba(255, 255, 255, 0.2);
 		transform: scale(1.1);
-	}
-	
-	/* Estilo específico para cuando sonidos están desactivados */
-	.btn-sonidos:not(:hover) {
-		opacity: 0.8;
-	}
-	
-	.btn-sonidos[title*="Activar"] {
-		background: rgba(239, 68, 68, 0.2);
-		color: #fca5a5;
-	}
-	
-	.btn-sonidos[title*="Activar"]:hover {
-		background: rgba(239, 68, 68, 0.3);
-		color: #f87171;
 	}
 
 	/* ============================================ */

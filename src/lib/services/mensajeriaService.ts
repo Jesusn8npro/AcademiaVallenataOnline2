@@ -683,14 +683,10 @@ class MensajeriaService {
 						table: 'mensajes',
 						filter: `chat_id=eq.${chatId}`
 					},
-					async (payload: any) => {
-						console.log(`🔥 [REALTIME] Nuevo mensaje detectado en chat ${chatId}:`, payload);
-						
+					async (payload) => {
 						if (callbacks.onNuevoMensaje) {
-							console.log(`📡 [REALTIME] Obteniendo datos completos del mensaje ${payload.new.id}...`);
-							
 							// Obtener datos completos del mensaje
-							const { data: mensajeCompleto, error } = await supabase
+							const { data: mensajeCompleto } = await supabase
 								.from('mensajes')
 								.select(`
 									*,
@@ -703,19 +699,9 @@ class MensajeriaService {
 								.eq('id', payload.new.id)
 								.single();
 
-							if (error) {
-								console.error(`❌ [REALTIME] Error obteniendo mensaje completo:`, error);
-								return;
-							}
-
 							if (mensajeCompleto) {
-								console.log(`✅ [REALTIME] Mensaje completo obtenido, ejecutando callback:`, mensajeCompleto);
 								callbacks.onNuevoMensaje(mensajeCompleto);
-							} else {
-								console.warn(`⚠️ [REALTIME] No se pudo obtener el mensaje completo para ID ${payload.new.id}`);
 							}
-						} else {
-							console.warn(`⚠️ [REALTIME] No hay callback onNuevoMensaje registrado para chat ${chatId}`);
 						}
 					}
 				)
@@ -727,7 +713,7 @@ class MensajeriaService {
 						table: 'mensajes',
 						filter: `chat_id=eq.${chatId}`
 					},
-					async (payload: any) => {
+					async (payload) => {
 						if (callbacks.onMensajeEditado && payload.new.editado) {
 							const { data: mensajeCompleto } = await supabase
 								.from('mensajes')
@@ -914,4 +900,4 @@ class MensajeriaService {
 // ============================================
 
 export const mensajeriaService = new MensajeriaService();
-export default mensajeriaServ
+export default mensajeriaService; 

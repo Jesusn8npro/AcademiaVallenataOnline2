@@ -10,11 +10,11 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
 
-  // Estado reactivo para el perfil del usuario
+  // Estado del usuario
   let perfil: any = {};
   let usuario: any = null;
 
-  // Feed de publicaciones
+  // Feed de publicaciones - VOLVEMOS A LA LÓGICA ORIGINAL PERO LIMPIA
   let publicaciones: any[] = [];
   let cargandoPublicaciones = false;
   let errorPublicaciones = '';
@@ -24,31 +24,35 @@
   let centinela: HTMLElement;
   let observador: IntersectionObserver;
 
-  // Cargar publicaciones con paginación
+  // Cargar publicaciones con paginación - LÓGICA ORIGINAL LIMPIA
   async function cargarMasPublicaciones() {
     if (cargandoPublicaciones || fin) return;
+    
     cargandoPublicaciones = true;
     errorPublicaciones = '';
     const desde = pagina * LIMITE;
     const hasta = desde + LIMITE - 1;
     
-    // Cargar publicaciones CON JOIN para obtener más datos del perfil
-    const { data, error } = await supabase
-      .from('comunidad_publicaciones')
-      .select(`
-        *,
-        perfiles(nombre_usuario, nombre, apellido, nombre_completo, url_foto_perfil)
-      `)
-      .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
-      .order('fecha_creacion', { ascending: false })
-      .range(desde, hasta);
-      
-    if (error) {
-      errorPublicaciones = 'Error al cargar publicaciones: ' + error.message;
-    } else {
+    try {
+      // Cargar publicaciones CON JOIN para obtener más datos del perfil
+      const { data, error } = await supabase
+        .from('comunidad_publicaciones')
+        .select(`
+          *,
+          perfiles(nombre_usuario, nombre, apellido, nombre_completo, url_foto_perfil)
+        `)
+        .not('tipo', 'in', '("foto_perfil","foto_portada")') // 🚫 Excluir publicaciones automáticas
+        .order('fecha_creacion', { ascending: false })
+        .range(desde, hasta);
+        
+      if (error) {
+        errorPublicaciones = 'Error al cargar publicaciones: ' + error.message;
+        return;
+      }
+
       if (!data || data.length < LIMITE) fin = true;
       
-      // Para cada publicación, cargar sus likes (slug ya viene del JOIN)
+      // Para cada publicación, cargar sus likes
       const publicacionesConLikes = await Promise.all((data || []).map(async (pub: any) => {
         // Cargar IDs de usuarios que dieron like
         const { data: likesData, error: likesError } = await supabase
@@ -58,7 +62,7 @@
           
         const likesUsuarios = likesError ? [] : (likesData || []).map((like: any) => like.usuario_id);
         
-        // 🔍 Obtener slug usando función unificada
+        // Obtener slug usando función unificada
         const datosUsuario = {
           nombre_usuario: pub.perfiles?.nombre_usuario,
           nombre: pub.perfiles?.nombre || pub.usuario_nombre,
@@ -81,7 +85,7 @@
           usuario_id: pub.usuario_id,
           usuario_nombre: pub.usuario_nombre || 'Usuario',
           url_foto_perfil: pub.perfiles?.url_foto_perfil || '',
-          usuario_slug: usuarioSlug, // ✅ Slug del JOIN o fallback
+          usuario_slug: usuarioSlug,
           contenido: pub.descripcion || '',
           fecha: pub.fecha_creacion ? new Date(pub.fecha_creacion).toLocaleString() : '',
           url_imagen: pub.url_imagen || '',
@@ -89,7 +93,7 @@
           url_gif: pub.url_gif || '',
           tipo: pub.tipo || 'texto',
           encuesta: pub.encuesta || null,
-          me_gusta: likesUsuarios, // ✅ Usar likes de la tabla correcta
+          me_gusta: likesUsuarios,
           total_comentarios: pub.total_comentarios || 0,
           total_compartidos: pub.total_compartidos || 0
         };
@@ -97,8 +101,13 @@
       
       publicaciones = [...publicaciones, ...publicacionesConLikes];
       pagina += 1;
+      
+    } catch (error) {
+      console.error('Error cargando publicaciones:', error);
+      errorPublicaciones = 'Error al cargar publicaciones';
+    } finally {
+      cargandoPublicaciones = false;
     }
-    cargandoPublicaciones = false;
   }
 
   // Intersection Observer para scroll infinito
@@ -108,41 +117,7 @@
     }
   }
 
-  onMount(async () => {
-    const sesion = await obtenerSesion();
-    if (!sesion?.user) return;
-    const resultado = await obtenerPerfil(sesion.user.id);
-    if (!resultado?.perfil) return;
-    perfil = resultado.perfil;
-
-    // Usuario para publicaciones
-    usuario = {
-      id: sesion.user.id,
-      nombre: perfil.nombre || perfil.nombre_usuario || 'Usuario'
-    };
-
-    // Cargar primeras publicaciones
-    await cargarMasPublicaciones();
-
-    // Observer para scroll infinito
-    observador = new IntersectionObserver(manejarInterseccion);
-    if (centinela) observador.observe(centinela);
-
-    // 🎯 Manejar hash de URL para ir a publicación específica
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash;
-      const match = hash.match(/#publicacion-(.+)/);
-      if (match) {
-        const publicacionId = match[1];
-        // Esperar un poco para que se carguen las publicaciones
-        setTimeout(() => {
-          scrollAPublicacion(publicacionId);
-        }, 1000);
-      }
-    }
-  });
-
-  // 🎯 Función para hacer scroll a una publicación específica
+  // Función para hacer scroll a una publicación específica
   function scrollAPublicacion(publicacionId: string) {
     const elemento = document.getElementById(`publicacion-${publicacionId}`);
     if (elemento) {
@@ -168,13 +143,7 @@
     }
   }
 
-  afterUpdate(() => {
-    if (observador && centinela && !fin) {
-      observador.disconnect();
-      observador.observe(centinela);
-    }
-  });
-
+  // Manejar nueva publicación
   const manejarPublicar = async () => {
     // Recargar el feed desde el principio
     publicaciones = [];
@@ -182,6 +151,48 @@
     fin = false;
     await cargarMasPublicaciones();
   };
+
+  onMount(async () => {
+    // Cargar datos del usuario
+    const sesion = await obtenerSesion();
+    if (!sesion?.user) return;
+    const resultado = await obtenerPerfil(sesion.user.id);
+    if (!resultado?.perfil) return;
+    perfil = resultado.perfil;
+
+    // Usuario para publicaciones
+    usuario = {
+      id: sesion.user.id,
+      nombre: perfil.nombre || perfil.nombre_usuario || 'Usuario'
+    };
+
+    // Cargar primeras publicaciones
+    await cargarMasPublicaciones();
+
+    // Observer para scroll infinito
+    observador = new IntersectionObserver(manejarInterseccion);
+    if (centinela) observador.observe(centinela);
+
+    // Manejar hash de URL para ir a publicación específica
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash;
+      const match = hash.match(/#publicacion-(.+)/);
+      if (match) {
+        const publicacionId = match[1];
+        // Esperar un poco para que se carguen las publicaciones
+        setTimeout(() => {
+          scrollAPublicacion(publicacionId);
+        }, 1000);
+      }
+    }
+  });
+
+  afterUpdate(() => {
+    if (observador && centinela && !fin) {
+      observador.disconnect();
+      observador.observe(centinela);
+    }
+  });
 </script>
 
 <!-- Banner Superior -->

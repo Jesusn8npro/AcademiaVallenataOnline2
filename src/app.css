@@ -19,34 +19,27 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Estilos globales para asegurar background consistente */
+/* Estilos globales básicos */
 html, body {
-  background-color: #fff !important;
-  background: #fff !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  background-color: #fff;
+  margin: 0;
+  padding: 0;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
 }
 
-/* Asegurar que el contenedor principal siempre tenga background blanco */
 #svelte {
-  background: #fff !important;
+  background: #fff;
   min-height: 100vh;
-  /* Prevenir cursor de texto en el contenedor principal */
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  cursor: default;
 }
 
+/* Layout principal */
 .layout-autenticado {
   display: flex;
   width: 100%;
   min-height: 100vh;
-  margin-top: 64px; /* altura del nav superior */
+  margin-top: 64px;
 }
 
 .admin-sidebar-container {
@@ -65,129 +58,111 @@ html, body {
 .main-content {
   flex: 1 1 0%;
   min-width: 0;
-  background: #fff !important; /* Forzar background blanco siempre */
+  background: #fff;
   padding: 0;
   margin: 0;
-  margin-left: 280px; /* Espacio para el sidebar expandido por defecto */
+  margin-left: 280px;
   overflow-x: hidden;
   box-sizing: border-box;
   display: block;
-  transition: margin-left 0.25s ease; /* Transición suave cuando cambia el sidebar */
+  transition: margin-left 0.25s ease;
 }
 
-/* Clase para cuando el sidebar está colapsado */
 .main-content.sidebar-colapsado {
-  margin-left: 80px; /* Espacio para el sidebar colapsado */
+  margin-left: 80px;
 }
 
-/* Responsive: Eliminar margin-left cuando el sidebar está oculto en móviles */
+/* Responsive para móviles */
 @media (max-width: 900px) {
   .main-content {
-    margin-left: 0 !important; /* Sin margen cuando el sidebar está oculto */
+    margin-left: 0;
     width: 100%;
-    padding: 1rem; /* Añadir padding para mejor experiencia móvil */
+    padding: 1rem;
   }
   
   .main-content.sidebar-colapsado {
-    margin-left: 0 !important; /* Sin margen incluso si tiene la clase colapsado */
+    margin-left: 0;
   }
   
   .layout-autenticado {
-    margin-top: 60px; /* Ajustar para móviles */
-  }
-  
-  html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-  
-  * {
-    max-width: 100vw;
+    margin-top: 60px;
   }
 }
 
-/* Páginas del perfil: Sin padding lateral como Facebook */
+/* Páginas del perfil */
 .main-content.perfil-sin-padding {
-  padding: 0 !important;
-  margin-left: 280px !important; /* Mantener solo el espacio del sidebar en desktop */
+  padding: 0;
+  margin-left: 280px;
 }
 
 .main-content.perfil-sin-padding.sidebar-colapsado {
-  margin-left: 80px !important; /* Espacio del sidebar colapsado en desktop */
+  margin-left: 80px;
 }
 
 @media (max-width: 900px) {
   .main-content.perfil-sin-padding {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100vw !important;
-    position: relative; /* Permitir que los elementos hijos usen posicionamiento absoluto */
-    overflow-x: hidden; /* Controlar overflow horizontal */
+    padding: 0;
+    margin: 0;
+    width: 100vw;
+    position: relative;
+    overflow-x: hidden;
   }
   
-  /* Permitir que elementos específicos del perfil salgan del contenedor */
   .main-content.perfil-sin-padding .contenedor-portada,
   .main-content.perfil-sin-padding .info-usuario {
-    width: 100vw !important;
-    margin-left: calc(-50vw + 50%) !important;
-    max-width: 100vw !important;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    max-width: 100vw;
   }
 }
 
-/* Para pantallas muy pequeñas, asegurar que ocupe todo el ancho */
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
+    margin-left: 0;
+    width: 100%;
     max-width: 100vw;
   }
   
   .main-content.perfil-sin-padding {
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0;
+    margin: 0;
   }
 }
 
-/* Páginas del blog: eliminar el margin-left del sidebar para mantener consistencia visual */
+/* Páginas del blog */
 .pagina-blog,
 .pagina-articulo-blog {
-  margin-left: 0 !important;
+  margin-left: 0;
 }
 
-/* FALLBACKS PARA NAVEGADORES ANTIGUOS */
-/* Soporte para navegadores sin CSS Variables */
+/* Fallbacks para navegadores antiguos */
 html {
-  color: #1f2937; /* Fallback para navegadores sin variables CSS */
+  color: #1f2937;
   background-color: #ffffff;
 }
 
-/* Fallbacks para navegadores sin soporte de variables CSS */
-.main-content {
-  width: 100%; /* Fallback para navegadores sin vw */
-}
-
-/* Fallbacks para propiedades modernas */
 .flex {
-  display: -webkit-box; /* Fallback para webkit antiguo */
-  display: -webkit-flex; /* Fallback para webkit */
+  display: -webkit-box;
+  display: -webkit-flex;
   display: flex;
 }
 
 /* Prevenir zoom automático en iOS */
-input, select, textarea {
-  font-size: 16px;
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
 }
 
-/* Fallback para navegadores sin soporte de object-fit */
+/* Imágenes responsivas */
 img {
   max-width: 100%;
   height: auto;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
-/* ========== PREVENIR CURSOR DE TEXTO EN ELEMENTOS NO EDITABLES ========== */
-/* Aplicar a elementos comunes que NO deberían mostrar cursor de texto */
-
-/* Elementos que NUNCA deben mostrar cursor de texto */
+/* Elementos que NO deben tener cursor de texto (solo básicos) */
 img, 
 svg, 
 canvas, 
@@ -202,7 +177,6 @@ button,
 nav,
 header,
 footer,
-aside,
 .sidebar,
 .menu,
 .navbar,
@@ -210,56 +184,15 @@ aside,
 .icono,
 .logo,
 .banner,
-.hero,
 .modal,
 .dropdown,
-.tooltip,
-.tab,
-.badge,
-.chip,
 .avatar,
-.thumbnail,
-.preview,
-/* Elementos específicos que comúnmente causan problemas */
-div,
-span:not(.texto-seleccionable),
-section,
-article:not(.contenido-articulo),
-main,
-figure,
-picture,
-.container,
-.wrapper,
-.layout,
-.grid,
-.flex,
-.component,
-.widget {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  cursor: default !important;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Regla más específica para elementos problemáticos */
-* {
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Aplicar por defecto a todos los elementos excepto inputs */
-*:not(input):not(textarea):not([contenteditable="true"]):not(.texto-seleccionable):not(.contenido-articulo):not(p):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+.thumbnail {
   cursor: default;
+  user-select: none;
 }
 
-/* Elementos clickeables que deben mostrar pointer */
+/* Elementos clickeables */
 button,
 [role="button"],
 .btn,
@@ -270,21 +203,14 @@ a,
 .clickeable,
 .cursor-pointer,
 [onclick],
-[tabindex]:not([tabindex="-1"]),
 select,
 summary,
 .menu-item,
-.nav-item,
-.card.clickeable,
-.tarjeta.clickeable {
-  cursor: pointer !important;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+.nav-item {
+  cursor: pointer;
 }
 
-/* Elementos de formulario que SÍ deben mantener cursor de texto */
+/* Elementos de formulario */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -296,69 +222,11 @@ textarea,
 [contenteditable="true"],
 .editor,
 .input-text {
-  cursor: text !important;
+  cursor: text;
   user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
 }
 
-/* Aplicar a clases específicas de la academia */
-.academia-logo,
-.perfil-avatar,
-.curso-card,
-.tutorial-card,
-.evento-card,
-.publicacion-card,
-.notificacion,
-.banner-slider,
-.menu-lateral,
-.pestana,
-.tab-button,
-.social-button,
-.play-button,
-.video-thumbnail,
-.imagen-curso,
-.miniatura,
-.portada,
-.header-perfil,
-.info-usuario,
-.estadisticas,
-.contador,
-.progreso,
-.ranking,
-.badge-membresia,
-.tag,
-.categoria,
-.filtro {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  cursor: default !important;
-}
-
-/* Elementos clickeables específicos de la academia */
-.curso-card,
-.tutorial-card,
-.evento-card,
-.publicacion-card,
-.avatar-clickeable,
-.perfil-link,
-.menu-item,
-.tab-button,
-.filtro-button,
-.social-button,
-.play-button,
-.like-button,
-.share-button,
-.comment-button,
-.follow-button,
-.subscribe-button {
-  cursor: pointer !important;
-}
-
-/* Texto seleccionable solo donde tiene sentido */
+/* Texto seleccionable */
 p, 
 h1, h2, h3, h4, h5, h6,
 .texto-seleccionable,
@@ -369,34 +237,7 @@ h1, h2, h3, h4, h5, h6,
 .post-content,
 .bio-usuario {
   user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
   cursor: text;
-}
-
-/* Prevenir arrastre de imágenes */
-img {
-  -webkit-user-drag: none;
-  -khtml-user-drag: none;
-  -moz-user-drag: none;
-  -o-user-drag: none;
-  user-drag: none;
-  pointer-events: auto;
-}
-
-/* Aplicar globalmente a divs que contienen solo imágenes/iconos */
-div:has(> img:only-child),
-div:has(> svg:only-child),
-div:has(> .icon:only-child),
-div:has(> .icono:only-child),
-.imagen-container,
-.icon-container,
-.logo-container,
-.avatar-container,
-.thumbnail-container {
-  user-select: none !important;
-  cursor: default !important;
 }
 
 /* Mejorar experiencia táctil en móviles */
@@ -406,65 +247,29 @@ div:has(> .icono:only-child),
   .btn,
   .boton,
   a,
-  .clickeable,
-  .card.clickeable,
-  .tarjeta.clickeable {
+  .clickeable {
     -webkit-tap-highlight-color: rgba(255, 102, 0, 0.1);
     tap-highlight-color: rgba(255, 102, 0, 0.1);
+    min-height: 44px; /* Mínimo recomendado para táctil */
+    min-width: 44px;
   }
   
-  /* Prevenir zoom en inputs en iOS */
-  input, select, textarea {
-    font-size: 16px;
-    transform-origin: left top;
+  /* Asegurar que los elementos táctiles sean accesibles */
+  .ranking-item,
+  .curso-card,
+  .tutorial-card,
+  .evento-card,
+  .publicacion-card {
+    min-height: 44px;
+    position: relative;
   }
-}
-
-/* === REGLAS DE EMERGENCIA PARA CASOS EXTREMOS === */
-/* Si aún hay problemas, estas reglas los solucionarán */
-
-/* Aplicar a elementos raíz comunes */
-html * {
-  -webkit-touch-callout: none;
-}
-
-/* Aplicar específicamente a elementos de Svelte */
-[class*="svelte-"] {
-  user-select: none !important;
-  cursor: default !important;
-}
-
-/* Aplicar a elementos con data attributes */
-[data-*]:not(input):not(textarea):not([contenteditable]) {
-  user-select: none !important;
-  cursor: default !important;
-}
-
-/* Regla catch-all para elementos problemáticos */
-body *:not(input):not(textarea):not([contenteditable="true"]):not(p):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(.texto-seleccionable):not(.contenido-articulo):not(.comentario-texto):not(.mensaje-texto):not(.post-content):not(.bio-usuario) {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  cursor: default !important;
-}
-
-/* Forzar cursor pointer solo en elementos que lo necesitan */
-body button,
-body a,
-body [role="button"],
-body [onclick],
-body .btn,
-body .boton,
-body .clickeable,
-body .link,
-body .enlace {
-  cursor: pointer !important;
-  user-select: none !important;
-}
-
-/* Asegurar que inputs mantengan cursor de texto */
-body input,
-body textarea,
-body [contenteditable="true"] {
-  cursor: text !important;
-  user-select: text !important;
+  
+  /* Mejorar área táctil para avatares */
+  .avatar-container {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

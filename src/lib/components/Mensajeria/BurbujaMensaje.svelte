@@ -285,7 +285,7 @@
 		{#if !mensaje.es_mio && mostrarAvatar()}
 			<div class="flex-shrink-0 mb-1">
 				<img
-					src={mensaje.usuario?.avatar_url || '/favicon.png'}
+					src={mensaje.usuario?.url_foto_perfil || '/favicon.png'}
 					alt={mensaje.usuario?.nombre_completo || 'Usuario'}
 					class="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
 				>
@@ -537,7 +537,7 @@
 		{#if mensaje.es_mio && mostrarAvatar()}
 			<div class="flex-shrink-0 mb-1">
 				<img
-					src={mensaje.usuario?.avatar_url || '/favicon.png'}
+					src={mensaje.usuario?.url_foto_perfil || '/favicon.png'}
 					alt={mensaje.usuario?.nombre_completo || 'Usuario'}
 					class="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
 				>
