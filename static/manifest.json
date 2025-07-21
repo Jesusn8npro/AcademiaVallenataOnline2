@@ -62,26 +62,66 @@
     }
   ],
   
-
+  "screenshots": [
+    {
+      "src": "/splash/screenshot-movil-1.png",
+      "sizes": "360x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Simulador de Acordeón"
+    },
+    {
+      "src": "/splash/screenshot-movil-2.png", 
+      "sizes": "360x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Cursos y Lecciones"
+    },
+    {
+      "src": "/splash/screenshot-escritorio-1.png",
+      "sizes": "1024x768",
+      "type": "image/png", 
+      "form_factor": "wide",
+      "label": "Dashboard Completo"
+    }
+  ],
 
   "shortcuts": [
     {
       "name": "Simulador Acordeón",
       "short_name": "Simulador",
       "description": "Acceso rápido al simulador de acordeón",
-      "url": "/simulador-gaming"
+      "url": "/simulador-gaming",
+      "icons": [
+        {
+          "src": "/iconos-pwa/shortcut-simulador.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Mis Cursos",
       "short_name": "Cursos", 
       "description": "Continúa con tus lecciones",
-      "url": "/mis-cursos"
+      "url": "/mis-cursos",
+      "icons": [
+        {
+          "src": "/iconos-pwa/shortcut-cursos.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Comunidad",
       "short_name": "Comunidad",
       "description": "Conecta con otros músicos",
-      "url": "/comunidad"
+      "url": "/comunidad",
+      "icons": [
+        {
+          "src": "/iconos-pwa/shortcut-comunidad.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
 

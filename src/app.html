@@ -44,47 +44,9 @@
 		<meta property="twitter:description" content="La mejor plataforma para aprender acordeón vallenato. Cursos profesionales, simulador interactivo y comunidad de estudiantes." />
 		<meta property="twitter:image" content="%sveltekit.assets%/images/og-image.jpg" />
 		
-		<!-- ⚡ Performance Optimizations -->
+		<!-- Performance -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link rel="preconnect" href="https://tbijzvtyyewhtwgakgka.supabase.co">
-		<link rel="dns-prefetch" href="https://checkout.epayco.co">
-		
-		<!-- 📦 Preload Critical Assets (solo recursos que existen) -->
-		<link rel="preload" href="/favicon.png" as="image">
-		<link rel="preload" href="/Acordeon PRO MAX.png" as="image" fetchpriority="high">
-		
-		<!-- 🔤 Preload de fuente crítica para mejorar CLS -->
-		<link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.woff2" as="font" type="font/woff2" crossorigin>
-		<link rel="preload" href="https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2" as="font" type="font/woff2" crossorigin>
-		
-		<!-- 🎨 Critical CSS Inline Optimizado -->
-		<style>
-			/* Critical CSS para LCP y evitar FOUC */
-			*,*::before,*::after{box-sizing:border-box}
-			html{line-height:1.15;-webkit-text-size-adjust:100%}
-			body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc}
-			
-			/* Hero section crítico */
-			.hero-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white}
-			.hero-content{text-align:center;max-width:600px;padding:2rem}
-			.hero-title{font-size:3rem;font-weight:700;margin:0 0 1rem 0;text-shadow:0 2px 4px rgba(0,0,0,0.3)}
-			.hero-subtitle{font-size:1.25rem;margin:0 0 2rem 0;opacity:0.9}
-			.btn-primary{background:#ff6b35;color:white;padding:1rem 2rem;border-radius:50px;text-decoration:none;font-weight:600;display:inline-block;transition:transform 0.2s}
-			.btn-primary:hover{transform:translateY(-2px)}
-			
-			/* Loading optimizado */
-			.loading-spinner{display:flex;align-items:center;justify-content:center;height:100vh;font-size:18px;color:#3b82f6}
-			.loading-spinner::after{content:'🎵 Cargando Academia Vallenata...'}
-			
-			/* Optimización de imágenes */
-			img{max-width:100%;height:auto;display:block}
-			
-			@media(max-width:768px){
-				.hero-title{font-size:2rem}
-				.hero-content{padding:1rem}
-			}
-		</style>
 		
 		<!-- Polyfill básico para navegadores antiguos -->
 		<script>
@@ -130,20 +92,19 @@
 			})();
 		</script>
 		
-		<!-- 🚀 PWA SERVICE WORKER (DESHABILITADO EN DEV) -->
+		<!-- 🚀 PWA SERVICE WORKER REGISTRATION -->
 		<script>
-			// Solo registrar SW en producción para evitar conflictos con Lighthouse
-			if ('serviceWorker' in navigator && location.protocol === 'https:') {
-				window.addEventListener('load', async function() {
-					try {
-						const registration = await navigator.serviceWorker.register('/sw-optimized.js');
-						console.log('🚀 SW optimizado registrado en producción');
-					} catch (error) {
-						console.warn('❌ Error registrando SW:', error);
-					}
+			// Registrar Service Worker automáticamente
+			if ('serviceWorker' in navigator) {
+				window.addEventListener('load', function() {
+					navigator.serviceWorker.register('/sw.js')
+						.then(function(registration) {
+							console.log('🚀 SW registered: ', registration);
+						})
+						.catch(function(registrationError) {
+							console.log('❌ SW registration failed: ', registrationError);
+						});
 				});
-			} else {
-				console.log('🔧 SW deshabilitado en desarrollo para Lighthouse');
 			}
 		</script>
 	</head>
