@@ -1,19 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { supabase } from '$lib/supabase/clienteSupabase';
-	
-	// Componentes modernos
 	import HeroCursos from '$lib/components/Cursos/HeroCursos.svelte';
 	import FiltrosCursos from '$lib/components/Cursos/FiltrosCursos.svelte';
 	import GridCursos from '$lib/components/Cursos/GridCursos.svelte';
 
-	// Estado de datos
 	let todosLosItems: any[] = [];
 	let itemsFiltrados: any[] = [];
 	let cargando = true;
 	let error = '';
 
-	// Estado de filtros
 	let filtros = {
 		texto: '',
 		tipo: '',
@@ -21,11 +17,9 @@
 		precio: ''
 	};
 
-	// Estado de paginación
-	let paginaActual = 1;
 	const itemsPorPagina = 12;
+	let paginaActual = 1;
 
-	// Estadísticas para los filtros
 	let estadisticas = {
 		totalCursos: 0,
 		totalTutoriales: 0
@@ -40,7 +34,6 @@
 		error = '';
 		
 		try {
-			// Cargar cursos y tutoriales en paralelo
 			const [cursosResponse, tutorialesResponse] = await Promise.all([
 				supabase
 					.from('cursos')
@@ -55,7 +48,6 @@
 			if (cursosResponse.error) throw cursosResponse.error;
 			if (tutorialesResponse.error) throw tutorialesResponse.error;
 
-			// Mapear y normalizar los datos
 			const cursos = (cursosResponse.data || []).map((curso: any) => ({
 				...curso,
 				tipo: 'curso',
@@ -70,15 +62,11 @@
 				rating: generateRating()
 			}));
 
-			// Combinar todos los items
 			todosLosItems = [...cursos, ...tutoriales]
-				.filter(item => item.titulo && item.imagen_url) // Solo items completos
+				.filter(item => item.titulo && item.imagen_url)
 				.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-			// Calcular estadísticas
 			calcularEstadisticas();
-			
-			// Aplicar filtros iniciales
 			aplicarFiltros();
 
 		} catch (err: any) {
@@ -110,7 +98,6 @@
 
 	function aplicarFiltros() {
 		itemsFiltrados = todosLosItems.filter(item => {
-			// Filtro de texto
 			if (filtros.texto) {
 				const texto = filtros.texto.toLowerCase();
 				const coincide = 
@@ -119,17 +106,14 @@
 				if (!coincide) return false;
 			}
 
-			// Filtro de tipo
 			if (filtros.tipo && item.tipo !== filtros.tipo) {
 				return false;
 			}
 
-			// Filtro de nivel
 			if (filtros.nivel && item.nivel !== filtros.nivel) {
 				return false;
 			}
 
-			// Filtro de precio
 			if (filtros.precio === 'gratis' && (item.precio_normal > 0)) {
 				return false;
 			}
@@ -140,7 +124,6 @@
 			return true;
 		});
 
-		// Resetear paginación
 		paginaActual = 1;
 	}
 
@@ -149,13 +132,11 @@
 		aplicarFiltros();
 	}
 
-	// Datos paginados
 	$: itemsPaginados = itemsFiltrados.slice(
 		(paginaActual - 1) * itemsPorPagina,
 		paginaActual * itemsPorPagina
 	);
 
-	// Actualizar estadísticas reactivamente
 	$: estadisticasActuales = {
 		...estadisticas,
 		totalCursos: itemsFiltrados.filter(item => item.tipo === 'curso').length,
@@ -172,13 +153,10 @@
 	<meta name="keywords" content="cursos acordeón vallenato, clases música, tutoriales acordeón, academia vallenata" />
 </svelte:head>
 
-<!-- Hero Section -->
 <HeroCursos />
 
-<!-- Sección principal del catálogo -->
 <section id="catalogo-section" class="catalogo-section">
 	<div class="container">
-		<!-- Título de la sección -->
 		<div class="seccion-header">
 			<h2 class="seccion-titulo">
 				Explora Nuestro <span class="titulo-highlight">Catálogo Completo</span>
@@ -188,14 +166,12 @@
 			</p>
 		</div>
 
-		<!-- Filtros -->
 		<FiltrosCursos 
 			bind:filtros={filtros}
 			estadisticas={estadisticasActuales}
 			on:filtrar={manejarFiltros}
 		/>
 
-		<!-- Grid de contenido -->
 		<GridCursos 
 			items={itemsPaginados}
 			{cargando}
@@ -211,7 +187,7 @@
 	.catalogo-section {
 		background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 		padding: 4rem 0;
-    width: 100%;
+    	width: 100%;
 	}
 
 	.container {
@@ -247,7 +223,6 @@
 		line-height: 1.6;
 	}
 
-	/* Responsivo */
 	@media (max-width: 768px) {
 		.catalogo-section {
 			padding: 2rem 0;

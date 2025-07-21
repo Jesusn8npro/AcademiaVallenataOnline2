@@ -224,7 +224,7 @@
           <div class="section-title">Herramientas</div>
         {/if}
         
-        <a href="/simulador-de-acordeon" class="nav-item">
+        <a href="/simulador-gaming" class="nav-item">
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>

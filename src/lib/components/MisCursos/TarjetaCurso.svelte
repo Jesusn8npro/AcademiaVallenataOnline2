@@ -298,8 +298,16 @@
   
   <div class="contenido-tarjeta">
     <div class="info-principal">
-      <h3 class="titulo-curso">{titulo}</h3>
+      <a href="{esCurso ? `/mis-cursos/${slug}` : `/tutoriales/${slug}/contenido`}" class="titulo-curso-link">
+        <h3 class="titulo-curso">{titulo}</h3>
+      </a>
       <p class="fecha-inscripcion">Inscrito el {fechaInscripcion}</p>
+      <div class="hint-navegacion">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+        </svg>
+        <span>Haz clic en el título para ver todos los {esCurso ? 'módulos' : 'clases'}</span>
+      </div>
     </div>
     
     <div class="progreso-seccion">
@@ -420,6 +428,27 @@
     flex: 1;
   }
 
+  .titulo-curso-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: color 0.2s ease;
+  }
+
+  .titulo-curso-link:hover {
+    color: #2563eb;
+  }
+
+  .titulo-curso-link:hover .titulo-curso {
+    color: #2563eb;
+  }
+
+  .info-principal:hover .hint-navegacion {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+  }
+
   .titulo-curso {
     font-size: 1.25rem;
     font-weight: 700;
@@ -430,12 +459,42 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    transition: color 0.2s ease;
   }
 
   .fecha-inscripcion {
     font-size: 0.875rem;
     color: #6b7280;
     margin: 0;
+  }
+
+  .hint-navegacion {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #0369a1;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .hint-navegacion:hover {
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    border-color: #0ea5e9;
+  }
+
+  .hint-navegacion svg {
+    color: #0284c7;
+    flex-shrink: 0;
+  }
+
+  .hint-navegacion span {
+    line-height: 1.4;
   }
 
   .progreso-seccion {
@@ -547,6 +606,16 @@
 
     .titulo-curso {
       font-size: 1.1rem;
+    }
+
+    .hint-navegacion {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+
+    .hint-navegacion svg {
+      width: 14px;
+      height: 14px;
     }
 
     .boton-continuar {

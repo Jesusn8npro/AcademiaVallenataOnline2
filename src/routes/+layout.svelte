@@ -13,6 +13,10 @@
   import { fade, fly } from 'svelte/transition';
   import BannerPermisosNotificacion from '$lib/components/NotificacionesRealTime/BannerPermisosNotificacion.svelte';
   import { inicializarTema } from '$lib/stores/temaStore';
+  
+  // 🚀 PWA COMPONENT
+  import InstaladorPWA from '$lib/components/PWA/InstaladorPWA.svelte';
+  import { funcionesPWA } from '$lib/stores/pwa-store';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -20,9 +24,12 @@
   $: rutaEsDetalleCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+$/) !== null;
   $: rutaEsClaseCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/clase\/[^\/]+$/) !== null;
   $: rutaEsLeccionCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/[^\/]+\/[^\/]+$/) !== null;
+  $: rutaEsSimuladorAcordeon = $page.url.pathname === '/simulador-de-acordeon' || 
+                               $page.url.pathname.startsWith('/simulador-acordeon') || 
+                               $page.url.pathname.startsWith('/simulador-gaming');
   
   // Páginas que NO deben tener menú ni sidebar (PANTALLA COMPLETA)
-  $: esPaginaSinMenu = rutaEsDetalleTutorial || rutaEsClaseTutorial || rutaEsDetalleCurso || rutaEsClaseCurso || rutaEsLeccionCurso;
+  $: esPaginaSinMenu = rutaEsDetalleTutorial || rutaEsClaseTutorial || rutaEsDetalleCurso || rutaEsClaseCurso || rutaEsLeccionCurso || rutaEsSimuladorAcordeon;
 
   // Detectar si es una página del perfil fijo
   $: rutaActual = $page.url.pathname;
@@ -47,6 +54,9 @@
   onMount(() => {
     // Inicializar tema al cargar
     inicializarTema();
+    
+    // 🚀 Inicializar PWA
+    funcionesPWA.inicializar();
     
     // Sesión usuario
     (async () => {
@@ -81,6 +91,9 @@
 
 <!-- Banner de permisos de notificación -->
 <BannerPermisosNotificacion />
+
+<!-- 🚀 PWA INSTALADOR - DISPONIBLE GLOBALMENTE -->
+<InstaladorPWA />
 
 <!-- Barra de progreso de lectura global -->
 {#if !ocultarBarraProgreso}

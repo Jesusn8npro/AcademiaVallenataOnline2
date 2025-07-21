@@ -59,7 +59,7 @@ onDestroy(() => {
 .progreso-label {
   font-size: 1rem;
   margin-bottom: 4px;
-  color: #333;
+  color: #ffffff;
 }
 .progreso-barra {
   width: 100%;
@@ -84,8 +84,32 @@ onDestroy(() => {
   align-items: center;
   font-size: 0.95rem;
   font-weight: bold;
-  color: #2196f3;
-  text-shadow: 1px 1px 2px #fff, 0 0 2px #4caf50;
+  color: #f59e0b;
+  text-shadow: 1px 1px 2px #fff, 0 0 2px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+/* Responsive para móvil */
+@media (max-width: 768px) {
+  .barra-progreso-general {
+    margin: 2px 0;
+  }
+  
+  .progreso-label {
+    display: none;
+  }
+  
+  .progreso-barra {
+    height: 10px;
+    border-radius: 5px;
+  }
+  
+  .progreso-marcador {
+    font-size: 0.7rem;
+    right: 3px;
+    color: #fbbf24;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+    font-weight: 600;
+  }
 }
 </style>

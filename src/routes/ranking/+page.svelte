@@ -13,7 +13,7 @@ Carga pocos usuarios inicialmente, luego más automáticamente
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import GamificacionService from '../../lib/services/gamificacionService';
-	import BarraXP from '../../lib/components/Gaming/BarraXP.svelte';
+	// import BarraXP from '../../lib/components/Gaming/BarraXP.svelte'; // Componente eliminado
 	import type { RankingGlobal } from '../../lib/services/gamificacionService';
 	import { estadoUsuarioActual } from '../../lib/supabase/estadoUsuarioActual';
 	import { obtenerSlugUsuario } from '../../lib/utilidades/utilidadesSlug';

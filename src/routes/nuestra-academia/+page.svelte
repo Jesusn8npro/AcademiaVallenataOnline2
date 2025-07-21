@@ -81,7 +81,7 @@
   }
 
   function irASimulador() {
-    goto('/simulador-de-acordeon');
+          goto('/simulador-gaming');
   }
 </script>
 

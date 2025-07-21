@@ -8,6 +8,7 @@
         type PaqueteTutorial 
     } from '$lib/services/paquetesService';
     import { supabase } from '$lib/supabase/clienteSupabase';
+    import { generateSlug } from '$lib/utilidades/utilidadesSlug';
 
     // Estados
     let paquetes: PaqueteTutorial[] = [];
@@ -135,9 +136,13 @@
         goto(`/administrador/paquetes/editar/${id}`);
     }
 
-    function verPaquete(slug: string) {
+    function verPaquete(paquete: any) {
+        // Usar el slug del paquete, o generar uno nuevo a partir del título
+        const slug = paquete.slug || generateSlug(paquete.titulo);
         goto(`/paquetes/${slug}`);
     }
+
+
 
     onMount(() => {
         cargarDatos();
@@ -360,7 +365,7 @@
                                             {#if paquete.estado === 'publicado'}
                                                 <button 
                                                     class="action-btn view" 
-                                                    on:click={() => verPaquete(paquete.slug || '')}
+                                                    on:click={() => verPaquete(paquete)}
                                                     title="Ver paquete"
                                                 >
                                                     <span>👁️</span>
@@ -476,7 +481,7 @@
                                     {#if paquete.estado === 'publicado'}
                                         <button 
                                             class="action-btn view" 
-                                            on:click={() => verPaquete(paquete.slug || '')}
+                                            on:click={() => verPaquete(paquete)}
                                             title="Ver"
                                         >👁️</button>
                                     {/if}
@@ -631,8 +636,70 @@
         box-shadow: var(--sombra-elevada);
     }
 
+    .btn-secondary-hero {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 1rem 2rem;
+        border-radius: var(--radio);
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: var(--transicion);
+        white-space: nowrap;
+    }
+
+    .btn-secondary-hero:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary-hero:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-accent-hero {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid #ffc107;
+        padding: 1rem 2rem;
+        border-radius: var(--radio);
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: var(--transicion);
+        white-space: nowrap;
+    }
+
+    .btn-accent-hero:hover:not(:disabled) {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: #ffc107;
+        transform: translateY(-1px);
+    }
+
+    .btn-accent-hero:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     .btn-icon {
         font-size: 1.25rem;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     /* Alertas y Panel de Filtros */

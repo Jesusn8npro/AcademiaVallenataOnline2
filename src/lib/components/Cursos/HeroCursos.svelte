@@ -5,7 +5,6 @@
 	let visible = false;
 	let currentBenefit = 0;
 
-	// Beneficios rotativos más directos
 	const beneficios = [
 		"🎮 Simulador Virtual Incluido - Sin Necesidad de Acordeón",
 		"📚 +200 Horas de Contenido Premium Exclusivo",
@@ -17,7 +16,6 @@
 	onMount(() => {
 		visible = true;
 		
-		// Rotar beneficios cada 4 segundos
 		const interval = setInterval(() => {
 			currentBenefit = (currentBenefit + 1) % beneficios.length;
 		}, 4000);
@@ -34,28 +32,23 @@
 </script>
 
 <section class="hero-vendedor">
-	<!-- Fondo con gradiente varonil -->
 	<div class="hero-background">
 		<div class="gradient-overlay"></div>
 		<div class="geometric-pattern"></div>
 	</div>
 
-	<!-- Contenido principal -->
 	<div class="hero-container">
 		{#if visible}
-			<!-- Badge de autoridad -->
 			<div class="authority-badge" in:scale="{{ duration: 600, delay: 200 }}">
 				<span class="badge-icon">🔥</span>
 				<span class="badge-text">ACADEMIA #1 EN ACORDEÓN VALLENATO</span>
 			</div>
 
-			<!-- Título principal impactante -->
 			<h1 class="hero-title" in:fly="{{ y: 50, duration: 800, delay: 300 }}">
 				DOMINA EL <span class="title-highlight">ACORDEÓN VALLENATO</span><br>
 				<span class="title-secondary">DESDE CASA - SIN INSTRUMENTO</span>
 			</h1>
 
-			<!-- Propuesta de valor clara -->
 			<div class="value-proposition" in:fly="{{ y: 30, duration: 800, delay: 500 }}">
 				<p class="hero-subtitle">
 					<strong>CURSOS COMPLETOS + TUTORIALES PREMIUM</strong> que te llevan del nivel 
@@ -63,7 +56,6 @@
 				</p>
 			</div>
 
-			<!-- Beneficio rotativo -->
 			<div class="rotating-benefit" in:fly="{{ y: 20, duration: 800, delay: 700 }}">
 				{#key currentBenefit}
 					<div class="benefit-card" in:fade="{{ duration: 400 }}">
@@ -74,7 +66,6 @@
 				{/key}
 			</div>
 
-			<!-- Estadísticas impactantes -->
 			<div class="stats-showcase" in:fly="{{ y: 20, duration: 800, delay: 900 }}">
 				<div class="stat-block">
 					<div class="stat-number">5,000+</div>
@@ -92,7 +83,6 @@
 				</div>
 			</div>
 
-			<!-- Call to Action principal -->
 			<div class="cta-section" in:fly="{{ y: 20, duration: 800, delay: 1100 }}">
 				<button class="btn-mega-cta" on:click={scrollToCatalogo}>
 					<span class="btn-text">VER CURSOS Y TUTORIALES AHORA</span>
@@ -100,7 +90,6 @@
 				</button>
 			</div>
 
-			<!-- Indicador de scroll -->
 			<div class="scroll-indicator" in:fade="{{ delay: 2000 }}">
 				<div class="scroll-text">DESCUBRE TODO NUESTRO CATÁLOGO</div>
 				<div class="scroll-arrow-down">▼</div>
@@ -388,7 +377,6 @@
 		60% { transform: translateY(-8px); }
 	}
 
-	/* Responsivo */
 	@media (max-width: 1024px) {
 		.stats-showcase {
 			gap: 2rem;

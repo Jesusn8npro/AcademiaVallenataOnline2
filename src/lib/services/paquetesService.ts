@@ -1,6 +1,7 @@
 import { supabase } from '$lib/supabase/clienteSupabase';
 import { createClient } from '@supabase/supabase-js';
 import { generarReferencia } from './ePaycoService';
+import { generateSlug } from '$lib/utilidades/utilidadesSlug';
 
 // Cliente admin para operaciones que requieren bypass de RLS
 const supabaseAdmin = createClient(
@@ -15,6 +16,26 @@ const supabaseAdmin = createClient(
 );
 
 // Tipos
+export interface TutorialPaqueteItem {
+    id: string;
+    paquete_id: string;
+    tutorial_id: string;
+    orden: number;
+    incluido: boolean;
+    tutoriales?: {
+        id: string;
+        titulo: string;
+        descripcion_corta?: string;
+        imagen_url?: string;
+        duracion_estimada?: number;
+        precio_normal?: number;
+        nivel?: string;
+        categoria?: string;
+        artista?: string;
+        tonalidad?: string;
+    };
+}
+
 export interface PaqueteTutorial {
     id?: string;
     titulo: string;
@@ -157,21 +178,83 @@ export async function obtenerPaquetePorId(id: string): Promise<ResultadoOperacio
  */
 export async function obtenerPaquetePorSlug(slug: string): Promise<ResultadoOperacion> {
     try {
-        const { data, error } = await supabase
-            .from('vista_paquetes_completos')
+        console.log('🔍 Buscando paquete con slug:', slug);
+        
+        // Primero buscar por slug exacto usando la tabla directa
+        let { data, error } = await supabase
+            .from('paquetes_tutoriales')
             .select('*')
             .eq('slug', slug)
             .eq('estado', 'publicado')
             .single();
 
-        if (error) {
-            console.error('Error obteniendo paquete por slug:', error);
-            return { success: false, error: error.message };
+        console.log('📦 Resultado búsqueda por slug:', { data, error });
+
+        // Si no se encuentra por slug, buscar por título generando slug o por ID
+        if (error && error.code === 'PGRST116') {
+            console.log('🔄 No encontrado por slug, buscando alternativas...');
+            
+            // Primero intentar buscar por ID si el slug parece ser un ID
+            if (slug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                console.log('🔍 Slug parece ser un ID, buscando por ID...');
+                const { data: paquetePorId, error: errorId } = await supabase
+                    .from('paquetes_tutoriales')
+                    .select('*')
+                    .eq('id', slug)
+                    .eq('estado', 'publicado')
+                    .single();
+                
+                if (!errorId && paquetePorId) {
+                    console.log('✅ Paquete encontrado por ID:', paquetePorId);
+                    data = paquetePorId;
+                    error = null;
+                    return { success: true, data };
+                }
+            }
+            
+            // Si no es ID, buscar por título
+            const { data: paquetes, error: errorPaquetes } = await supabase
+                .from('paquetes_tutoriales')
+                .select('*')
+                .eq('estado', 'publicado');
+
+            console.log('📦 Todos los paquetes:', paquetes?.length, 'paquetes encontrados');
+
+            if (!errorPaquetes && paquetes) {
+                // Buscar el paquete cuyo título genere el slug buscado
+                const paqueteEncontrado = paquetes.find((p: any) => {
+                    const slugGenerado = generateSlug(p.titulo);
+                    console.log(`🔍 Comparando: "${slugGenerado}" === "${slug}" (${p.titulo})`);
+                    return slugGenerado === slug;
+                });
+                
+                console.log('🎯 Paquete encontrado por título:', paqueteEncontrado);
+                
+                if (paqueteEncontrado) {
+                    data = paqueteEncontrado;
+                    error = null;
+                    
+                    // Actualizar el slug en la base de datos si no lo tiene
+                    if (!paqueteEncontrado.slug) {
+                        console.log('🔧 Actualizando slug en BD...');
+                        await supabaseAdmin
+                            .from('paquetes_tutoriales')
+                            .update({ slug: generateSlug(paqueteEncontrado.titulo) })
+                            .eq('id', paqueteEncontrado.id);
+                    }
+                }
+            }
         }
 
+        if (error) {
+            console.error('❌ Error obteniendo paquete por slug:', error);
+            return { success: false, error: 'Paquete no encontrado' };
+        }
+
+        console.log('✅ Paquete encontrado:', data);
         return { success: true, data };
     } catch (error: any) {
-        console.error('Error en obtenerPaquetePorSlug:', error);
+        console.error('❌ Error en obtenerPaquetePorSlug:', error);
         return { success: false, error: error.message };
     }
 }
@@ -181,9 +264,16 @@ export async function obtenerPaquetePorSlug(slug: string): Promise<ResultadoOper
  */
 export async function crearPaquete(paquete: PaqueteTutorial): Promise<ResultadoOperacion> {
     try {
+        // Generar slug automáticamente si no existe
+        const paqueteConSlug = {
+            ...paquete,
+            slug: paquete.slug || generateSlug(paquete.titulo),
+            updated_at: new Date().toISOString()
+        };
+
         const { data, error } = await supabaseAdmin
             .from('paquetes_tutoriales')
-            .insert([paquete])
+            .insert([paqueteConSlug])
             .select('*')
             .single();
 
@@ -208,9 +298,20 @@ export async function crearPaquete(paquete: PaqueteTutorial): Promise<ResultadoO
  */
 export async function actualizarPaquete(id: string, paquete: Partial<PaqueteTutorial>): Promise<ResultadoOperacion> {
     try {
+        // Generar slug automáticamente si se actualiza el título
+        const paqueteConSlug = {
+            ...paquete,
+            updated_at: new Date().toISOString()
+        };
+
+        // Si se actualiza el título y no se proporciona slug, generar uno nuevo
+        if (paquete.titulo && !paquete.slug) {
+            paqueteConSlug.slug = generateSlug(paquete.titulo);
+        }
+
         const { data, error } = await supabaseAdmin
             .from('paquetes_tutoriales')
-            .update(paquete)
+            .update(paqueteConSlug)
             .eq('id', id)
             .select('*')
             .single();
@@ -409,29 +510,399 @@ export async function obtenerProgresoUsuarioPaquetes(usuarioId: string): Promise
 }
 
 /**
- * Inscribir usuario en paquete
+ * Inscribir usuario en paquete y sus tutoriales
  */
 export async function inscribirUsuarioEnPaquete(usuarioId: string, paqueteId: string): Promise<ResultadoOperacion> {
     try {
-        const { data, error } = await supabaseAdmin
-            .rpc('inscribir_usuario_paquete', {
+        console.log('🔍 Inscribiendo usuario en paquete:', { usuarioId, paqueteId });
+        
+        // MÉTODO 1: Intentar con RPC function (más seguro)
+        try {
+            const { data: rpcResult, error: rpcError } = await supabaseAdmin
+                .rpc('inscribir_usuario_en_paquete_admin', {
                 p_usuario_id: usuarioId,
                 p_paquete_id: paqueteId
             });
 
-        if (error) {
-            console.error('Error inscribiendo usuario en paquete:', error);
-            return { success: false, error: error.message };
+            if (!rpcError && rpcResult) {
+                console.log('✅ Inscripción exitosa via RPC:', rpcResult);
+                // Inscribir tutoriales automáticamente
+                console.log('🔄 Iniciando inscripción automática de tutoriales (RPC)...');
+                try {
+                    await inscribirTutorialesDelPaquete(usuarioId, paqueteId);
+                    console.log('✅ Inscripción de tutoriales completada (RPC)');
+                } catch (errorTutoriales) {
+                    console.error('❌ Error inscribiendo tutoriales (RPC):', errorTutoriales);
+                }
+                return { 
+                    success: true, 
+                    data: rpcResult, 
+                    message: 'Usuario inscrito en paquete exitosamente' 
+                };
+            }
+        } catch (rpcError) {
+            console.log('⚠️ RPC no disponible, usando método directo...');
         }
 
+        // MÉTODO 2: Inserción directa (fallback)
+        console.log('🔄 Usando método directo...');
+        
+        // Primero verificar si ya está inscrito
+        const { data: existeInscripcion } = await supabaseAdmin
+            .from('inscripciones')
+            .select('id')
+            .eq('usuario_id', usuarioId)
+            .eq('paquete_id', paqueteId)
+            .maybeSingle();
+
+        if (existeInscripcion) {
+            return { 
+                success: false, 
+                error: 'El usuario ya está inscrito en este paquete' 
+            };
+        }
+
+        // Obtener información del paquete
+        const { data: paquete, error: errorPaquete } = await supabaseAdmin
+            .from('paquetes_tutoriales')
+            .select('id, titulo')
+            .eq('id', paqueteId)
+            .single();
+
+        if (errorPaquete || !paquete) {
+            console.error('Error obteniendo paquete:', errorPaquete);
+            return { success: false, error: 'Paquete no encontrado' };
+        }
+
+        console.log('📦 Paquete encontrado:', paquete);
+
+        // MÉTODO 3: Usar cliente regular (sin service role)
+        const { data, error } = await supabase
+            .from('inscripciones')
+            .insert({
+                usuario_id: usuarioId,
+                paquete_id: paqueteId,
+                fecha_inscripcion: new Date().toISOString(),
+                porcentaje_completado: 0,
+                completado: false,
+                estado: 'activo',
+                progreso: 0,
+                ultima_actividad: new Date().toISOString()
+            })
+            .select();
+
+        if (error) {
+            console.error('❌ Error con cliente regular, intentando con admin...');
+            
+            // MÉTODO 4: Forzar con service role
+            const { data: adminData, error: adminError } = await supabaseAdmin
+                .from('inscripciones')
+                .insert({
+                    usuario_id: usuarioId,
+                    paquete_id: paqueteId,
+                    fecha_inscripcion: new Date().toISOString(),
+                    porcentaje_completado: 0,
+                    completado: false,
+                    estado: 'activo',
+                    progreso: 0,
+                    ultima_actividad: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                .select();
+
+            if (adminError) {
+                console.error('❌ Error final:', adminError);
+                return { 
+                    success: false, 
+                    error: `Error de inscripción: ${adminError.message}. Ejecutar script SQL urgente.` 
+                };
+            }
+
+            console.log('✅ Inscripción exitosa con admin:', adminData);
+            // Inscribir tutoriales automáticamente
+            console.log('🔄 Iniciando inscripción automática de tutoriales (admin)...');
+            try {
+                await inscribirTutorialesDelPaquete(usuarioId, paqueteId);
+                console.log('✅ Inscripción de tutoriales completada (admin)');
+            } catch (errorTutoriales) {
+                console.error('❌ Error inscribiendo tutoriales (admin):', errorTutoriales);
+            }
+            return { 
+                success: true, 
+                data: adminData, 
+                message: `Usuario inscrito en paquete "${paquete.titulo}" exitosamente` 
+            };
+        }
+
+        console.log('✅ Usuario inscrito exitosamente:', data);
+        // Inscribir tutoriales automáticamente
+        console.log('🔄 Iniciando inscripción automática de tutoriales...');
+        try {
+            await inscribirTutorialesDelPaquete(usuarioId, paqueteId);
+            console.log('✅ Inscripción de tutoriales completada');
+        } catch (errorTutoriales) {
+            console.error('❌ Error inscribiendo tutoriales:', errorTutoriales);
+        }
         return { 
             success: true, 
             data: data, 
-            message: 'Usuario inscrito en paquete exitosamente' 
+            message: `Usuario inscrito en paquete "${paquete.titulo}" exitosamente` 
         };
     } catch (error: any) {
-        console.error('Error en inscribirUsuarioEnPaquete:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Error inesperado en inscribirUsuarioEnPaquete:', error);
+        return { success: false, error: `Error inesperado: ${error.message}` };
+    }
+}
+
+/**
+ * Inscribir automáticamente todos los tutoriales de un paquete
+ */
+async function inscribirTutorialesDelPaquete(usuarioId: string, paqueteId: string): Promise<void> {
+    try {
+        console.log('🎯 [INICIO] Inscribiendo tutoriales del paquete:', { usuarioId, paqueteId });
+        
+        // PASO 1: Obtener todos los tutoriales del paquete
+        console.log('📋 Paso 1: Obteniendo tutoriales del paquete...');
+        const resultadoTutoriales = await obtenerTutorialesPaquete(paqueteId);
+        
+        if (!resultadoTutoriales.success || !resultadoTutoriales.data) {
+            console.error('❌ Error obteniendo tutoriales del paquete:', resultadoTutoriales.error);
+            return;
+        }
+
+        const tutoriales = resultadoTutoriales.data;
+        console.log('📚 Tutoriales encontrados:', tutoriales.length);
+        console.log('📋 Estructura completa de tutoriales:', JSON.stringify(tutoriales, null, 2));
+
+        // PASO 2: Verificar estructura de datos
+        console.log('📋 Paso 2: Verificando estructura de datos...');
+        const tutorialesValidos = tutoriales.filter((item: any) => {
+            const tieneId = item.tutoriales?.id;
+            const tieneTitulo = item.tutoriales?.titulo;
+            console.log('🔍 Item tutorial:', {
+                item: item,
+                tieneId: tieneId,
+                tieneTitulo: tieneTitulo,
+                tutorial: item.tutoriales
+            });
+            return tieneId;
+        });
+
+        console.log(`📊 Tutoriales válidos: ${tutorialesValidos.length} de ${tutoriales.length}`);
+
+        if (tutorialesValidos.length === 0) {
+            console.error('❌ No hay tutoriales válidos para inscribir');
+            return;
+        }
+
+        // PASO 3: Verificar qué tutoriales ya están inscritos
+        console.log('📋 Paso 3: Verificando inscripciones existentes...');
+        const { data: inscripcionesExistentes, error: errorExistentes } = await supabaseAdmin
+            .from('inscripciones')
+            .select('tutorial_id')
+            .eq('usuario_id', usuarioId)
+            .not('tutorial_id', 'is', null);
+
+        if (errorExistentes) {
+            console.error('❌ Error consultando inscripciones existentes:', errorExistentes);
+        }
+
+        const tutorialesInscritos = inscripcionesExistentes?.map(i => i.tutorial_id) || [];
+        console.log('📝 Tutoriales ya inscritos:', tutorialesInscritos);
+
+        // PASO 4: Filtrar tutoriales que no están inscritos
+        console.log('📋 Paso 4: Filtrando tutoriales por inscribir...');
+        const tutorialesParaInscribir = tutorialesValidos.filter((item: any) => {
+            const tutorialId = item.tutoriales?.id;
+            const yaInscrito = tutorialesInscritos.includes(tutorialId);
+            console.log('🔍 Verificando tutorial:', {
+                id: tutorialId,
+                titulo: item.tutoriales?.titulo,
+                yaInscrito: yaInscrito
+            });
+            return tutorialId && !yaInscrito;
+        });
+
+        console.log(`📝 Tutoriales para inscribir: ${tutorialesParaInscribir.length}`);
+
+        if (tutorialesParaInscribir.length === 0) {
+            console.log('✅ No hay tutoriales nuevos para inscribir');
+            return;
+        }
+
+        // PASO 5: Preparar inscripciones
+        console.log('📋 Paso 5: Preparando inscripciones...');
+        const inscripciones = tutorialesParaInscribir.map((item: any) => {
+            const inscripcion = {
+                usuario_id: usuarioId,
+                tutorial_id: item.tutoriales.id,
+                fecha_inscripcion: new Date().toISOString(),
+                porcentaje_completado: 0,
+                completado: false,
+                estado: 'activo',
+                progreso: 0,
+                ultima_actividad: new Date().toISOString()
+                // Removido created_at y updated_at para evitar problemas
+            };
+            console.log('📋 Preparando inscripción:', inscripcion);
+            return inscripcion;
+        });
+
+        // PASO 6: Guardar en base de datos
+        console.log('💾 Paso 6: Guardando inscripciones en BD...');
+        console.log('📊 Total de inscripciones a guardar:', inscripciones.length);
+        
+        // MÉTODO 1: Intentar con cliente admin - insertar una por una
+        let exitosas = 0;
+        let fallidas = 0;
+        
+        for (const inscripcion of inscripciones) {
+            try {
+                console.log('📝 Insertando inscripción (Admin):', inscripcion);
+                const { data, error } = await supabaseAdmin
+                    .from('inscripciones')
+                    .insert([inscripcion])
+                    .select();
+                
+                if (error) {
+                    console.error('❌ Error insertando inscripción individual (Admin):', error);
+                    console.error('📋 Datos que fallaron:', inscripcion);
+                    fallidas++;
+                } else {
+                    console.log('✅ Inscripción insertada exitosamente (Admin):', data);
+                    exitosas++;
+                }
+            } catch (error) {
+                console.error('❌ Error en inscripción individual (Admin):', error);
+                fallidas++;
+            }
+        }
+        
+        console.log(`📊 Resumen Admin: ${exitosas} exitosas, ${fallidas} fallidas`);
+        
+        // MÉTODO 2: Si falló con admin, intentar con cliente regular
+        if (fallidas > 0) {
+            console.log('🔄 Intentando con cliente regular...');
+            let exitosasRegular = 0;
+            let fallidasRegular = 0;
+            
+            for (const inscripcion of inscripciones) {
+                try {
+                    console.log('📝 Insertando inscripción (Regular):', inscripcion);
+                    const { data, error } = await supabase
+                        .from('inscripciones')
+                        .insert([inscripcion])
+                        .select();
+                    
+                    if (error) {
+                        console.error('❌ Error insertando inscripción individual (Regular):', error);
+                        console.error('📋 Datos que fallaron:', inscripcion);
+                        fallidasRegular++;
+                    } else {
+                        console.log('✅ Inscripción insertada exitosamente (Regular):', data);
+                        exitosasRegular++;
+                    }
+                } catch (error) {
+                    console.error('❌ Error en inscripción individual (Regular):', error);
+                    fallidasRegular++;
+                }
+            }
+            
+            console.log(`📊 Resumen Regular: ${exitosasRegular} exitosas, ${fallidasRegular} fallidas`);
+        }
+        
+        // MÉTODO 3: Inserción en lote como último recurso
+        if (inscripciones.length > 0) {
+            console.log('🔄 Intentando inserción en lote como respaldo...');
+            try {
+                const { data, error } = await supabaseAdmin
+                    .from('inscripciones')
+                    .insert(inscripciones)
+                    .select();
+
+                if (error) {
+                    console.error('❌ Error en inserción en lote:', error);
+                    console.error('📋 Detalles del error:', error.details);
+                    console.error('📋 Mensaje del error:', error.message);
+                } else {
+                    console.log('✅ Inserción en lote exitosa:', data?.length || 0);
+                    console.log('📋 Datos insertados en lote:', data);
+                }
+            } catch (error) {
+                console.error('❌ Error en inserción en lote:', error);
+            }
+        }
+
+        // PASO 7: Verificación final
+        console.log('📋 Paso 7: Verificación final...');
+        const { data: verificacion, error: errorVerificacion } = await supabaseAdmin
+            .from('inscripciones')
+            .select('*')
+            .eq('usuario_id', usuarioId)
+            .not('tutorial_id', 'is', null)
+            .in('tutorial_id', tutorialesParaInscribir.map((item: any) => item.tutoriales.id));
+
+        if (errorVerificacion) {
+            console.error('❌ Error en verificación:', errorVerificacion);
+        } else {
+            console.log('✅ Verificación exitosa. Tutoriales en BD:', verificacion?.length || 0);
+        }
+
+    } catch (error) {
+        console.error('❌ Error inscribiendo tutoriales del paquete:', error);
+    }
+}
+
+/**
+ * Eliminar inscripción de paquete y todos sus tutoriales
+ */
+export async function eliminarInscripcionPaquete(usuarioId: string, paqueteId: string): Promise<ResultadoOperacion> {
+    try {
+        console.log('🗑️ Eliminando inscripción de paquete:', { usuarioId, paqueteId });
+        
+        // 1. Obtener tutoriales del paquete
+        const resultadoTutoriales = await obtenerTutorialesPaquete(paqueteId);
+        
+        if (resultadoTutoriales.success && resultadoTutoriales.data) {
+            const tutorialesIds = resultadoTutoriales.data.map((item: any) => item.tutoriales?.id).filter(Boolean);
+            
+            if (tutorialesIds.length > 0) {
+                console.log('🎯 Eliminando tutoriales:', tutorialesIds);
+                
+                // 2. Eliminar inscripciones de tutoriales individuales
+                const { error: errorTutoriales } = await supabase
+                    .from('inscripciones')
+                    .delete()
+                    .eq('usuario_id', usuarioId)
+                    .in('tutorial_id', tutorialesIds);
+                
+                if (errorTutoriales) {
+                    console.error('❌ Error eliminando tutoriales:', errorTutoriales);
+                    return { success: false, error: `Error eliminando tutoriales: ${errorTutoriales.message}` };
+                }
+                
+                console.log('✅ Tutoriales eliminados exitosamente');
+            }
+        }
+        
+        // 3. Eliminar inscripción del paquete
+        const { error: errorPaquete } = await supabase
+            .from('inscripciones')
+            .delete()
+            .eq('usuario_id', usuarioId)
+            .eq('paquete_id', paqueteId);
+        
+        if (errorPaquete) {
+            console.error('❌ Error eliminando paquete:', errorPaquete);
+            return { success: false, error: `Error eliminando paquete: ${errorPaquete.message}` };
+        }
+        
+        console.log('✅ Inscripción de paquete eliminada exitosamente');
+        return { success: true, message: 'Paquete y todos sus tutoriales eliminados exitosamente' };
+    } catch (error: any) {
+        console.error('❌ Error eliminando inscripción de paquete:', error);
+        return { success: false, error: `Error inesperado: ${error.message}` };
     }
 }
 

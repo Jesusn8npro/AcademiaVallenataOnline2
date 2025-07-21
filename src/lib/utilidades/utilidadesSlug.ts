@@ -8,15 +8,23 @@
  * @returns Slug generado
  */
 export function generateSlug(text: string): string {
-  return text
+  if (!text) return '';
+  
+  console.log('🔧 Generando slug para:', text);
+  
+  const slug = text
     .toString()
+    .trim()                             // Elimina espacios al inicio y final
     .normalize('NFD')                   // Normaliza caracteres acentuados
-    .replace(/[\u0300-\u036f]/g, '')    // Elimina diacríticos
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')           // Elimina caracteres especiales
-    .replace(/\s+/g, '-')               // Reemplaza espacios con guiones
+    .replace(/[\u0300-\u036f]/g, '')    // Elimina diacríticos (tildes, etc.)
+    .toLowerCase()                      // Convierte a minúsculas
+    .replace(/[^\w\s-]/g, ' ')          // Convierte caracteres especiales a espacios
+    .replace(/\s+/g, '-')               // Reemplaza espacios múltiples con guiones
     .replace(/--+/g, '-')               // Elimina guiones múltiples
-    .trim();                            // Elimina espacios al inicio y final
+    .replace(/^-+|-+$/g, '');           // Elimina guiones al inicio y final
+  
+  console.log('✅ Slug generado:', slug);
+  return slug;
 }
 
 /**

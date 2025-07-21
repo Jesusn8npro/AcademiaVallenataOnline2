@@ -20,7 +20,7 @@
       <p>Este usuario aún no ha subido grabaciones de acordeón desde el simulador.</p>
       
       <div class="accion-vacio">
-        <a href="/simulador-de-acordeon" class="btn-probar-simulador">
+        <a href="/simulador-gaming" class="btn-probar-simulador">
           🎹 Probar el Simulador
         </a>
       </div>

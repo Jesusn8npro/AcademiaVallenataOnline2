@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { usuario } from '$lib/UsuarioActivo/usuario';
   import { goto } from '$app/navigation';
   import { cargarTodasLasEstadisticas, type EstadisticasCompletas } from '$lib/services/adminService';
   
@@ -9,21 +8,13 @@
   import SeccionVentas from '$lib/components/Administrador/SeccionVentas.svelte';
   import SeccionComunidad from '$lib/components/Administrador/SeccionComunidad.svelte';
 
-  let currentUser;
   let estadisticas: EstadisticasCompletas | null = null;
   let cargando = true;
   let seccionActiva = 'dashboard';
 
   onMount(() => {
-    const unsubscribe = usuario.subscribe((u) => {
-      currentUser = u;
-      if (!u || u.rol !== 'admin') {
-        goto('/');
-      } else {
-        cargarEstadisticas();
-      }
-    });
-    return unsubscribe;
+    // El layout ya se encarga de la autenticación
+    cargarEstadisticas();
   });
 
   async function cargarEstadisticas() {

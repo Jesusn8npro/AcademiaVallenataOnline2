@@ -26,6 +26,8 @@
       cargandoCursos = true;
       errorCursos = null;
 
+      console.log('🔍 [MIS CURSOS] Cargando inscripciones para usuario:', $usuario.id);
+
       // Primero obtener todas las inscripciones del usuario
       const { data: inscripcionesData, error } = await supabase
         .from('inscripciones')
@@ -37,14 +39,25 @@
         throw error;
       }
 
+      console.log('📋 [MIS CURSOS] Inscripciones encontradas:', inscripcionesData?.length || 0);
+      console.log('📋 [MIS CURSOS] Datos de inscripciones:', inscripcionesData);
+
       if (!inscripcionesData || inscripcionesData.length === 0) {
         inscripciones = [];
+        console.log('❌ [MIS CURSOS] No se encontraron inscripciones');
         return;
       }
 
       // Separar las inscripciones por tipo
       const inscripcionesCursos = inscripcionesData.filter((i: any) => i.curso_id);
       const inscripcionesTutoriales = inscripcionesData.filter((i: any) => i.tutorial_id);
+      const inscripcionesPaquetes = inscripcionesData.filter((i: any) => i.paquete_id);
+
+      console.log('📊 [MIS CURSOS] Distribución de inscripciones:', {
+        cursos: inscripcionesCursos.length,
+        tutoriales: inscripcionesTutoriales.length,
+        paquetes: inscripcionesPaquetes.length
+      });
 
       // Obtener datos de cursos si hay inscripciones a cursos
       let cursosData = [];
@@ -55,17 +68,21 @@
           .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug')
           .in('id', cursoIds);
         cursosData = cursos || [];
+        console.log('📚 [MIS CURSOS] Cursos cargados:', cursosData.length);
       }
 
       // Obtener datos de tutoriales si hay inscripciones a tutoriales
       let tutorialesData = [];
       if (inscripcionesTutoriales.length > 0) {
         const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
+        console.log('🎯 [MIS CURSOS] Tutorial IDs a buscar:', tutorialIds);
         const { data: tutoriales } = await supabase
           .from('tutoriales')
           .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad')
           .in('id', tutorialIds);
         tutorialesData = tutoriales || [];
+        console.log('🎵 [MIS CURSOS] Tutoriales cargados:', tutorialesData.length);
+        console.log('🎵 [MIS CURSOS] Datos de tutoriales:', tutorialesData);
       }
 
       // Combinar todo
@@ -84,8 +101,11 @@
 
       // Reordenar por fecha de inscripción
       inscripciones.sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime());
+      
+      console.log('✅ [MIS CURSOS] Inscripciones finales:', inscripciones.length);
+      console.log('✅ [MIS CURSOS] Datos finales:', inscripciones);
     } catch (error: any) {
-      console.error('Error cargando inscripciones:', error);
+      console.error('❌ [MIS CURSOS] Error cargando inscripciones:', error);
       errorCursos = error.message || 'Error desconocido al cargar los cursos';
     } finally {
       cargandoCursos = false;
@@ -144,6 +164,8 @@
     grid-template-columns: 2fr 1fr;
     gap: 2.5rem;
     align-items: start;
+    max-width: 1400px;
+    margin: 0 auto;
   }
 
   .columna-principal {
@@ -169,12 +191,17 @@
   .columna-lateral {
     position: sticky;
     top: 2rem;
+    min-width: 300px;
+    max-width: 400px;
   }
 
   .widgets-contenedor {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   @media (max-width: 900px) {
@@ -190,6 +217,8 @@
     .columna-lateral {
       order: 1;
       position: static;
+      min-width: auto;
+      max-width: none;
     }
 
     .columna-principal {

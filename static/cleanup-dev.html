@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧹 Limpieza de Development - Academia Vallenata</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            display: inline-block;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn.danger { background: #ef4444; }
+        .btn.danger:hover { background: #dc2626; }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧹 Limpieza de Development</h1>
+        <p>Esta página te ayuda a limpiar service workers y caches que pueden estar interfiriendo con Lighthouse.</p>
+        
+        <div>
+            <button class="btn" onclick="checkCurrentState()">🔍 Ver Estado Actual</button>
+            <button class="btn danger" onclick="clearEverything()">🗑️ Limpiar Todo</button>
+            <button class="btn" onclick="goHome()">🏠 Ir a Inicio</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;">
+            <h3>📊 Estado:</h3>
+            <pre id="output"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function checkCurrentState() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            
+            let report = '🔍 ESTADO ACTUAL:\n\n';
+            
+            // Service Workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                report += `📋 Service Workers: ${registrations.length}\n`;
+                registrations.forEach((reg, i) => {
+                    report += `  ${i+1}. ${reg.scope}\n`;
+                });
+            }
+            
+            // Caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                report += `\n💾 Caches: ${cacheNames.length}\n`;
+                cacheNames.forEach((name, i) => {
+                    report += `  ${i+1}. ${name}\n`;
+                });
+            }
+            
+            // Local Storage
+            const localStorageSize = Object.keys(localStorage).length;
+            report += `\n📦 LocalStorage items: ${localStorageSize}\n`;
+            
+            // Session Storage  
+            const sessionStorageSize = Object.keys(sessionStorage).length;
+            report += `🔄 SessionStorage items: ${sessionStorageSize}\n`;
+            
+            output.textContent = report;
+        }
+        
+        async function clearEverything() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            
+            let report = '🧹 LIMPIANDO TODO...\n\n';
+            
+            try {
+                // 1. Desregistrar todos los Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        report += `✅ Service Worker desregistrado: ${registration.scope}\n`;
+                    }
+                }
+                
+                // 2. Limpiar todos los caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    for (const cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        report += `✅ Cache eliminado: ${cacheName}\n`;
+                    }
+                }
+                
+                // 3. Limpiar Local Storage
+                localStorage.clear();
+                report += '✅ LocalStorage limpiado\n';
+                
+                // 4. Limpiar Session Storage
+                sessionStorage.clear();
+                report += '✅ SessionStorage limpiado\n';
+                
+                report += '\n🎉 ¡LIMPIEZA COMPLETADA!\n';
+                report += '\n📋 PRÓXIMOS PASOS:\n';
+                report += '1. Cierra todas las pestañas de localhost:5173\n';
+                report += '2. Abre una nueva pestaña en localhost:5173\n';
+                report += '3. Ahora Lighthouse debería funcionar correctamente\n';
+                
+            } catch (error) {
+                report += `❌ Error durante limpieza: ${error.message}\n`;
+            }
+            
+            output.textContent = report;
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        // Auto-verificar estado al cargar
+        window.addEventListener('load', checkCurrentState);
+    </script>
+</body>
+</html> 

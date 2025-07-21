@@ -12,6 +12,7 @@
 	let datos = {
 		nombre: '',
 		apellido: '',
+		nombre_usuario: '',
 		correo_electronico: '',
 		password: '',
 		rol: 'estudiante',
@@ -33,6 +34,12 @@
 	// Función para limpiar entrada de emojis y caracteres especiales
 	function limpiarTexto(texto: string): string {
 		return texto
+			.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+	}
+	
+	// Función para limpiar solo al enviar el formulario (con trim)
+	function limpiarTextoFinal(texto: string): string {
+		return texto
 			.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
 			.trim();
 	}
@@ -43,28 +50,17 @@
 		return regex.test(email);
 	}
 
-	async function verificarEmailExistente(email: string): Promise<boolean> {
-		try {
-			const { data, error } = await supabase
-				.from('perfiles')
-				.select('correo_electronico')
-				.eq('correo_electronico', email)
-				.single();
 
-			return !!data;
-		} catch {
-			return false;
-		}
-	}
 
 	async function crearUsuario() {
-		// Limpiar todos los campos de texto
-		datos.nombre = limpiarTexto(datos.nombre);
-		datos.apellido = limpiarTexto(datos.apellido);
+		// Limpiar todos los campos de texto al enviar el formulario
+		datos.nombre = limpiarTextoFinal(datos.nombre);
+		datos.apellido = limpiarTextoFinal(datos.apellido);
+		datos.nombre_usuario = limpiarTextoFinal(datos.nombre_usuario);
 		datos.correo_electronico = datos.correo_electronico.trim().toLowerCase();
-		datos.ciudad = limpiarTexto(datos.ciudad);
-		datos.pais = limpiarTexto(datos.pais);
-		datos.profesion = limpiarTexto(datos.profesion);
+		datos.ciudad = limpiarTextoFinal(datos.ciudad);
+		datos.pais = limpiarTextoFinal(datos.pais);
+		datos.profesion = limpiarTextoFinal(datos.profesion);
 
 		// Validaciones
 		if (!datos.nombre || !datos.apellido || !datos.correo_electronico || !datos.password) {
@@ -82,79 +78,48 @@
 			return;
 		}
 
+		// Validar formato del nombre de usuario (solo si se proporciona)
+		if (datos.nombre_usuario && datos.nombre_usuario.trim() !== '') {
+			const usernameRegex = /^[a-zA-Z0-9_]+$/;
+			if (!usernameRegex.test(datos.nombre_usuario)) {
+				error = 'El nombre de usuario solo puede contener letras, números y guiones bajos (_)';
+				return;
+			}
+
+			if (datos.nombre_usuario.length < 3) {
+				error = 'El nombre de usuario debe tener al menos 3 caracteres';
+				return;
+			}
+		}
+
 		try {
 			cargando = true;
 			error = '';
 
-			// Verificar si el email ya existe
-			const emailExiste = await verificarEmailExistente(datos.correo_electronico);
-			if (emailExiste) {
-				error = 'Ya existe un usuario registrado con este correo electrónico';
-				return;
-			}
-
-			// Crear usuario en Auth
-			const { data: authData, error: authError } = await supabase.auth.signUp({
-				email: datos.correo_electronico,
-				password: datos.password,
-				options: {
-					emailRedirectTo: undefined // Evitar envío de email de confirmación
-				}
+			// Crear usuario usando API endpoint local (NO afecta la sesión del admin)
+			const response = await fetch('/api/admin/crear-usuario', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(datos)
 			});
 
-			if (authError) {
-				if (authError.message.includes('User already registered')) {
-					error = 'Ya existe un usuario registrado con este correo electrónico';
-				} else {
-					error = `Error de autenticación: ${authError.message}`;
-				}
+			const resultado = await response.json();
+
+			if (!response.ok) {
+				error = resultado.error || 'Error al crear el usuario';
 				return;
 			}
 
-			if (authData.user) {
-				// Preparar datos del perfil
-				const perfilData = {
-					id: authData.user.id,
-					nombre: datos.nombre,
-					apellido: datos.apellido,
-					nombre_completo: `${datos.nombre} ${datos.apellido}`,
-					correo_electronico: datos.correo_electronico,
-					rol: datos.rol,
-					suscripcion: datos.suscripcion,
-					ciudad: datos.ciudad || null,
-					pais: datos.pais || null,
-					whatsapp: datos.whatsapp || null,
-					nivel_habilidad: datos.nivel_habilidad || null,
-					documento_tipo: datos.documento_tipo,
-					documento_numero: datos.documento_numero || null,
-					profesion: datos.profesion || null,
-					instrumento: datos.instrumento,
-					eliminado: false
-				};
+			// Usuario creado exitosamente
+			exito = true;
+			const usuarioCreado = resultado.usuario;
+			limpiarFormulario();
+			setTimeout(() => {
+				dispatch('usuarioCreado', usuarioCreado);
+			}, 2000);
 
-				// Crear perfil del usuario
-				const { error: profileError } = await supabase
-					.from('perfiles')
-					.insert(perfilData);
-
-				if (profileError) {
-					console.error('Error al crear perfil:', profileError);
-					// Si falla la creación del perfil, intentamos eliminar el usuario de Auth
-					try {
-						await supabase.auth.admin.deleteUser(authData.user.id);
-					} catch (deleteError) {
-						console.error('Error al limpiar usuario de Auth:', deleteError);
-					}
-					error = `Error al crear el perfil: ${profileError.message}`;
-					return;
-				}
-
-				exito = true;
-				limpiarFormulario();
-				setTimeout(() => {
-					dispatch('usuarioCreado');
-				}, 2000);
-			}
 		} catch (err: any) {
 			console.error('Error completo:', err);
 			error = `Error inesperado: ${err.message}`;
@@ -167,6 +132,7 @@
 		datos = {
 			nombre: '',
 			apellido: '',
+			nombre_usuario: '',
 			correo_electronico: '',
 			password: '',
 			rol: 'estudiante',
@@ -188,7 +154,7 @@
 	function manejarEntradaTexto(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const campo = target.name;
-		if (campo && ['nombre', 'apellido', 'ciudad', 'pais', 'profesion'].includes(campo)) {
+		if (campo && ['nombre', 'apellido', 'nombre_usuario', 'ciudad', 'pais', 'profesion'].includes(campo)) {
 			target.value = limpiarTexto(target.value);
 		}
 	}
@@ -247,6 +213,19 @@
 							required 
 							placeholder="Apellido del usuario"
 							maxlength="100"
+						/>
+					</div>
+
+					<div class="campo">
+						<label for="nombre_usuario">Nombre de Usuario (opcional)</label>
+						<input 
+							id="nombre_usuario" 
+							name="nombre_usuario"
+							type="text" 
+							bind:value={datos.nombre_usuario} 
+							on:input={manejarEntradaTexto}
+							placeholder="Se generará automáticamente si no se especifica"
+							maxlength="50"
 						/>
 					</div>
 

@@ -10,6 +10,13 @@
     let filtroCategoria = '';
     let filtroNivel = '';
     let categorias: string[] = [];
+    let busquedaTimeout: NodeJS.Timeout;
+    let stats = {
+        total: 0,
+        principiante: 0,
+        intermedio: 0,
+        avanzado: 0
+    };
 
     onMount(async () => {
         await cargarPaquetes();
@@ -18,6 +25,7 @@
     async function cargarPaquetes() {
         try {
             cargando = true;
+            error = '';
             const resultado = await obtenerPaquetesPublicados();
             
             if (resultado.success) {
@@ -27,38 +35,64 @@
                 const categoriasUnicas = [...new Set(paquetes
                     .map(p => p.categoria)
                     .filter(c => c && c.trim() !== ''))];
-                categorias = categoriasUnicas;
+                categorias = categoriasUnicas.sort();
+                
+                // Calcular estadísticas
+                calcularEstadisticas();
             } else {
-                error = 'Error cargando paquetes';
+                error = resultado.error || 'Error cargando paquetes';
             }
         } catch (err) {
-            error = 'Error inesperado';
+            console.error('Error cargando paquetes:', err);
+            error = 'Error inesperado al cargar paquetes';
         } finally {
             cargando = false;
         }
     }
 
+    function calcularEstadisticas() {
+        stats = {
+            total: paquetes.length,
+            principiante: paquetes.filter(p => p.nivel === 'principiante').length,
+            intermedio: paquetes.filter(p => p.nivel === 'intermedio').length,
+            avanzado: paquetes.filter(p => p.nivel === 'avanzado').length
+        };
+    }
+
     async function aplicarFiltros() {
-        if (!busqueda && !filtroCategoria && !filtroNivel) {
-            await cargarPaquetes();
-            return;
+        // Limpiar timeout anterior
+        if (busquedaTimeout) {
+            clearTimeout(busquedaTimeout);
         }
 
-        try {
-            cargando = true;
-            const resultado = await buscarPaquetes(busqueda, {
-                categoria: filtroCategoria || undefined,
-                nivel: filtroNivel || undefined
-            });
-
-            if (resultado.success) {
-                paquetes = resultado.data || [];
+        // Aplicar filtros con debounce solo para búsqueda de texto
+        busquedaTimeout = setTimeout(async () => {
+            if (!busqueda && !filtroCategoria && !filtroNivel) {
+                await cargarPaquetes();
+                return;
             }
-        } catch (err) {
-            console.error('Error en búsqueda:', err);
-        } finally {
-            cargando = false;
-        }
+
+            try {
+                cargando = true;
+                error = '';
+                const resultado = await buscarPaquetes(busqueda, {
+                    categoria: filtroCategoria || undefined,
+                    nivel: filtroNivel || undefined
+                });
+
+                if (resultado.success) {
+                    paquetes = resultado.data || [];
+                    calcularEstadisticas();
+                } else {
+                    error = resultado.error || 'Error en la búsqueda';
+                }
+            } catch (err) {
+                console.error('Error en búsqueda:', err);
+                error = 'Error inesperado en la búsqueda';
+            } finally {
+                cargando = false;
+            }
+        }, busqueda ? 300 : 0); // Debounce solo para búsqueda de texto
     }
 
     function limpiarFiltros() {
@@ -96,32 +130,71 @@
 
     <!-- Filtros -->
     <section class="filters">
+        <div class="filters-header">
+            <h2>Encuentra tu paquete ideal</h2>
+            <div class="stats-summary">
+                <span class="stat-item">
+                    <strong>{stats.total}</strong> paquetes disponibles
+                </span>
+                <span class="stat-item">
+                    <strong>{stats.principiante}</strong> principiante
+                </span>
+                <span class="stat-item">
+                    <strong>{stats.intermedio}</strong> intermedio
+                </span>
+                <span class="stat-item">
+                    <strong>{stats.avanzado}</strong> avanzado
+                </span>
+            </div>
+        </div>
+        
         <div class="search-bar">
-            <input 
-                type="text" 
-                placeholder="Buscar paquetes..." 
-                bind:value={busqueda}
-                on:input={aplicarFiltros}
-            />
+            <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <input 
+                    type="text" 
+                    placeholder="Buscar paquetes por título, categoría..." 
+                    bind:value={busqueda}
+                    on:input={aplicarFiltros}
+                />
+                {#if busqueda}
+                    <button class="clear-search" on:click={() => { busqueda = ''; aplicarFiltros(); }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                {/if}
+            </div>
         </div>
         
         <div class="filter-controls">
-            <select bind:value={filtroCategoria} on:change={aplicarFiltros}>
-                <option value="">Todas las categorías</option>
-                {#each categorias as categoria}
-                    <option value={categoria}>{categoria}</option>
-                {/each}
-            </select>
+            <div class="filter-group">
+                <label>Categoría:</label>
+                <select bind:value={filtroCategoria} on:change={aplicarFiltros}>
+                    <option value="">Todas las categorías</option>
+                    {#each categorias as categoria}
+                        <option value={categoria}>{categoria}</option>
+                    {/each}
+                </select>
+            </div>
             
-            <select bind:value={filtroNivel} on:change={aplicarFiltros}>
-                <option value="">Todos los niveles</option>
-                <option value="principiante">Principiante</option>
-                <option value="intermedio">Intermedio</option>
-                <option value="avanzado">Avanzado</option>
-            </select>
+            <div class="filter-group">
+                <label>Nivel:</label>
+                <select bind:value={filtroNivel} on:change={aplicarFiltros}>
+                    <option value="">Todos los niveles</option>
+                    <option value="principiante">🟢 Principiante</option>
+                    <option value="intermedio">🟡 Intermedio</option>
+                    <option value="avanzado">🔴 Avanzado</option>
+                </select>
+            </div>
             
             <button class="btn-clear" on:click={limpiarFiltros}>
-                Limpiar
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Limpiar filtros
             </button>
         </div>
     </section>
@@ -176,13 +249,32 @@
                             <div class="card-meta">
                                 <div class="stats">
                                     <span class="stat">
-                                        <strong>{paquete.total_tutoriales || 0}</strong>
-                                        Tutoriales
+                                        <div class="stat-icon">🎵</div>
+                                        <div class="stat-info">
+                                            <strong>{paquete.total_tutoriales || 0}</strong>
+                                            <span>Tutoriales</span>
+                                        </div>
                                     </span>
                                     <span class="stat">
-                                        <strong>{paquete.nivel}</strong>
-                                        Nivel
+                                        <div class="stat-icon">
+                                            {#if paquete.nivel === 'principiante'}🟢
+                                            {:else if paquete.nivel === 'intermedio'}🟡
+                                            {:else}🔴{/if}
+                                        </div>
+                                        <div class="stat-info">
+                                            <strong>{paquete.nivel}</strong>
+                                            <span>Nivel</span>
+                                        </div>
                                     </span>
+                                    {#if paquete.duracion_total_estimada}
+                                        <span class="stat">
+                                            <div class="stat-icon">⏱️</div>
+                                            <div class="stat-info">
+                                                <strong>{Math.round(paquete.duracion_total_estimada / 60)}</strong>
+                                                <span>Horas</span>
+                                            </div>
+                                        </span>
+                                    {/if}
                                 </div>
                             </div>
                         </div>
@@ -250,29 +342,112 @@
         margin-bottom: 2rem;
     }
 
+    .filters-header {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .filters-header h2 {
+        margin: 0 0 1rem 0;
+        color: #333;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .stats-summary {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .stat-item strong {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 0.25rem;
+    }
+
     .search-bar {
         margin-bottom: 1rem;
     }
 
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        color: #6c757d;
+        z-index: 1;
+    }
+
     .search-bar input {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.75rem 1rem 0.75rem 3rem;
         border: 1px solid #ddd;
         border-radius: 6px;
         font-size: 1rem;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
     }
 
     .search-bar input:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        background: white;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 0.75rem;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .clear-search:hover {
+        background: #f8f9fa;
+        color: #333;
     }
 
     .filter-controls {
         display: flex;
         gap: 1rem;
-        align-items: center;
+        align-items: end;
         flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #333;
     }
 
     .filter-controls select {
@@ -280,6 +455,15 @@
         border: 1px solid #ddd;
         border-radius: 6px;
         font-size: 0.9rem;
+        background: white;
+        min-width: 150px;
+        transition: all 0.2s ease;
+    }
+
+    .filter-controls select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
     }
 
     .btn-clear {
@@ -290,10 +474,15 @@
         border-radius: 6px;
         cursor: pointer;
         font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
     }
 
     .btn-clear:hover {
         background: #545b62;
+        transform: translateY(-1px);
     }
 
     /* Loading & States */
@@ -448,26 +637,40 @@
     .stats {
         display: flex;
         gap: 1rem;
+        justify-content: space-around;
     }
 
     .stat {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        text-align: center;
+        gap: 0.5rem;
+        flex: 1;
     }
 
-    .stat strong {
+    .stat-icon {
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .stat-info strong {
         display: block;
-        font-size: 1rem;
+        font-size: 0.9rem;
         font-weight: 600;
         color: #333;
+        line-height: 1;
     }
 
-    .stat {
+    .stat-info span {
         font-size: 0.75rem;
         color: #666;
         text-transform: uppercase;
+        line-height: 1;
     }
 
     /* Footer */

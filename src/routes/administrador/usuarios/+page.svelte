@@ -14,6 +14,7 @@
 		rol: string;
 		suscripcion: string;
 		fecha_creacion: string;
+		fecha_actualizacion: string;
 		ultima_actividad?: string;
 		url_foto_perfil?: string;
 		eliminado: boolean;
@@ -33,6 +34,7 @@
 	let busqueda = '';
 	let filtroRol = 'todos';
 	let filtroSuscripcion = 'todas';
+	let pestanaInicialUsuario = 'personal';
 	let mostrarEliminados = false;
 
 	// Estadísticas
@@ -102,11 +104,13 @@
 
 	function seleccionarUsuario(usuario: Usuario) {
 		usuarioSeleccionado = usuario;
+		pestanaInicialUsuario = 'personal'; // Pestaña normal para usuarios existentes
 		mostrarCrearUsuario = false;
 	}
 
 	function cerrarDetalles() {
 		usuarioSeleccionado = null;
+		pestanaInicialUsuario = 'personal'; // Resetear para próxima selección
 	}
 
 	function abrirCrearUsuario() {
@@ -118,9 +122,20 @@
 		mostrarCrearUsuario = false;
 	}
 
-	async function onUsuarioCreado() {
+	async function onUsuarioCreado(event: CustomEvent) {
+		const usuarioCreado = event.detail;
 		mostrarCrearUsuario = false;
 		await cargarUsuarios();
+		
+		// Abrir la vista detallada del usuario creado en la pestaña "Cursos y Progreso"
+		if (usuarioCreado) {
+			// Buscar el usuario completo en la lista actualizada
+			const usuarioCompleto = usuarios.find(u => u.id === usuarioCreado.id);
+			if (usuarioCompleto) {
+				usuarioSeleccionado = usuarioCompleto;
+				pestanaInicialUsuario = 'cursos';
+			}
+		}
 	}
 
 	async function onUsuarioActualizado(event: CustomEvent) {
@@ -304,6 +319,7 @@
 		{:else if usuarioSeleccionado}
 			<DetalleUsuario 
 				usuario={usuarioSeleccionado}
+				pestanaInicial={pestanaInicialUsuario}
 				on:usuarioActualizado={onUsuarioActualizado}
 				on:usuarioEliminado={onUsuarioEliminado}
 				on:cerrar={cerrarDetalles}

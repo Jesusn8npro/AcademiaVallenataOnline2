@@ -17,7 +17,10 @@
 
     async function cargarPaquete() {
         try {
-            const resultado = await obtenerPaquetePorSlug(slug);
+            console.log('🔍 Buscando paquete con slug:', slug);
+            let resultado = await obtenerPaquetePorSlug(slug);
+            console.log('📦 Resultado obtenerPaquetePorSlug:', resultado);
+            
             if (resultado.success) {
                 paquete = resultado.data;
                 
@@ -29,9 +32,11 @@
                     })).sort((a: any, b: any) => a.orden - b.orden);
                 }
             } else {
+                console.error('❌ Error obteniendo paquete:', resultado.error);
                 error = 'Paquete no encontrado';
             }
         } catch (err: any) {
+            console.error('❌ Error cargando paquete:', err);
             error = 'Error cargando el paquete';
         } finally {
             cargando = false;
@@ -54,6 +59,8 @@
     function comprarPaquete() {
         goto(`/pago-confirmacion?tipo=paquete&id=${paquete.id}`);
     }
+
+
 </script>
 
 <svelte:head>
@@ -70,7 +77,12 @@
     <div class="error-page">
         <h1>❌ {error}</h1>
         <p>El paquete que buscas no está disponible.</p>
-        <button class="btn" on:click={() => goto('/')}>Ir al inicio</button>
+        <div class="error-actions">
+            <button class="btn" on:click={() => goto('/')}>Ir al inicio</button>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+            URL actual: <code>{slug}</code>
+        </p>
     </div>
 {:else if paquete}
     <div class="container">
@@ -232,6 +244,30 @@
     .error-page h1 {
         color: #dc3545;
         margin-bottom: 1rem;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    code {
+        background: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
     }
 
     .container {

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador Iconos PWA Temporal</title>
+</head>
+<body>
+    <h2>🚀 Generador Iconos PWA - Academia Vallenata</h2>
+    <div id="iconos"></div>
+    
+    <script>
+        // Tamaños requeridos para PWA
+        const tamaños = [72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('iconos');
+        
+        tamaños.forEach(tamaño => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = tamaño;
+            canvas.height = tamaño;
+            
+            // Fondo azul (theme color)
+            ctx.fillStyle = '#1e40af';
+            ctx.fillRect(0, 0, tamaño, tamaño);
+            
+            // Texto "AV" (Academia Vallenata)
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${tamaño * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AV', tamaño / 2, tamaño / 2);
+            
+            // Crear link de descarga
+            const link = document.createElement('a');
+            link.download = `icon-${tamaño}x${tamaño}.png`;
+            link.href = canvas.toDataURL();
+            link.textContent = `Descargar ${tamaño}x${tamaño}`;
+            link.style.display = 'block';
+            link.style.margin = '5px';
+            
+            container.appendChild(link);
+            container.appendChild(canvas);
+            canvas.style.margin = '10px';
+            canvas.style.border = '1px solid #ccc';
+        });
+        
+        // Auto-descargar todos
+        setTimeout(() => {
+            document.querySelectorAll('a[download]').forEach(link => {
+                // link.click(); // Descomenta para auto-descarga
+            });
+        }, 1000);
+    </script>
+</body>
+</html> 

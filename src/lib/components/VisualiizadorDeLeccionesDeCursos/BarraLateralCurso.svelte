@@ -15,38 +15,29 @@
   
   const dispatch = createEventDispatcher();
   
-  // Adaptar tutoriales para que funcionen como cursos
+  // Adaptar tutoriales para funcionar como cursos
   $: {
-    console.log('🔍 BARRA LATERAL - Datos del curso recibidos:', curso);
-    
     if (curso && !curso.modulos) {
-      // Para tutoriales, buscar las partes en orden de prioridad
-      let leccionesArray = null;
+      // Buscar lecciones en orden de prioridad
+      const opcionesLecciones = [
+        'partes_tutorial', 'clases_tutorial', 'partes', 'clases'
+      ];
       
-      // Prioridad: partes_tutorial > clases_tutorial > partes > clases
-      if (Array.isArray(curso.partes_tutorial) && curso.partes_tutorial.length > 0) {
-        leccionesArray = curso.partes_tutorial;
-        console.log('✅ Usando partes_tutorial:', leccionesArray.length, 'elementos');
-      } else if (Array.isArray(curso.clases_tutorial) && curso.clases_tutorial.length > 0) {
-        leccionesArray = curso.clases_tutorial;
-        console.log('✅ Usando clases_tutorial:', leccionesArray.length, 'elementos');
-      } else if (Array.isArray(curso.partes) && curso.partes.length > 0) {
-        leccionesArray = curso.partes;
-        console.log('✅ Usando partes:', leccionesArray.length, 'elementos');
-      } else if (Array.isArray(curso.clases) && curso.clases.length > 0) {
-        leccionesArray = curso.clases;
-        console.log('✅ Usando clases:', leccionesArray.length, 'elementos');
+      let leccionesArray = null;
+      for (const opcion of opcionesLecciones) {
+        if (Array.isArray(curso[opcion]) && curso[opcion].length > 0) {
+          leccionesArray = curso[opcion];
+          break;
+        }
       }
       
       if (leccionesArray && leccionesArray.length > 0) {
-        // Eliminar duplicados por ID
+        // Eliminar duplicados y normalizar datos
         const leccionesUnicas = leccionesArray.filter((parte: any, index: number, array: any[]) => 
           array.findIndex((p: any) => p.id === parte.id) === index
         );
         
-        console.log('🧹 Lecciones después de eliminar duplicados:', leccionesUnicas.length, 'de', leccionesArray.length);
-        
-        const partes = leccionesUnicas.map((parte: any) => ({
+        const partesNormalizadas = leccionesUnicas.map((parte: any) => ({
           ...parte,
           thumbnail_url: parte.thumbnail_url || parte.thumbnail || parte.video_miniatura_url || '',
         }));
@@ -54,16 +45,13 @@
         curso.modulos = [{
           id: 'tutorial-partes',
           titulo: 'Clases',
-          lecciones: partes
+          lecciones: partesNormalizadas
         }];
-        
-        console.log('✅ Módulos creados para tutorial:', curso.modulos[0].lecciones.length, 'lecciones');
-      } else {
-        console.log('❌ No se encontraron lecciones válidas para el tutorial');
       }
     }
     
-    if (curso && curso.modulos) {
+    // Expandir módulos por defecto
+    if (curso?.modulos) {
       curso.modulos.forEach((modulo: any) => {
         if (!(modulo.id in modulosExpandidos)) {
           modulosExpandidos[modulo.id] = true;
@@ -72,11 +60,11 @@
     }
   }
   
-  // Función para extraer ID de video de diferentes fuentes
+  // Funciones para manejo de videos
   function obtenerVideoId(url: string): { source: 'youtube' | 'bunny' | null; id: string | null; libraryId: string | null } {
     if (!url) return { source: null, id: null, libraryId: null };
 
-    // YouTube patterns
+    // Patrones de YouTube
     const youtubePatterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
       /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
@@ -85,12 +73,12 @@
 
     for (const pattern of youtubePatterns) {
       const match = url.match(pattern);
-      if (match && match[1]) {
+      if (match?.[1]) {
         return { source: 'youtube', id: match[1], libraryId: null };
       }
     }
 
-    // Bunny.net patterns (soporta tanto /play/ como /embed/)
+    // Patrones de Bunny.net
     const bunnyPatterns = [
       /iframe\.mediadelivery\.net\/embed\/([0-9]+)\/([a-zA-Z0-9-]+)/,
       /iframe\.mediadelivery\.net\/play\/([0-9]+)\/([a-zA-Z0-9-]+)/
@@ -106,29 +94,28 @@
     return { source: null, id: null, libraryId: null };
   }
   
-  // Función para obtener miniatura
   function obtenerMiniatura(videoUrl: string): string {
     const { source, id, libraryId } = obtenerVideoId(videoUrl);
     
-    if (source === 'youtube') {
+    if (source === 'youtube' && id) {
       return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
     } else if (source === 'bunny' && libraryId && id) {
-      // Usar el formato correcto para thumbnails de Bunny.net
       return `https://iframe.mediadelivery.net/thumbnail/${libraryId}/${id}`;
     }
     
     return 'https://academiavallenataonline.com/wp-content/uploads/2023/06/placeholder-video.jpg';
   }
   
+  // Funciones de navegación y estado
   function toggleModulo(moduloId: string) {
     modulosExpandidos[moduloId] = !modulosExpandidos[moduloId];
     modulosExpandidos = { ...modulosExpandidos };
   }
   
   function irALeccion(modulo: any, leccion: any) {
-    let cursoSlug = curso?.slug || (curso?.titulo ? generateSlug(curso.titulo) : '');
-    let moduloSlug = modulo?.slug || (modulo?.titulo ? generateSlug(modulo.titulo) : '');
-    let leccionSlug = leccion?.slug || (leccion?.titulo ? generateSlug(leccion.titulo) : '');
+    const cursoSlug = curso?.slug || (curso?.titulo ? generateSlug(curso.titulo) : '');
+    const moduloSlug = modulo?.slug || (modulo?.titulo ? generateSlug(modulo.titulo) : '');
+    const leccionSlug = leccion?.slug || (leccion?.titulo ? generateSlug(leccion.titulo) : '');
 
     if (tipo === 'curso' && cursoSlug && moduloSlug && leccionSlug) {
       window.location.href = `/cursos/${cursoSlug}/${moduloSlug}/${leccionSlug}`;
@@ -140,21 +127,27 @@
   function esLeccionCompletada(leccionId: string): boolean {
     return progreso[leccionId] >= 90;
   }
+  
+  function esLeccionActiva(leccion: any): boolean {
+    return String(leccion.slug) === String(leccionActiva) || 
+           String(leccion.id) === String(leccionActiva) ||
+           leccion.id === parseInt(String(leccionActiva));
+  }
 </script>
 
 <div class="curso-sidebar">
   <div class="sidebar-header">
     <h2>{curso.titulo}</h2>
-    <button class="cerrar-sidebar" on:click={() => dispatch('cerrar-sidebar')}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
+    <button class="cerrar-sidebar" on:click={() => dispatch('cerrar-sidebar')} aria-label="Cerrar menú del curso">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
   </div>
   
   <div class="sidebar-content">
-    {#if curso && curso.modulos}
+    {#if curso?.modulos}
       {#each curso.modulos as modulo (modulo.id)}
         <div class="modulo" class:activo={modulo.slug === moduloActivo || modulo.id === 'tutorial-partes'}>
           <div 
@@ -166,28 +159,33 @@
             aria-expanded={modulosExpandidos[modulo.id]}
           >
             <span class="modulo-titulo">{modulo.titulo}</span>
-            <svg class="toggle-icon" class:expandido={modulosExpandidos[modulo.id]} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg 
+              class="toggle-icon" 
+              class:expandido={modulosExpandidos[modulo.id]} 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2"
+            >
               <path d="M6 9l6 6 6-6"/>
             </svg>
           </div>
           
           {#if modulosExpandidos[modulo.id]}
             <div class="lecciones-list" transition:slide|local={{duration: 300}}>
-              {#if modulo.lecciones && modulo.lecciones.length > 0}
+              {#if modulo.lecciones?.length > 0}
                 {#each modulo.lecciones as leccion (leccion.id)}
                   <div 
                     class="leccion-item"
-                    class:activa={
-                      String(leccion.slug) === String(leccionActiva) || 
-                      String(leccion.id) === String(leccionActiva) ||
-                      leccion.id === parseInt(String(leccionActiva))
-                    }
+                    class:activa={esLeccionActiva(leccion)}
                     class:completada={esLeccionCompletada(leccion.id)}
                     on:click={() => irALeccion(modulo, leccion)}
+                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') irALeccion(modulo, leccion); }}
                     tabindex="0"
                     role="button"
                     aria-label={`Ir a la lección ${leccion.titulo}`}
-                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') irALeccion(modulo, leccion); }}
                   >
                     <div class="leccion-thumbnail">
                       {#if leccion.video_url}
@@ -207,27 +205,23 @@
                         {:else}
                           <div class="tipo-parte-container">
                             <div class="tipo-parte">
-                              {#if leccion.tipo_parte}
-                                <span class="tipo-texto">{leccion.tipo_parte}</span>
-                              {:else}
-                                <span class="tipo-texto">Clase</span>
-                              {/if}
+                              <span class="tipo-texto">{leccion.tipo_parte || 'Clase'}</span>
                               <span class="titulo-texto">{leccion.titulo}</span>
                             </div>
                           </div>
                         {/if}
                       {:else}
                         <div class="thumbnail-placeholder">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                           </svg>
                         </div>
                       {/if}
                       
                       <div class="leccion-play-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
-                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
+                          <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
                       </div>
                     </div>
@@ -238,8 +232,8 @@
                       <div class="leccion-estado">
                         {#if esLeccionCompletada(leccion.id)}
                           <div class="estado-completado">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
                             </svg>
                             <span>Completada</span>
                           </div>
@@ -252,8 +246,8 @@
                           </div>
                         {:else}
                           <div class="estado-pendiente">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polygon points="5 3 19 12 5 21 5 3"/>
                             </svg>
                             <span>Pendiente</span>
                           </div>
@@ -276,6 +270,7 @@
 </div>
 
 <style>
+  /* Contenedor principal */
   .curso-sidebar {
     display: flex;
     flex-direction: column;
@@ -287,6 +282,7 @@
     box-shadow: -2px 0 15px rgba(0, 0, 0, 0.3);
   }
 
+  /* Header del sidebar */
   .sidebar-header {
     padding: 20px;
     display: flex;
@@ -325,12 +321,14 @@
     background-color: rgba(255, 255, 255, 0.1);
   }
 
+  /* Contenido del sidebar */
   .sidebar-content {
     padding: 10px;
     flex: 1;
     overflow-y: auto;
   }
 
+  /* Scrollbar personalizada */
   .sidebar-content::-webkit-scrollbar {
     width: 6px;
   }
@@ -374,6 +372,10 @@
     background-color: #2a2a2a;
   }
 
+  .modulo-titulo {
+    font-weight: 500;
+  }
+
   .toggle-icon {
     transition: transform 0.3s ease;
   }
@@ -382,7 +384,7 @@
     transform: rotate(180deg);
   }
 
-  /* Lecciones */
+  /* Lista de lecciones */
   .lecciones-list {
     padding: 0 10px 10px 10px;
   }
@@ -404,7 +406,7 @@
     background-color: #2a2a2a;
   }
 
-  /* Estado ACTIVA */
+  /* Estados de lección */
   .leccion-item.activa {
     background-color: #ffffff !important;
     border-left-color: #fb923c !important;
@@ -428,7 +430,6 @@
     stroke: currentColor !important;
   }
 
-  /* Estado COMPLETADA (cuando NO está activa) */
   .leccion-item.completada:not(.activa) {
     opacity: 0.8;
   }
@@ -441,40 +442,7 @@
     stroke: #22c55e !important;
   }
 
-  /* Estados de lección */
-  .estado-completado,
-  .estado-pendiente,
-  .estado-progreso {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.8rem;
-  }
-
-  .estado-completado {
-    font-weight: 600;
-  }
-
-  .estado-pendiente {
-    color: #a0a0a0;
-  }
-
-  .leccion-titulo {
-    font-size: 14px;
-    font-weight: 400;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .leccion-estado {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    color: #a0a0a0;
-  }
-
+  /* Thumbnail de lección */
   .leccion-thumbnail {
     position: relative;
     width: 120px;
@@ -504,7 +472,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
     background-color: #1a1a1a;
   }
 
@@ -515,26 +482,10 @@
     width: 100%;
     height: 100%;
     background-color: #2a2a2a;
+    color: #666;
   }
 
-  .leccion-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .progreso-mini-bar {
-    width: 50px;
-    height: 3px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 1.5px;
-    overflow: hidden;
-  }
-
-  .progreso-mini-fill {
-    height: 100%;
-    background-color: #4CAF50;
-  }
-
+  /* Icono de reproducción */
   .leccion-play-icon {
     position: absolute;
     top: 50%;
@@ -560,30 +511,60 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   }
 
-  .no-lecciones,
-  .no-modulos {
+  /* Información de lección */
+  .leccion-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .leccion-titulo {
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .leccion-estado {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 30px;
-    text-align: center;
+    font-size: 12px;
     color: #a0a0a0;
   }
 
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .leccion-thumbnail {
-      width: 100px;
-      height: 56px;
-    }
-    
-    .leccion-item {
-      padding: 8px;
-      margin-bottom: 6px;
-    }
+  /* Estados de progreso */
+  .estado-completado,
+  .estado-pendiente,
+  .estado-progreso {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
   }
 
+  .estado-completado {
+    font-weight: 600;
+  }
+
+  .estado-pendiente {
+    color: #a0a0a0;
+  }
+
+  .progreso-mini-bar {
+    width: 50px;
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1.5px;
+    overflow: hidden;
+  }
+
+  .progreso-mini-fill {
+    height: 100%;
+    background-color: #4CAF50;
+  }
+
+  /* Contenedor de tipo de parte */
   .tipo-parte-container {
     width: 100%;
     height: 100%;
@@ -635,5 +616,30 @@
 
   .leccion-item.activa .titulo-texto {
     color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Estados vacíos */
+  .no-lecciones,
+  .no-modulos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    color: #a0a0a0;
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .leccion-thumbnail {
+      width: 100px;
+      height: 56px;
+    }
+    
+    .leccion-item {
+      padding: 8px;
+      margin-bottom: 6px;
+    }
   }
 </style> 

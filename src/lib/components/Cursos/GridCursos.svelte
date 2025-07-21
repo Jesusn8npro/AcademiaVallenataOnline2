@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { fly, scale } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { generateSlug } from '$lib/utilidades/utilidadesSlug';
 
 	export let items: any[] = [];
 	export let cargando = false;
 	export let error = '';
-
-	// Paginación
 	export let paginaActual = 1;
 	export let itemsPorPagina = 12;
 	export let totalItems = 0;
@@ -18,21 +16,13 @@
 
 	function verContenido(item: any) {
 		const slug = item.slug || generateSlug(item.titulo);
-		if (item.tipo === 'curso') {
-			goto(`/cursos/${slug}`);
-		} else if (item.tipo === 'tutorial') {
-			goto(`/tutoriales/${slug}`);
-		}
+		goto(item.tipo === 'curso' ? `/cursos/${slug}` : `/tutoriales/${slug}`);
 	}
 
 	function cambiarPagina(nuevaPagina: number) {
 		if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
 			paginaActual = nuevaPagina;
-			// Scroll suave al inicio del grid
-			const grid = document.getElementById('grid-cursos');
-			if (grid) {
-				grid.scrollIntoView({ behavior: 'smooth' });
-			}
+			document.getElementById('grid-cursos')?.scrollIntoView({ behavior: 'smooth' });
 		}
 	}
 
@@ -54,7 +44,6 @@
 		}).format(precio);
 	}
 
-	// Generar páginas visibles para la paginación
 	function generarPaginas() {
 		const paginas = [];
 		const maxPaginas = 5;
@@ -119,7 +108,6 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Grid de cursos -->
 		<div class="cursos-grid">
 			{#each items as item, i (item.id)}
 				<div 
@@ -130,7 +118,6 @@
 					tabindex="0"
 					on:keydown={(e) => e.key === 'Enter' && verContenido(item)}
 				>
-					<!-- Imagen del curso -->
 					<div class="curso-imagen-container">
 						<img 
 							src={item.imagen_url || '/images/default-curso.jpg'} 
@@ -139,26 +126,17 @@
 							loading="lazy"
 						/>
 						
-						<!-- Badge de tipo -->
 						<div class="tipo-badge {item.tipo}">
-							{#if item.tipo === 'curso'}
-								🎓 CURSO
-							{:else}
-								🎵 TUTORIAL
-							{/if}
+							{item.tipo === 'curso' ? '🎓 CURSO' : '🎵 TUTORIAL'}
 						</div>
 						
-						<!-- Badge de descuento -->
 						{#if item.precio_descuento && item.precio_normal}
 							{@const descuento = calcularDescuento(item.precio_normal, item.precio_descuento)}
 							{#if descuento > 0}
-								<div class="descuento-badge">
-									-{descuento}%
-								</div>
+								<div class="descuento-badge">-{descuento}%</div>
 							{/if}
 						{/if}
 						
-						<!-- Overlay con botón de acción -->
 						<div class="imagen-overlay">
 							<button class="btn-ver-curso">
 								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -169,48 +147,33 @@
 						</div>
 					</div>
 					
-					<!-- Contenido del curso -->
 					<div class="curso-content">
-						<!-- Header con título y rating -->
 						<div class="curso-header">
 							<h3 class="curso-titulo">{item.titulo}</h3>
 							{#if item.rating || item.estudiantes}
 								<div class="curso-meta">
-									{#if item.rating}
-										<span class="rating">⭐ {item.rating}</span>
-									{/if}
-									{#if item.estudiantes}
-										<span class="estudiantes">👥 {item.estudiantes}</span>
-									{/if}
+									{#if item.rating}<span class="rating">⭐ {item.rating}</span>{/if}
+									{#if item.estudiantes}<span class="estudiantes">👥 {item.estudiantes}</span>{/if}
 								</div>
 							{/if}
 						</div>
 						
-						<!-- Descripción -->
 						<p class="curso-descripcion">
 							{acortarTexto(item.descripcion || 'Contenido educativo de alta calidad para aprender acordeón vallenato')}
 						</p>
 						
-						<!-- Nivel -->
 						{#if item.nivel}
 							<div class="nivel-container">
 								<span class="nivel-badge nivel-{item.nivel}">
-									{#if item.nivel === 'principiante'}
-										🌱 Principiante
-									{:else if item.nivel === 'intermedio'}
-										🔥 Intermedio
-									{:else if item.nivel === 'avanzado'}
-										⚡ Avanzado
-									{:else if item.nivel === 'profesional'}
-										👑 Profesional
-									{:else}
-										📚 {item.nivel}
-									{/if}
+									{#if item.nivel === 'principiante'}🌱 Principiante
+									{:else if item.nivel === 'intermedio'}🔥 Intermedio
+									{:else if item.nivel === 'avanzado'}⚡ Avanzado
+									{:else if item.nivel === 'profesional'}👑 Profesional
+									{:else}📚 {item.nivel}{/if}
 								</span>
 							</div>
 						{/if}
 						
-						<!-- Footer con precio y botón -->
 						<div class="curso-footer">
 							<div class="precio-container">
 								{#if item.precio_normal === 0 || item.precio_normal === null}
@@ -232,7 +195,6 @@
 			{/each}
 		</div>
 		
-		<!-- Paginación -->
 		{#if totalPaginas > 1}
 			<div class="paginacion-container" in:fly="{{ y: 20, duration: 600, delay: 300 }}">
 				<div class="paginacion-info">
@@ -240,7 +202,6 @@
 				</div>
 				
 				<div class="paginacion">
-					<!-- Botón anterior -->
 					<button 
 						class="paginacion-btn {paginaActual === 1 ? 'disabled' : ''}"
 						on:click={() => cambiarPagina(paginaActual - 1)}
@@ -252,7 +213,6 @@
 						Anterior
 					</button>
 					
-					<!-- Primera página -->
 					{#if paginasVisibles[0] > 1}
 						<button class="paginacion-numero" on:click={() => cambiarPagina(1)}>1</button>
 						{#if paginasVisibles[0] > 2}
@@ -260,7 +220,6 @@
 						{/if}
 					{/if}
 					
-					<!-- Páginas visibles -->
 					{#each paginasVisibles as pagina}
 						<button 
 							class="paginacion-numero {pagina === paginaActual ? 'activa' : ''}"
@@ -270,7 +229,6 @@
 						</button>
 					{/each}
 					
-					<!-- Última página -->
 					{#if paginasVisibles[paginasVisibles.length - 1] < totalPaginas}
 						{#if paginasVisibles[paginasVisibles.length - 1] < totalPaginas - 1}
 							<span class="paginacion-dots">...</span>
@@ -278,7 +236,6 @@
 						<button class="paginacion-numero" on:click={() => cambiarPagina(totalPaginas)}>{totalPaginas}</button>
 					{/if}
 					
-					<!-- Botón siguiente -->
 					<button 
 						class="paginacion-btn {paginaActual === totalPaginas ? 'disabled' : ''}"
 						on:click={() => cambiarPagina(paginaActual + 1)}
@@ -300,7 +257,6 @@
 		min-height: 400px;
 	}
 
-	/* Loading States */
 	.loading-container, .error-container, .empty-container {
 		display: flex;
 		justify-content: center;
@@ -353,7 +309,6 @@
 		100% { background-position: -200% 0; }
 	}
 
-	/* Error State */
 	.error-content, .empty-content {
 		text-align: center;
 		max-width: 400px;
@@ -392,7 +347,6 @@
 		box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 	}
 
-	/* Grid de Cursos */
 	.cursos-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -425,7 +379,7 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: all 0.3s ease;
+		transition: transform 0.3s ease;
 	}
 
 	.curso-card:hover .curso-imagen {
@@ -475,7 +429,7 @@
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.3s ease;
+		transition: opacity 0.3s ease;
 	}
 
 	.curso-card:hover .imagen-overlay {
@@ -604,16 +558,15 @@
 		font-size: 0.9rem;
 		cursor: pointer;
 		transition: all 0.3s ease;
+		color: white;
 	}
 
 	.btn-acceder.curso {
 		background: linear-gradient(45deg, #22c55e, #16a34a);
-		color: white;
 	}
 
 	.btn-acceder.tutorial {
 		background: linear-gradient(45deg, #3b82f6, #2563eb);
-		color: white;
 	}
 
 	.btn-acceder:hover {
@@ -621,7 +574,6 @@
 		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 	}
 
-	/* Paginación */
 	.paginacion-container {
 		display: flex;
 		flex-direction: column;
@@ -679,7 +631,6 @@
 		padding: 0 0.5rem;
 	}
 
-	/* Responsivo */
 	@media (max-width: 768px) {
 		.cursos-grid {
 			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

@@ -92,6 +92,12 @@
       </span>
       <span>Cursos</span>
     </a>
+    <a href="/simulador-de-acordeon" class="enlace simulador-enlace">
+      <span class="icono-enlace-nav">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </span>
+      <span>🎵 Simulador</span>
+    </a>
     <a href="/administrador/usuarios" class="enlace">
       <span class="icono-enlace-nav">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
@@ -348,6 +354,56 @@
 .enlace:hover {
   color: #ff6d1a;
   background: rgba(255, 109, 26, 0.05);
+}
+
+/* 🎵 Estilos especiales para el enlace del simulador */
+.simulador-enlace {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+  border-radius: 12px;
+  padding: 0.5rem 0.8rem !important;
+  margin: 0 0.2rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.simulador-enlace:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  color: white !important;
+}
+
+.simulador-enlace::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.simulador-enlace:hover::before {
+  left: 100%;
+}
+
+.simulador-enlace svg {
+  stroke: white !important;
+  animation: pulseIcon 2s ease-in-out infinite;
+}
+
+@keyframes pulseIcon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.simulador-enlace span {
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .enlace svg {

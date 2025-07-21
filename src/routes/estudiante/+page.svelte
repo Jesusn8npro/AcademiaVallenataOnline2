@@ -44,7 +44,7 @@
         <div class="bg-white rounded-xl p-6 shadow hover:shadow-md transition">
           <h2 class="text-lg font-bold text-gray-800 mb-2">Simulador</h2>
           <p class="text-sm text-gray-600">Practica con nuestro simulador de acordeón.</p>
-          <button class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" on:click={() => goto('/simulador-de-acordeon')}>Abrir Simulador</button>
+          <button class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" on:click={() => goto('/simulador-gaming')}>Abrir Simulador</button>
         </div>
   
         <div class="bg-white rounded-xl p-6 shadow hover:shadow-md transition">

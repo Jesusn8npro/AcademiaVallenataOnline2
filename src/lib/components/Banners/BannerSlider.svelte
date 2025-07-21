@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   let banners = [
   {
@@ -18,7 +18,7 @@
   }
 ];
   let actual = 0;
-  let intervalo;
+  let intervalo: any;
 
   onMount(() => {
     intervalo = setInterval(() => {
@@ -27,7 +27,7 @@
     return () => clearInterval(intervalo);
   });
 
-  function irA(idx) {
+  function irA(idx: number) {
     actual = idx;
   }
 </script>
@@ -52,20 +52,22 @@
 <style>
 .banner-slider {
   width: 100%;
-  max-width: 480px;
-  margin: 2rem auto 0 auto;
+  max-width: 100%;
+  margin: 0;
   background: linear-gradient(135deg, #23234b 70%, #ffd700 100%);
   border-radius: 18px;
   box-shadow: 0 4px 18px 0 #00000022;
   overflow: hidden;
   position: relative;
   min-height: 180px;
+  min-width: 0; /* Permite que el elemento se encoja */
+  box-sizing: border-box;
 }
 .banner-contenido {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.2rem 1.4rem 1.2rem 1.2rem;
+  padding: 1rem 1.2rem;
 }
 .banner-texto {
   flex: 1;
@@ -73,20 +75,22 @@
 }
 .banner-texto.solo-texto {
   margin: 0 auto;
-  max-width: 90%;
+  max-width: 100%;
 }
 .banner-texto h3 {
-  margin: 0 0 0.2rem 0;
-  font-size: 1.18rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
   color: #ffd700;
   font-family: 'Orbitron', Arial, sans-serif;
   font-weight: 900;
+  line-height: 1.2;
 }
 .banner-texto p {
-  margin: 0 0 0.7rem 0;
+  margin: 0 0 0.8rem 0;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
+  line-height: 1.3;
 }
 .banner-btn {
   background: #ffd700;
@@ -130,5 +134,43 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .banner-slider {
+    min-height: 160px;
+  }
+  
+  .banner-texto h3 {
+    font-size: 1rem;
+  }
+  
+  .banner-texto p {
+    font-size: 0.85rem;
+  }
+  
+  .banner-btn {
+    font-size: 0.9rem;
+    padding: 0.3rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-slider {
+    min-height: 140px;
+  }
+  
+  .banner-contenido {
+    padding: 0.8rem 1rem;
+  }
+  
+  .banner-texto h3 {
+    font-size: 0.95rem;
+  }
+  
+  .banner-texto p {
+    font-size: 0.8rem;
+  }
 }
 </style>

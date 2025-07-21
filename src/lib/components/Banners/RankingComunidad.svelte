@@ -11,7 +11,7 @@ Mejor estética, funcionalidad de clic y texto explicativo
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { estadoUsuarioActual } from '$lib/supabase/estadoUsuarioActual';
   import GamificacionService from '$lib/services/gamificacionService';
-  import BarraXP from '$lib/components/Gaming/BarraXP.svelte';
+  // import BarraXP from '$lib/components/Gaming/BarraXP.svelte'; // Componente eliminado
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
@@ -414,7 +414,7 @@ Mejor estética, funcionalidad de clic y texto explicativo
                 {obtenerDescripcionPuntuacion(item)}
               </p>
               
-              {#if showXPBars && item.es_gaming}
+              <!-- {#if showXPBars && item.es_gaming}
                 <div class="xp-bar-container">
                   <BarraXP 
                     usuarioId={item.usuario_id}
@@ -423,7 +423,7 @@ Mejor estética, funcionalidad de clic y texto explicativo
                     animarSubida={false}
                   />
                 </div>
-              {/if}
+              {/if} -->
             </div>
 
             <!-- Puntuación -->

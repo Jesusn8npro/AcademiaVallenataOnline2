@@ -1,0 +1,117 @@
+{
+  "name": "Academia Vallenata Online",
+  "short_name": "Vallenata",
+  "description": "La mejor academia online para aprender acordeón vallenato. Cursos profesionales, simulador interactivo y comunidad de músicos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1e40af",
+  "background_color": "#ffffff",
+  "lang": "es",
+  "dir": "ltr",
+  
+  "icons": [
+    {
+      "src": "/iconos-pwa/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/iconos-pwa/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  
+
+
+  "shortcuts": [
+    {
+      "name": "Simulador Acordeón",
+      "short_name": "Simulador",
+      "description": "Acceso rápido al simulador de acordeón",
+      "url": "/simulador-gaming"
+    },
+    {
+      "name": "Mis Cursos",
+      "short_name": "Cursos", 
+      "description": "Continúa con tus lecciones",
+      "url": "/mis-cursos"
+    },
+    {
+      "name": "Comunidad",
+      "short_name": "Comunidad",
+      "description": "Conecta con otros músicos",
+      "url": "/comunidad"
+    }
+  ],
+
+  "categories": ["music", "education", "entertainment"],
+  
+  "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
+  
+  "prefer_related_applications": false,
+  
+  "protocol_handlers": [
+    {
+      "protocol": "web+vallenata",
+      "url": "/curso/%s"
+    }
+  ],
+
+  "share_target": {
+    "action": "/compartir-progreso",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "titulo",
+      "text": "descripcion",
+      "url": "enlace",
+      "files": [
+        {
+          "name": "grabacion",
+          "accept": ["audio/wav", "audio/mp3", "audio/ogg"]
+        }
+      ]
+    }
+  }
+} 

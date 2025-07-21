@@ -30,9 +30,7 @@
 </script>
 
 <div class="filtros-container">
-	<!-- Layout Desktop: Todo en una línea -->
 	<div class="filtros-desktop">
-		<!-- Buscador -->
 		<div class="buscador-item">
 			<input
 				type="text"
@@ -43,18 +41,16 @@
 			/>
 		</div>
 
-		<!-- Tipo -->
 		<select 
 			bind:value={filtros.tipo}
 			on:change={() => cambiarFiltro('tipo', filtros.tipo)}
 			class="filtro-select"
 		>
-			<option value="">📚 Curos y Tutoriales</option>
+			<option value="">📚 Cursos y Tutoriales</option>
 			<option value="curso">🎓 Cursos</option>
 			<option value="tutorial">🎵 Tutoriales</option>
 		</select>
 
-		<!-- Nivel -->
 		<select 
 			bind:value={filtros.nivel}
 			on:change={() => cambiarFiltro('nivel', filtros.nivel)}
@@ -67,7 +63,6 @@
 			<option value="profesional">👑 Profesional</option>
 		</select>
 
-		<!-- Precio -->
 		<select 
 			bind:value={filtros.precio}
 			on:change={() => cambiarFiltro('precio', filtros.precio)}
@@ -78,14 +73,12 @@
 			<option value="pago">💎 Premium</option>
 		</select>
 
-		<!-- Limpiar -->
 		{#if hayFiltros}
 			<button class="btn-limpiar" on:click={limpiarTodo}>
 				🗑️ Limpiar
 			</button>
 		{/if}
 
-		<!-- Resultados en desktop - Solo si hay filtros -->
 		{#if hayFiltros}
 			<div class="resultados-desktop">
 				<span class="resultados-count">{totalResultados}</span>
@@ -94,9 +87,7 @@
 		{/if}
 	</div>
 
-	<!-- Layout Mobile: Buscador arriba y selects en fila -->
 	<div class="filtros-mobile">
-		<!-- Buscador ancho completo -->
 		<div class="buscador-completo">
 			<input
 				type="text"
@@ -107,14 +98,13 @@
 			/>
 		</div>
 
-		<!-- Filtros en fila horizontal -->
 		<div class="filtros-fila">
 			<select 
 				bind:value={filtros.tipo}
 				on:change={() => cambiarFiltro('tipo', filtros.tipo)}
 				class="filtro-select-mobile"
 			>
-				<option value="">📚 Tutoriales</option>
+				<option value="">📚 Todos</option>
 				<option value="curso">🎓 Cursos</option>
 				<option value="tutorial">🎵 Tutoriales</option>
 			</select>
@@ -142,7 +132,6 @@
 			</select>
 		</div>
 
-		<!-- Botón limpiar en mobile -->
 		{#if hayFiltros}
 			<div class="limpiar-mobile">
 				<button class="btn-limpiar" on:click={limpiarTodo}>
@@ -151,7 +140,6 @@
 			</div>
 		{/if}
 
-		<!-- Resultados en mobile - Solo si hay filtros -->
 		{#if hayFiltros}
 			<div class="resultados-mobile">
 				<span class="resultados-count">{totalResultados}</span>
@@ -171,7 +159,6 @@
 		border: 1px solid #e5e7eb;
 	}
 
-	/* DESKTOP LAYOUT - Todo en línea horizontal */
 	.filtros-desktop {
 		display: flex;
 		gap: 1rem;
@@ -270,7 +257,6 @@
 		font-weight: 500;
 	}
 
-	/* MOBILE LAYOUT - Buscador arriba y selects en fila */
 	@media (max-width: 768px) {
 		.filtros-desktop {
 			display: none;

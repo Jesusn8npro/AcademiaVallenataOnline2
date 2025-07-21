@@ -7,7 +7,6 @@
   import ModalBusqueda from '$lib/components/Busqueda/ModalBusqueda.svelte';
   import MenuLateralResponsive from './MenuLateralResponsive.svelte';
   
-  // Tipos para artículos del blog
   interface ArticuloBlog {
     id: number;
     titulo: string;
@@ -27,21 +26,14 @@
   let cargandoArticulos = false;
   let esMovil = false;
   let cerrandoSesion = false;
+  let scrollY = 0;
+  let isSticky = false;
   
-  // Usar el store global del usuario (manejado por el layout principal)
   $: usuarioActual = $usuario;
-  
-  // Debug del store (solo en desarrollo)
-  $: {
-    if (import.meta.env.DEV && usuarioActual) {
-      console.log('🎯 Usuario activo:', usuarioActual?.nombre || usuarioActual?.correo_electronico, 'Rol:', usuarioActual?.rol);
-    }
-  }
   
   // Función para cerrar sesión
   async function cerrarSesion() {
     if (cerrandoSesion) return;
-    
     cerrandoSesion = true;
     try {
       await cerrarSesionSupabase();
@@ -54,10 +46,9 @@
     }
   }
   
-  // Función para cargar artículos del blog desde Supabase
+  // Función para cargar artículos del blog
   async function cargarArticulosBlog() {
-    if (articulosBlog.length > 0) return; // Ya están cargados
-    
+    if (articulosBlog.length > 0) return;
     cargandoArticulos = true;
     try {
       const { data, error } = await supabase
@@ -91,29 +82,12 @@
     });
   }
   
-  // Cierra el menú si haces clic fuera
-  function manejarClicFuera(event: Event) {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.selector-idioma')) {
-      mostrarIdiomas = false;
-    }
-  }
-  
-  // Funciones para el modal de búsqueda
+  // Funciones para manejar modales
   function abrirModalBusqueda() {
     mostrarModalBusqueda = true;
     document.body.style.overflow = 'hidden';
   }
   
-  function cerrarModales() {
-    mostrarModalBusqueda = false;
-    mostrarModalMenu = false;
-    mostrarMenuLateralResponsive = false;
-    mostrarModalLogin = false;
-    document.body.style.overflow = 'auto';
-  }
-  
-  // Funciones para el modal del menú lateral
   function abrirModalMenu() {
     if (esMovil) {
       mostrarMenuLateralResponsive = true;
@@ -124,7 +98,6 @@
     document.body.style.overflow = 'hidden';
   }
   
-  // Funciones para el modal de login
   function abrirModalLogin() {
     mostrarModalLogin = true;
     document.body.style.overflow = 'hidden';
@@ -133,6 +106,22 @@
   function cerrarModalLogin() {
     mostrarModalLogin = false;
     document.body.style.overflow = 'auto';
+  }
+  
+  function cerrarModales() {
+    mostrarModalBusqueda = false;
+    mostrarModalMenu = false;
+    mostrarMenuLateralResponsive = false;
+    mostrarModalLogin = false;
+    document.body.style.overflow = 'auto';
+  }
+  
+  // Función para manejar clicks fuera del selector de idiomas
+  function manejarClicFuera(event: Event) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.selector-idioma')) {
+      mostrarIdiomas = false;
+    }
   }
   
   function manejarTeclaEscape(event: KeyboardEvent) {
@@ -147,19 +136,13 @@
     }
   }
   
-  // Detectar si es móvil
   function detectarMovil() {
     esMovil = window.innerWidth <= 1000;
   }
   
-  // Variable para controlar el efecto sticky
-  let scrollY = 0;
-  let isSticky = false;
-
-  // Función para manejar el scroll
   function manejarScroll() {
     scrollY = window.scrollY;
-    isSticky = scrollY > 80; // Se activa después de 80px de scroll
+    isSticky = scrollY > 80;
   }
 
   onMount(() => {
@@ -185,9 +168,8 @@
 <!-- Barra superior negra -->
 <div class="barra-superior-negra">
   <div class="contenedor-barra-superior">
-    <!-- Izquierda: Correo y teléfono -->
+    <!-- Información de contacto -->
     <div class="zona-izquierda">
-      <!-- Correo -->
       <div class="item-contacto">
         <span class="icono-circulo">
           <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24">
@@ -196,7 +178,6 @@
         </span>
         <span class="texto-contacto">contacto@academiavallenata.com</span>
       </div>
-      <!-- Teléfono -->
       <div class="item-contacto">
         <span class="icono-circulo">
           <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24">
@@ -207,16 +188,14 @@
       </div>
     </div>
     
-    <!-- Derecha: Redes, idioma, login -->
+    <!-- Redes sociales, idioma y login -->
     <div class="zona-derecha">
       <div class="redes-sociales">
-        <!-- Facebook -->
         <a href="https://www.facebook.com/academiavallenataonlineoficial" class="icono-red" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path fill="#fff" d="M17 2.05H15c-2.76 0-5 2.24-5 5v2H7a1 1 0 0 0-1 1v3c0 .55.45 1 1 1h3v7a1 1 0 0 0 1 1h3c.55 0 1-.45 1-1v-7h2.29a1 1 0 0 0 .99-1.14l-.38-3A1 1 0 0 0 18.23 9H16V7c0-.55.45-1 1-1h1a1 1 0 0 0 1-1V3.05a1 1 0 0 0-1-1z"/>
           </svg>
         </a>
-        <!-- Instagram -->
         <a href="https://www.instagram.com/academiavallenataonline/" class="icono-red" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
             <rect width="18" height="18" x="3" y="3" rx="5" fill="none" stroke="#fff" stroke-width="2"/>
@@ -224,13 +203,11 @@
             <circle cx="17" cy="7" r="1.5" fill="#fff"/>
           </svg>
         </a>
-        <!-- WhatsApp -->
         <a href="https://wa.me/573212587616?text=Hola,%20quiero%20información%20sobre%20la%20Academia%20Vallenata%20Online" class="icono-red" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path fill="#fff" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.531 3.488"/>
           </svg>
         </a>
-        <!-- YouTube -->
         <a href="https://www.youtube.com/@AcademiaVallenataONLINE" class="icono-red" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path fill="#fff" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
@@ -238,7 +215,6 @@
         </a>
       </div>
       
-      <!-- Contenedor para idioma y login -->
       <div class="contenedor-idioma-login">
         <div class="selector-idioma" tabIndex="0">
           <button class="boton-idioma" aria-haspopup="listbox" aria-expanded={mostrarIdiomas} on:click={() => mostrarIdiomas = !mostrarIdiomas}>
@@ -276,53 +252,74 @@
       <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Logo Academia Vallenata" />
     </div>
     
-    <!-- Menú de enlaces -->
+    <!-- Menú de navegación -->
     <nav class="menu-enlaces">
       <a href="/" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M3 12L12 3l9 9"/><path d="M9 21V9h6v12"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <path d="M3 12L12 3l9 9"/>
+            <path d="M9 21V9h6v12"/>
+          </svg>
         </span>
         <span class="enlace-texto">Inicio</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/blog" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 7h10M7 11h10M7 15h6"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <path d="M7 7h10M7 11h10M7 15h6"/>
+          </svg>
         </span>
         <span class="enlace-texto">Blog</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/cursos" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <rect x="2" y="7" width="20" height="13" rx="2"/>
+            <path d="M16 3v4M8 3v4"/>
+          </svg>
         </span>
         <span class="enlace-texto">Cursos</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/paquetes" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <rect x="3" y="7" width="18" height="13" rx="2"/>
+            <path d="M3 7l9 6 9-6"/>
+          </svg>
         </span>
         <span class="enlace-texto">Paquetes</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/eventos" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <rect x="3" y="5" width="18" height="16" rx="2"/>
+            <path d="M16 3v4M8 3v4M3 10h18"/>
+          </svg>
         </span>
         <span class="enlace-texto">Eventos</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/nuestra-academia" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M12 3l9 6-9 6-9-6 9-6z"/><path d="M3 9v6a9 9 0 0 0 18 0V9"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <path d="M12 3l9 6-9 6-9-6 9-6z"/>
+            <path d="M3 9v6a9 9 0 0 0 18 0V9"/>
+          </svg>
         </span>
         <span class="enlace-texto">Nuestra Academia</span>
         <div class="enlace-underline"></div>
       </a>
       <a href="/simulador-de-acordeon" class="enlace-nav">
         <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 7v10M18 7v10"/></svg>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
+            <rect x="2" y="7" width="20" height="10" rx="2"/>
+            <path d="M6 7v10M18 7v10"/>
+          </svg>
         </span>
         <span class="enlace-texto">Simulador de Acordeón</span>
         <div class="enlace-underline"></div>
@@ -331,38 +328,29 @@
     
     <!-- Botones de acción -->
     <div class="botones-accion">
-      <!-- Buscador -->
       <button class="boton-busqueda" aria-label="Buscar contenido" on:click={abrirModalBusqueda}>
-        <div class="boton-icono-wrapper">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-            <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="boton-ripple"></div>
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
       </button>
 
-      <!-- Menú hamburguesa -->
       <button class="menu-hamburguesa" aria-label="Abrir menú" on:click={abrirModalMenu}>
-        <div class="boton-icono-wrapper">
-          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <rect y="4" width="24" height="2" rx="1" fill="currentColor"/>
-            <rect y="11" width="24" height="2" rx="1" fill="currentColor"/>
-            <rect y="18" width="24" height="2" rx="1" fill="currentColor"/>
-          </svg>
-        </div>
-        <div class="boton-ripple"></div>
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <rect y="4" width="24" height="2" rx="1" fill="currentColor"/>
+          <rect y="11" width="24" height="2" rx="1" fill="currentColor"/>
+          <rect y="18" width="24" height="2" rx="1" fill="currentColor"/>
+        </svg>
       </button>
     </div>
   </div>
 </div>
 
-<!-- Modal de búsqueda -->
+<!-- Modales -->
 {#if mostrarModalBusqueda}
   <ModalBusqueda abierto={mostrarModalBusqueda} onCerrar={cerrarModales} />
 {/if}
 
-<!-- Menú lateral responsivo -->
 {#if mostrarMenuLateralResponsive}
   <MenuLateralResponsive 
     abierto={mostrarMenuLateralResponsive}
@@ -374,25 +362,15 @@
   />
 {/if}
 
-<!-- Modal de menú lateral (desktop) -->
 {#if mostrarModalMenu}
-  <div 
-    class="modal-menu-overlay" 
-    on:click={manejarClicModal}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Modal de menú"
-    tabindex="-1"
-  >
+  <div class="modal-menu-overlay" on:click={manejarClicModal} role="dialog" aria-modal="true" aria-label="Modal de menú" tabindex="-1">
     <div class="modal-menu-panel">
-      <!-- Botón cerrar -->
       <button class="boton-cerrar-menu" on:click={cerrarModales} aria-label="Cerrar menú">
         <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
           <path stroke="#ff6600" stroke-width="2" stroke-linecap="round" d="M18 6L6 18M6 6l12 12"/>
         </svg>
       </button>
       
-      <!-- Encabezado del menú -->
       <div class="encabezado-menu">
         <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Academia Vallenata" class="logo-menu" />
         <p class="descripcion-menu">
@@ -400,7 +378,6 @@
         </p>
       </div>
       
-      <!-- Redes sociales -->
       <div class="redes-menu">
         <a href="https://www.facebook.com/academiavallenataonlineoficial" class="icono-red-menu" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -426,15 +403,11 @@
         </a>
       </div>
       
-      <!-- Artículos recientes -->
       <div class="articulos-recientes">
         <h3>Artículos Recientes</h3>
-        
         {#if cargandoArticulos}
-          <p>Cargando...</p>
-        {/if}
-        
-        {#if articulosBlog.length > 0}
+          <p>Cargando artículos...</p>
+        {:else if articulosBlog.length > 0}
           {#each articulosBlog as articulo}
             <article class="articulo-item">
               <img src={articulo.imagen_url} alt="Artículo" class="imagen-articulo" />
@@ -444,13 +417,14 @@
               </div>
             </article>
           {/each}
+        {:else}
+          <p>No hay artículos disponibles</p>
         {/if}
       </div>
     </div>
   </div>
 {/if}
 
-<!-- Modal de login -->
 {#if mostrarModalLogin}
   <ModalDeInicioDeSesion abierto={mostrarModalLogin} onCerrar={cerrarModalLogin} />
 {/if}
@@ -596,7 +570,6 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Efecto sticky */
 .barra-principal-navegacion.sticky {
   position: fixed;
   top: 0;
@@ -620,16 +593,6 @@
     transform: translateY(0);
     opacity: 1;
   }
-}
-
-.barra-principal-navegacion::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,102,0,0.3) 50%, transparent 100%);
 }
 
 .contenedor-barra-principal {
@@ -657,10 +620,6 @@
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
   transition: filter 0.3s ease;
-}
-
-.logo-navegacion:hover img {
-  filter: drop-shadow(0 4px 12px rgba(255,102,0,0.2));
 }
 
 .menu-enlaces {
@@ -692,6 +651,10 @@
   position: relative;
   z-index: 2;
   transition: all 0.3s ease;
+  font-size: 1.01rem;
+  font-weight: 500;
+  color: #222;
+  margin-top: 0.1rem;
 }
 
 .enlace-underline {
@@ -721,8 +684,11 @@
   transform: translateY(-1px);
 }
 
-.enlace-nav:active {
-  transform: translateY(0);
+.icono-enlace-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0.2rem 0;
 }
 
 .botones-accion {
@@ -732,120 +698,39 @@
 }
 
 .boton-busqueda, .menu-hamburguesa {
-  position: relative;
   border: none;
   cursor: pointer;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   color: #fff;
+  background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
+  box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .boton-busqueda {
-  background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
   border-radius: 50%;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.boton-busqueda::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.boton-busqueda:hover::before {
-  left: 100%;
-}
-
-.boton-busqueda:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px rgba(255,102,0,0.4), 0 4px 8px rgba(0,0,0,0.15);
-  background: linear-gradient(135deg, #e55a00 0%, #ff6600 100%);
-}
-
-.boton-busqueda:active {
-  transform: translateY(0) scale(1.02);
 }
 
 .menu-hamburguesa {
-  background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
   border-radius: 12px;
   padding: 10px 14px;
   margin-left: 1rem;
-  box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
-  position: relative;
-  overflow: hidden;
 }
 
-.menu-hamburguesa::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.menu-hamburguesa:hover::before {
-  left: 100%;
-}
-
-.menu-hamburguesa:hover {
+.boton-busqueda:hover, .menu-hamburguesa:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255,102,0,0.4), 0 4px 8px rgba(0,0,0,0.15);
   background: linear-gradient(135deg, #e55a00 0%, #ff6600 100%);
 }
 
-.menu-hamburguesa:active {
+.boton-busqueda:active, .menu-hamburguesa:active {
   transform: translateY(0);
-}
-
-.boton-icono-wrapper {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-}
-
-.boton-busqueda:hover .boton-icono-wrapper,
-.menu-hamburguesa:hover .boton-icono-wrapper {
-  transform: scale(1.1);
-}
-
-.boton-ripple {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.3);
-  transform: translate(-50%, -50%);
-  transition: all 0.3s ease;
-  pointer-events: none;
-}
-
-.boton-busqueda:active .boton-ripple,
-.menu-hamburguesa:active .boton-ripple {
-  width: 100px;
-  height: 100px;
-  opacity: 0;
 }
 
 /* Modal de menú */
@@ -1061,6 +946,10 @@
     gap: 1rem;
   }
 
+  .barra-principal-navegacion {
+    padding: 6px 15px;
+  }
+
   .barra-principal-navegacion.sticky {
     padding: 4px 15px;
   }
@@ -1068,32 +957,5 @@
   .menu-enlaces {
     display: none !important;
   }
-}
-
-@media (max-width: 800px) {
-  .menu-enlaces {
-    display: none !important;
-  }
-}
-
-.icono-enlace-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 0 0.2rem 0;
-}
-.enlace-nav {
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  min-width: 90px;
-  max-width: 120px;
-  padding: 10px 8px;
-}
-.enlace-texto {
-  font-size: 1.01rem;
-  font-weight: 500;
-  color: #222;
-  margin-top: 0.1rem;
 }
 </style>
