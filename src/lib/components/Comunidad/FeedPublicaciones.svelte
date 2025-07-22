@@ -1,6 +1,7 @@
 <script lang="ts">
   import ComunidadComentarios from './ComunidadComentarios.svelte';
   import EncuestaPublicacion from './EncuestaPublicacion.svelte';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { goto } from '$app/navigation';
   import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
@@ -21,10 +22,6 @@
 
   // Estado local para el total de comentarios
   let contadorComentarios: number = total_comentarios;
-
-  // Imagen de perfil con prioridad correcta
-  $: imagenPerfil = url_foto_perfil || 
-                   `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff&size=128`;
 
   import { onMount } from 'svelte';
   // Al montar, cargar contador de comentarios y likes reales desde Supabase
@@ -126,25 +123,15 @@
   <header class="encabezado-publicacion">
     <div class="info-usuario">
       <div class="contenedor-avatar">
-        <button
-          class="avatar-button clickeable" 
-          on:click={navegarAlPerfil}
-          aria-label="Ver perfil de {usuario_nombre}"
-        >
-          <img 
-            class="avatar-usuario" 
-            src={imagenPerfil} 
+        <div class="avatar-button-container">
+          <Avatar 
+            src={url_foto_perfil}
             alt={usuario_nombre}
-            loading="lazy"
-            on:error={(event) => {
-              // Fallback si falla cargar la imagen
-              const img = event.target as HTMLImageElement;
-              if (img && !img.src.includes('ui-avatars.com')) {
-                img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario_nombre)}&background=667eea&color=fff&size=128`;
-              }
-            }}
+            nombreCompleto={usuario_nombre}
+            size="medium"
+            onClick={navegarAlPerfil}
           />
-        </button>
+        </div>
         <div class="indicador-estado"></div>
       </div>
       <div class="detalles-usuario">

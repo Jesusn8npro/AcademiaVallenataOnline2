@@ -119,6 +119,16 @@
 		}
 	}
 
+	// Función auxiliar para recargar todos los datos de cursos/paquetes
+	async function recargarTodosCursosPaquetes() {
+		await Promise.all([
+			cargarCursosInscritos(),
+			cargarPaquetesInscritos(),
+			cargarCursosDisponibles(),
+			cargarPaquetesDisponibles()
+		]);
+	}
+
 	async function cargarCursosDisponibles() {
 		try {
 			cargandoDisponibles = true;
@@ -349,11 +359,8 @@ async function agregarPaqueteAUsuario(paqueteId: string) {
 		if (resultado.success) {
 			exito = resultado.message || 'Paquete agregado exitosamente';
 			
-			// Recargar datos
-			await Promise.all([
-				cargarPaquetesInscritos(),
-				cargarPaquetesDisponibles()
-			]);
+			// Recargar TODOS los datos para mostrar cambios inmediatos
+			await recargarTodosCursosPaquetes();
 
 			// Cerrar la sección de paquetes disponibles
 			mostrarPaquetesDisponibles = false;
@@ -738,13 +745,13 @@ async function eliminarPaqueteInscrito(paqueteId: string) {
 		const resultado = await eliminarInscripcionPaquete(usuario.id, paqueteId);
 		
 		if (resultado.success) {
-			// Remover el paquete de la lista sin recargar todo
-			paquetesInscritos = paquetesInscritos.filter(p => p.paquete_id !== paqueteId);
-			
 			// Mostrar mensaje de éxito
 			mostrarToast(resultado.message || 'Paquete eliminado exitosamente', 'success');
 			
-			console.log('✅ Paquete eliminado exitosamente');
+			// Recargar TODOS los datos para reflejar cambios inmediatos
+			await recargarTodosCursosPaquetes();
+			
+			console.log('✅ Paquete eliminado y datos actualizados');
 		} else {
 			// Quitar indicador de carga del paquete
 			if (paqueteIndex !== -1) {
@@ -781,11 +788,11 @@ function verPaquete(paqueteId: string) {
 			const resultado = await inscribirUsuarioEnPaquete(usuario.id, paqueteId);
 			if (resultado.success) {
 				exito = 'Usuario inscrito en el paquete exitosamente';
-				// Recargar datos
-				await Promise.all([
-					cargarPaquetesInscritos(),
-					cargarPaquetesDisponibles()
-				]);
+				// Recargar TODOS los datos para mostrar cambios inmediatos
+				await recargarTodosCursosPaquetes();
+				
+				// Mostrar toast de éxito
+				mostrarToast('Usuario inscrito en el paquete exitosamente', 'success');
 				setTimeout(() => exito = '', 3000);
 			} else {
 				error = resultado.error || 'Error al inscribir en el paquete';
@@ -879,6 +886,9 @@ function verPaquete(paqueteId: string) {
 
 			console.log('📤 Enviando usuario actualizado desde guardarCambios:', usuario);
 			dispatch('usuarioActualizado', usuario);
+			
+			// Mostrar toast de éxito
+			mostrarToast('Información personal actualizada exitosamente', 'success');
 		} catch (err: any) {
 			error = `Error al actualizar: ${err.message}`;
 		} finally {
@@ -949,7 +959,17 @@ function verPaquete(paqueteId: string) {
 				if (deleteError) throw deleteError;
 			}
 
+			// Recargar datos y mostrar mensaje de éxito
 			await Promise.all([cargarCursosInscritos(), cargarCursosDisponibles()]);
+			
+			// Mostrar toast de éxito
+			const nombreCurso = tipo === 'curso' ? 
+				cursosDisponibles.find(c => c.id === cursoId)?.titulo || 
+				cursosInscritos.find(c => c.curso_id === cursoId)?.curso?.titulo :
+				tutorialesDisponibles.find(t => t.id === cursoId)?.titulo ||
+				cursosInscritos.find(c => c.tutorial_id === cursoId)?.curso?.titulo;
+				
+			mostrarToast(`${tipo} "${nombreCurso}" ${accion === 'agregar' ? 'agregado' : 'removido'} exitosamente`, 'success');
 		} catch (err: any) {
 			error = `Error al ${accion} ${tipo}: ${err.message}`;
 		}
@@ -1003,6 +1023,9 @@ function verPaquete(paqueteId: string) {
 
 			console.log('📤 Enviando usuario actualizado desde cambiarMembresia:', usuario);
 			dispatch('usuarioActualizado', usuario);
+			
+			// Mostrar toast de éxito  
+			mostrarToast(`Membresía cambiada a ${nuevaMembresia}`, 'success');
 		} catch (err: any) {
 			error = `Error al cambiar membresía: ${err.message}`;
 		} finally {

@@ -3,7 +3,7 @@
 	import { writable } from 'svelte/store';
 	import { mensajeriaService, type Chat, type Mensaje } from '$lib/services/mensajeriaService';
 	import { supabase } from '$lib/supabase';
-	import { temaOscuro } from '$lib/stores/temaStore';
+	import { modoOscuro, toggleModoOscuro } from '$lib/stores/temaStore';
 	import BurbujaMensaje from './BurbujaMensaje.svelte';
 	import EntradaMensaje from './EntradaMensaje.svelte';
 	import { goto } from '$app/navigation';
@@ -367,7 +367,7 @@
 <!-- TEMPLATE PRINCIPAL -->
 <!-- ============================================ -->
 
-<div class="chat-vista {$temaOscuro ? 'dark' : ''}" class:panel-abierto={mostrarInfoPanel}>
+<div class="chat-vista {$modoOscuro ? 'dark' : ''}" class:panel-abierto={mostrarInfoPanel}>
 	{#if !chat}
 		<!-- Sin chat seleccionado -->
 		<div class="estado-vacio">
@@ -410,12 +410,12 @@
 			
 					<div class="acciones-header">
 						<!-- Botón modo oscuro/claro -->
-				<button
-							class="btn-tema"
-							on:click={temaOscuro.alternar}
-							title="{$temaOscuro ? 'Modo claro' : 'Modo oscuro'}"
-						>
-							{#if $temaOscuro}
+									<button
+						class="btn-tema"
+						on:click={toggleModoOscuro}
+						title="{$modoOscuro ? 'Modo claro' : 'Modo oscuro'}"
+					>
+						{#if $modoOscuro}
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
 					</svg>

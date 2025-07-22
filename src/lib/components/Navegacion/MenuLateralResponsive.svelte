@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
 
   export let abierto = false;
   export let onCerrar: () => void;
@@ -11,7 +12,6 @@
   // Determinar el tipo de usuario
   $: tipoUsuario = usuario ? (usuario.rol === 'admin' ? 'admin' : 'estudiante') : 'publico';
   $: nombreUsuario = usuario?.nombre || usuario?.email?.split('@')[0] || 'Usuario';
-  $: avatarUsuario = usuario?.url_foto_perfil || '/images/avatar-generico.png';
 
   function manejarCerrar() {
     onCerrar();
@@ -76,11 +76,14 @@
       {:else}
         <!-- Usuario autenticado -->
         <div class="perfil-info">
-          <img 
-            src={avatarUsuario} 
-            alt="Avatar del usuario" 
-            class="avatar-perfil"
-          />
+          <div class="avatar-perfil-container">
+            <Avatar 
+              src={usuario?.url_foto_perfil}
+              alt="Avatar del usuario" 
+              nombreCompleto={nombreUsuario}
+              size="large"
+            />
+          </div>
           <div class="info-texto">
             <h3 class="nombre-usuario">{nombreUsuario}</h3>
             <p class="rol-usuario">
@@ -141,12 +144,15 @@
             </div>
             <span>Nuestra Academia</span>
           </button>
-          <button class="enlace-nav" on:click={() => navegarA('/simulador-de-acordeon')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <span>Simulador de Acordeón</span>
-          </button>
+          <!-- SIMULADOR - Solo para Administradores -->
+          {#if usuario?.rol === 'admin'}
+            <button class="enlace-nav" on:click={() => navegarA('/simulador-gaming')}>
+              <div class="icono-nav">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="7" cy="7" r="1.5"/><circle cx="17" cy="7" r="1.5"/><line x1="7" y1="10" x2="7" y2="12"/><line x1="17" y1="10" x2="17" y2="12"/></svg>
+              </div>
+              <span>Simulador</span>
+            </button>
+          {/if}
         </div>
 
         <!-- Botones de Acción para Usuarios Públicos -->
@@ -182,46 +188,76 @@
           <button class="enlace-nav activo" on:click={() => navegarA('/estudiante')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="9"/>
-                <rect x="14" y="3" width="7" height="5"/>
-                <rect x="14" y="12" width="7" height="9"/>
-                <rect x="3" y="16" width="7" height="5"/>
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                <path d="M6 12v5c3 0 5-1 8-1s5 1 8 1v-5"/>
               </svg>
             </div>
-            <span>Mi Panel</span>
+            <span>Mi Aprendizaje</span>
           </button>
 
-          <button class="enlace-nav" on:click={() => navegarA('/mis-cursos')}>
+          <button class="enlace-nav" on:click={() => navegarA('/cursos')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                <rect x="2" y="7" width="20" height="13" rx="2"/>
+                <path d="M16 3v4M8 3v4"/>
               </svg>
             </div>
-            <span>Mis Cursos</span>
+            <span>Cursos</span>
             <span class="badge-nav progreso">75%</span>
           </button>
 
-          <button class="enlace-nav" on:click={() => navegarA('/tutoriales')}>
+          <button class="enlace-nav" on:click={() => navegarA('/ranking')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="23 7 16 12 23 17 23 7"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
               </svg>
             </div>
-            <span>Tutoriales</span>
+            <span>Ranking</span>
           </button>
 
-          <button class="enlace-nav" on:click={() => navegarA('/simulador-de-acordeon')}>
+          <button class="enlace-nav" on:click={() => navegarA('/eventos')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
-            <span>Simulador</span>
+            <span>Eventos</span>
           </button>
+
+          <button class="enlace-nav" on:click={() => navegarA('/blog')}>
+            <div class="icono-nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="M7 7h10M7 11h10M7 15h6"/>
+              </svg>
+            </div>
+            <span>Blog</span>
+          </button>
+
+          <!-- SIMULADOR - Solo para Administradores -->
+          {#if usuario?.rol === 'admin'}
+            <button class="enlace-nav" on:click={() => navegarA('/simulador-gaming')}>
+              <div class="icono-nav">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                  <circle cx="7" cy="7" r="1.5"/>
+                  <circle cx="17" cy="7" r="1.5"/>
+                  <line x1="7" y1="10" x2="7" y2="12"/>
+                  <line x1="17" y1="10" x2="17" y2="12"/>
+                </svg>
+              </div>
+              <span>Simulador</span>
+            </button>
+          {/if}
 
           <button class="enlace-nav con-badge" on:click={() => navegarA('/comunidad')}>
             <div class="icono-nav">
@@ -264,24 +300,24 @@
             <span class="badge-nav nuevo">3</span>
           </button>
 
-          <button class="enlace-nav" on:click={() => navegarA('/mi-perfil')}>
+          <button class="enlace-nav" on:click={() => navegarA('/perfil')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
-            <span>Mi Perfil</span>
+            <span>Ver Perfil</span>
           </button>
 
-          <button class="enlace-nav" on:click={() => navegarA('/configuracion')}>
+          <button class="enlace-nav" on:click={() => navegarA('/cuenta')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V6a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
             </div>
-            <span>Configuración</span>
+            <span>Configuración de Cuenta</span>
           </button>
         </div>
 
@@ -293,19 +329,31 @@
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
             </div>
-            <span>Panel</span>
+            <span>Panel Admin</span>
           </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/crear')}>
+          <button class="enlace-nav" on:click={() => navegarA('/administrador/crear-contenido')}>
             <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
             </div>
-            <span>Crear</span>
+            <span>Crear Contenido</span>
           </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/panel-contenido')}>
+          <button class="enlace-nav" on:click={() => navegarA('/administrador/usuarios')}>
             <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
             </div>
-            <span>Contenido</span>
+            <span>Gestión Usuarios</span>
+          </button>
+          <button class="enlace-nav" on:click={() => navegarA('/administrador/pagos')}>
+            <div class="icono-nav">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M2 10h20"/><circle cx="8" cy="15" r="2"/><circle cx="16" cy="15" r="2"/></svg>
+            </div>
+            <span>Pagos</span>
+          </button>
+          <button class="enlace-nav" on:click={() => navegarA('/simulador-gaming')}>
+            <div class="icono-nav">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="7" cy="7" r="1.5"/><circle cx="17" cy="7" r="1.5"/><line x1="7" y1="10" x2="7" y2="12"/><line x1="17" y1="10" x2="17" y2="12"/></svg>
+            </div>
+            <span>Simulador</span>
           </button>
           <button class="enlace-nav con-badge" on:click={() => navegarA('/mensajes')}>
             <div class="icono-nav">
@@ -313,36 +361,6 @@
             </div>
             <span>Mensajes</span>
             <span class="badge-nav nuevo">5</span>
-          </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/cursos')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/></svg>
-            </div>
-            <span>Cursos</span>
-          </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/usuarios')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a4.5 4.5 0 0 1 9 0v2"/></svg>
-            </div>
-            <span>Usuarios</span>
-          </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/blog')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>
-            </div>
-            <span>Blog</span>
-          </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/pagos')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/></svg>
-            </div>
-            <span>Pagos</span>
-          </button>
-          <button class="enlace-nav" on:click={() => navegarA('/administrador/notificaciones')}>
-            <div class="icono-nav">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </div>
-            <span>Notificaciones</span>
           </button>
         </div>
 
@@ -557,13 +575,16 @@
   flex: 1;
 }
 
-.avatar-perfil {
+.avatar-perfil-container {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  object-fit: cover;
   border: 3px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-texto {

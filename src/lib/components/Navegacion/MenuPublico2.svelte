@@ -314,16 +314,8 @@
         <span class="enlace-texto">Nuestra Academia</span>
         <div class="enlace-underline"></div>
       </a>
-      <a href="/simulador-de-acordeon" class="enlace-nav">
-        <span class="icono-enlace-nav">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2">
-            <rect x="2" y="7" width="20" height="10" rx="2"/>
-            <path d="M6 7v10M18 7v10"/>
-          </svg>
-        </span>
-        <span class="enlace-texto">Simulador de Acordeón</span>
-        <div class="enlace-underline"></div>
-      </a>
+      <!-- 🎵 SIMULADOR REMOVIDO DEL MENÚ PÚBLICO -->
+      <!-- Solo admins autenticados pueden ver y acceder al simulador -->
     </nav>
     
     <!-- Botones de acción -->

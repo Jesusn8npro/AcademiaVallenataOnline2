@@ -1,63 +1,56 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-// Función para obtener el tema desde localStorage o usar el preferido del sistema
-function obtenerTemaInicial(): boolean {
-	if (!browser) return false;
-	
-	const temaGuardado = localStorage.getItem('tema-oscuro');
-	if (temaGuardado !== null) {
-		return JSON.parse(temaGuardado);
-	}
-	
-	// Si no hay tema guardado, usar la preferencia del sistema
-	return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
+// Store global para el modo oscuro
+export const modoOscuro = writable<boolean>(false);
 
-// Store para el modo oscuro
-function crearTemaStore() {
-	const { subscribe, set, update } = writable<boolean>(obtenerTemaInicial());
-
-	return {
-		subscribe,
-		alternar: () => update(modoOscuro => {
-			const nuevoModo = !modoOscuro;
-			if (browser) {
-				localStorage.setItem('tema-oscuro', JSON.stringify(nuevoModo));
-				// Aplicar clase al HTML
-				if (nuevoModo) {
-					document.documentElement.classList.add('dark');
-				} else {
-					document.documentElement.classList.remove('dark');
-				}
-			}
-			return nuevoModo;
-		}),
-		establecer: (valor: boolean) => {
-			if (browser) {
-				localStorage.setItem('tema-oscuro', JSON.stringify(valor));
-				// Aplicar clase al HTML
-				if (valor) {
-					document.documentElement.classList.add('dark');
-				} else {
-					document.documentElement.classList.remove('dark');
-				}
-			}
-			set(valor);
-		}
-	};
-}
-
-export const temaOscuro = crearTemaStore();
-
-// Función para inicializar el tema en el HTML
+// Función para inicializar el tema
 export function inicializarTema() {
-	if (!browser) return;
-	
-	const modoOscuro = obtenerTemaInicial();
-	if (modoOscuro) {
-		document.documentElement.classList.add('dark');
-	} else {
-		document.documentElement.classList.remove('dark');
-	}
+  if (!browser) return;
+  
+  try {
+    // Verificar localStorage
+    const savedTheme = localStorage.getItem('modo-oscuro');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    const isDark = savedTheme === 'true' || (!savedTheme && prefersDark);
+    
+    aplicarTema(isDark);
+    modoOscuro.set(isDark);
+  } catch (error) {
+    console.warn('Error al inicializar tema:', error);
+  }
+}
+
+// Función para aplicar el tema
+export function aplicarTema(dark: boolean) {
+  if (!browser) return;
+  
+  try {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch (error) {
+    console.warn('Error al aplicar tema:', error);
+  }
+}
+
+// Función para toggle del modo oscuro
+export function toggleModoOscuro() {
+  if (!browser) return;
+  
+  modoOscuro.update(isDark => {
+    const newValue = !isDark;
+    aplicarTema(newValue);
+    
+    try {
+      localStorage.setItem('modo-oscuro', newValue.toString());
+    } catch (error) {
+      console.warn('Error al guardar tema:', error);
+    }
+    
+    return newValue;
+  });
 } 

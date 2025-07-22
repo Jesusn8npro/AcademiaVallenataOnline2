@@ -34,11 +34,19 @@
   const dispatch = createEventDispatcher();
 
   function procesarUrl(url: string): string {
-    if (!url) return '';
+    console.log('🎥 [REPRODUCTOR] Procesando URL:', url);
+    
+    if (!url || url.trim() === '') {
+      console.warn('⚠️ [REPRODUCTOR] URL vacía o nula');
+      tieneError = true;
+      return '';
+    }
     
     // Detectar si es YouTube
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      console.log('📺 [REPRODUCTOR] URL de YouTube detectada');
       esYouTube = true;
+      esBunny = false;
       
       // Extraer ID de YouTube
       let videoId = '';
@@ -52,17 +60,26 @@
         const match = url.match(pattern);
         if (match) {
           videoId = match[1];
+          console.log('📺 [REPRODUCTOR] ID de YouTube extraído:', videoId);
           break;
         }
       }
       
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0`;
+        const youtubeUrl = `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1&iv_load_policy=3`;
+        console.log('✅ [REPRODUCTOR] URL de YouTube procesada:', youtubeUrl);
+        tieneError = false;
+        return youtubeUrl;
+      } else {
+        console.error('❌ [REPRODUCTOR] No se pudo extraer ID de YouTube');
+        tieneError = true;
+        return '';
       }
     }
     
     // Si es Bunny.net
-    if (url.includes('iframe.mediadelivery.net')) {
+    if (url.includes('iframe.mediadelivery.net') || url.includes('bunnycdn.com')) {
+      console.log('🐰 [REPRODUCTOR] URL de Bunny.net detectada');
       esYouTube = false;
       esBunny = true;
       
@@ -72,6 +89,7 @@
       if (match) {
         libraryId = match[1];
         videoId = match[2];
+        console.log('🐰 [REPRODUCTOR] IDs de Bunny extraídos:', { libraryId, videoId });
       }
       
       // Asegurarse de que la URL use /embed/ en lugar de /play/
@@ -79,18 +97,32 @@
         url = url.replace('/play/', '/embed/');
       }
       
-      // Agregar o actualizar parámetros para optimizar la carga
-      const urlObj = new URL(url);
-      urlObj.searchParams.set('autoplay', 'false');
-      urlObj.searchParams.set('preload', 'true');
-      urlObj.searchParams.set('responsive', 'true');
-      urlObj.searchParams.set('muted', 'false');
-      urlObj.searchParams.set('quality', 'auto');
-      urlObj.searchParams.set('loading', 'eager');
-      
-      return urlObj.toString();
+      try {
+        // Agregar o actualizar parámetros para optimizar la carga
+        const urlObj = new URL(url);
+        urlObj.searchParams.set('autoplay', 'false');
+        urlObj.searchParams.set('preload', 'true');
+        urlObj.searchParams.set('responsive', 'true');
+        urlObj.searchParams.set('muted', 'false');
+        urlObj.searchParams.set('quality', 'auto');
+        urlObj.searchParams.set('loading', 'eager');
+        
+        const bunnyUrl = urlObj.toString();
+        console.log('✅ [REPRODUCTOR] URL de Bunny.net procesada:', bunnyUrl);
+        tieneError = false;
+        return bunnyUrl;
+      } catch (error) {
+        console.error('❌ [REPRODUCTOR] Error procesando URL de Bunny:', error);
+        tieneError = true;
+        return url; // Devolver URL original como fallback
+      }
     }
     
+    // Para otras URLs (directo HTML5)
+    console.log('🎬 [REPRODUCTOR] URL directa detectada');
+    esYouTube = false;
+    esBunny = false;
+    tieneError = false;
     return url;
   }
 
@@ -356,25 +388,63 @@
 
 <div class="reproductor-container">
   <div class="video-wrapper">
-    <iframe
-      title={titulo}
-      src={urlProcesada}
-      class="video-frame"
-      allow="accelerometer;gyroscope;encrypted-media;picture-in-picture;"
-      allowfullscreen={true}
-      referrerpolicy="no-referrer-when-downgrade"
-      sandbox="allow-scripts allow-same-origin allow-presentation"
-      loading="eager"
-      on:load={() => {
-        console.log('Video iframe cargado');
-        cargando = false;
-      }}
-    ></iframe>
-
-    {#if cargando}
-      <div class="loading-overlay">
-        <div class="spinner"></div>
+    {#if tieneError || !urlProcesada}
+      <div class="error-overlay">
+        <div class="error-content">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h3>Video no disponible</h3>
+          <p>
+            {#if !videoUrl}
+              Esta clase aún no tiene un video asignado.
+            {:else}
+              Hubo un problema al cargar el video. Por favor, inténtalo más tarde.
+            {/if}
+          </p>
+          <div class="debug-info">
+            <details>
+              <summary>Información de depuración</summary>
+              <pre>
+URL original: {videoUrl || 'No proporcionada'}
+URL procesada: {urlProcesada || 'No procesada'}
+YouTube: {esYouTube}
+Bunny: {esBunny}
+              </pre>
+            </details>
+          </div>
+        </div>
       </div>
+    {:else}
+      <iframe
+        title={titulo}
+        src={urlProcesada}
+        class="video-frame"
+        allow="accelerometer;gyroscope;encrypted-media;picture-in-picture;"
+        allowfullscreen={true}
+        referrerpolicy="no-referrer-when-downgrade"
+        sandbox="allow-scripts allow-same-origin allow-presentation"
+        loading="eager"
+        on:load={() => {
+          console.log('✅ [REPRODUCTOR] Video iframe cargado exitosamente');
+          cargando = false;
+          tieneError = false;
+        }}
+        on:error={() => {
+          console.error('❌ [REPRODUCTOR] Error cargando iframe');
+          tieneError = true;
+          cargando = false;
+        }}
+      ></iframe>
+
+      {#if cargando}
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          <p class="loading-text">Cargando video...</p>
+        </div>
+      {/if}
     {/if}
   </div>
 
@@ -456,16 +526,85 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .loading-text {
+    margin-top: 1rem;
+    color: white;
+    font-size: 0.9rem;
+  }
+
+  .error-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
+    padding: 2rem;
+  }
+
+  .error-content {
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .error-content svg {
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+  }
+
+  .error-content h3 {
+    color: white;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .error-content p {
+    color: #ccc;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .debug-info {
+    margin-top: 1rem;
+  }
+
+  .debug-info details {
+    cursor: pointer;
+  }
+
+  .debug-info summary {
+    color: #888;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .debug-info pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #aaa;
+    text-align: left;
+    white-space: pre-wrap;
   }
 
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #f3f3f3;
+    border: 3px solid #333;
     border-top: 3px solid #2196f3;
     border-radius: 50%;
     animation: spin 1s linear infinite;

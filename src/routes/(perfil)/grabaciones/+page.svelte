@@ -17,7 +17,7 @@
       <p>Usa el simulador de acordeón para grabar y compartir tus interpretaciones. ¡Muestra tu talento!</p>
       
       <div class="acciones-vacio">
-        <a href="/simulador-de-acordeon" class="btn-ir-simulador">
+                        <a href="/simulador-gaming" class="btn-ir-simulador">
           🎹 Ir al Simulador
         </a>
         <button class="btn-subir-video" on:click={() => alert('Función de subir video próximamente')}>

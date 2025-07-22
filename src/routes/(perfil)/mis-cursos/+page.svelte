@@ -112,13 +112,18 @@
     }
   }
 
+  let usuarioIdAnterior: string | null = null;
+
   onMount(() => {
     cargarInscripciones();
   });
 
-  // Recargar cuando cambie el usuario
-  $: if ($usuario?.id) {
-    cargarInscripciones();
+  // Recargar solo cuando el ID del usuario cambie realmente (no en cada reactivo)
+  $: {
+    if ($usuario?.id && $usuario.id !== usuarioIdAnterior) {
+      usuarioIdAnterior = $usuario.id;
+      cargarInscripciones();
+    }
   }
 </script>
 
@@ -161,15 +166,17 @@
 
   .layout-mis-cursos {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 2.5rem;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
     align-items: start;
     max-width: 1400px;
     margin: 0 auto;
+    overflow: hidden; /* Prevenir desbordamiento horizontal */
   }
 
   .columna-principal {
     min-width: 0;
+    overflow: hidden; /* Prevenir que el contenido se salga */
   }
 
   .header-seccion {
@@ -189,10 +196,9 @@
   }
 
   .columna-lateral {
-    position: sticky;
-    top: 2rem;
-    min-width: 300px;
-    max-width: 400px;
+    width: 320px;
+    max-width: 320px;
+    /* Removemos position: sticky que puede causar problemas */
   }
 
   .widgets-contenedor {
@@ -216,9 +222,8 @@
 
     .columna-lateral {
       order: 1;
-      position: static;
-      min-width: auto;
-      max-width: none;
+      width: 100%;
+      max-width: 100%;
     }
 
     .columna-principal {

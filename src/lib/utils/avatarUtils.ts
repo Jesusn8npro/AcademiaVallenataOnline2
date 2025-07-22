@@ -1,63 +1,53 @@
 /**
- * Utilidades para manejar avatares de usuario
+ * 🎨 Utilidades para manejar avatares de usuarios
  */
 
 /**
- * Genera una URL de avatar por defecto usando UI Avatars
+ * Generar iniciales a partir de un nombre completo
  */
-export function generarAvatarPorDefecto(nombre: string, opciones?: {
-  background?: string;
-  color?: string;
-  size?: number;
-}): string {
-  const config = {
-    background: opciones?.background || '667eea',
-    color: opciones?.color || 'fff',
-    size: opciones?.size || 200
-  };
+export function generarIniciales(nombreCompleto: string): string {
+  if (!nombreCompleto) return 'U';
   
-  const nombreLimpio = nombre?.trim() || 'Usuario';
-  const iniciales = nombreLimpio
-    .split(' ')
-    .map(palabra => palabra.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const palabras = nombreCompleto.split(' ').filter(palabra => palabra.length > 0);
+  let iniciales = '';
   
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciales)}&background=${config.background}&color=${config.color}&size=${config.size}&font-size=0.6`;
+  if (palabras.length >= 2) {
+    // Si tiene nombre y apellido, tomar primera letra de cada uno
+    iniciales = palabras[0].charAt(0) + palabras[1].charAt(0);
+  } else if (palabras.length === 1) {
+    // Si solo tiene una palabra, tomar las primeras 2 letras
+    iniciales = palabras[0].substring(0, 2);
+  } else {
+    iniciales = 'U';
+  }
+  
+  return iniciales.toUpperCase();
 }
 
 /**
- * Obtiene el avatar del usuario con fallback
+ * Obtener avatar por defecto de la carpeta local
  */
-export function obtenerAvatarUsuario(usuario: any): string {
-  // Prioridad de campos para el avatar
-  const urlAvatar = usuario?.url_foto_perfil || 
-                   usuario?.imagen_perfil || 
-                   usuario?.avatar;
-  
-  if (urlAvatar && urlAvatar.trim()) {
-    return urlAvatar;
-  }
-  
-  // Generar nombre para el avatar por defecto
-  const nombre = usuario?.nombre_completo || 
-                usuario?.nombre || 
-                usuario?.usuario_nombre || 
-                usuario?.nombre_usuario ||
-                'Usuario';
-  
-  return generarAvatarPorDefecto(nombre);
+export function obtenerAvatarPorDefecto(): string {
+  return '/images/perfil-portada/Imagen perfil 1.jpg';
 }
 
 /**
- * Verifica si una URL de imagen es válida
+ * Obtener portada por defecto de la carpeta local
  */
-export async function verificarImagenValida(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.ok && (response.headers.get('content-type')?.startsWith('image/') ?? false);
-  } catch {
-    return false;
-  }
+export function obtenerPortadaPorDefecto(): string {
+  return '/images/perfil-portada/Imagen de portada.png';
+}
+
+/**
+ * Verificar si se debe mostrar iniciales en lugar de imagen
+ */
+export function debeMostrarIniciales(urlAvatar: string | null | undefined): boolean {
+  return !urlAvatar || urlAvatar.trim() === '';
+}
+
+/**
+ * Obtener URL de avatar con fallback a imagen por defecto
+ */
+export function obtenerUrlAvatar(urlAvatar: string | null | undefined): string {
+  return urlAvatar || obtenerAvatarPorDefecto();
 } 

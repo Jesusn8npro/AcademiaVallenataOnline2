@@ -18,10 +18,37 @@
   // Estado del modal de imágenes (para ocultar pestañas)
   let modalImagenAbierto = false;
 
+  // Emergency fallback después de mucho tiempo cargando
+  let mostrarFallback = false;
+  
+  // Activar fallback después de 20 segundos de carga
+  $: if (cargandoDatos) {
+    setTimeout(() => {
+      if ($perfilStore.cargando) {
+        console.warn('⚠️ [LAYOUT PERFIL] Activando emergency fallback después de 20s');
+        mostrarFallback = true;
+      }
+    }, 20000);
+  } else {
+    mostrarFallback = false;
+  }
+
   onMount(async () => {
-    // Solo cargar datos si no están inicializados
-    if (!$perfilStore.inicializado) {
-      await perfilStore.cargarDatosPerfil();
+    console.log('🚀 [LAYOUT PERFIL] Montando componente, estado del store:', $perfilStore);
+    
+    // Cargar datos del perfil con timeout
+    try {
+      const cargarPromise = perfilStore.cargarDatosPerfil(false);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout del layout')), 15000) // 15 segundos
+      );
+      
+      await Promise.race([cargarPromise, timeoutPromise]);
+      console.log('✅ [LAYOUT PERFIL] Datos cargados exitosamente');
+    } catch (error) {
+      console.error('❌ [LAYOUT PERFIL] Error/timeout cargando datos:', error);
+      // Si hay timeout, forzar que el store se marque como inicializado para que no se quede cargando
+      perfilStore.resetear();
     }
   });
 
@@ -63,11 +90,10 @@
   <div class="encabezado-fijo">
     {#if datosDisponibles}
       <EncabezadoPerfil 
-        bind:nombreCompleto={perfilData!.nombre_completo} 
-        bind:correoElectronico={perfilData!.correo_electronico} 
-        bind:urlAvatar={perfilData!.url_foto_perfil} 
-        bind:urlPortada={perfilData!.portada_url} 
-        bind:posicionPortadaY={perfilData!.posicion_img_portada}
+        nombreCompleto={perfilData!.nombre_completo} 
+        urlAvatar={perfilData!.url_foto_perfil} 
+        urlPortada={perfilData!.portada_url} 
+        posicionPortadaY={perfilData!.posicion_img_portada || 50}
         userId={perfilData!.id}
         stats={statsData}
         on:modalStateChange={handleModalStateChange}
@@ -96,14 +122,25 @@
   <div class="contenido-dinamico">
     {#if datosDisponibles}
       <slot />
-    {:else if cargandoDatos}
+    {:else if cargandoDatos && !mostrarFallback}
       <div class="contenido-cargando">
         <div class="spinner"></div>
         <p>Cargando información del perfil...</p>
       </div>
+    {:else if mostrarFallback || (!cargandoDatos && !datosDisponibles)}
+      <div class="contenido-fallback">
+        <div class="fallback-mensaje">
+          <h2>🎵 Academia Vallenata</h2>
+          <p>Continuando con tu aprendizaje...</p>
+        </div>
+        <slot />
+      </div>
     {:else}
       <div class="contenido-error">
         <p>No se pudo cargar el contenido del perfil</p>
+        <button on:click={() => perfilStore.cargarDatosPerfil(true)} class="btn-reintentar">
+          Reintentar
+        </button>
       </div>
     {/if}
   </div>
@@ -174,6 +211,31 @@
     padding: 2rem;
     gap: 1rem;
     color: #dc2626;
+  }
+
+  .contenido-fallback {
+    padding: 1rem;
+  }
+
+  .fallback-mensaje {
+    text-align: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 2rem;
+  }
+
+  .fallback-mensaje h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .fallback-mensaje p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
   }
 
   .spinner {

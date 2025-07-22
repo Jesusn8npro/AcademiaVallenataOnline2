@@ -120,7 +120,10 @@
         return;
       }
 
-      // Verificar si el usuario está inscrito
+      // TEMPORALMENTE DESHABILITADO: Verificar si el usuario está inscrito
+      // TODO: Implementar lógica de acceso más granular (gratuito vs premium)
+      
+      /* 
       const { data: inscripcionTutorial } = await supabase
         .from('inscripciones')
         .select('*')
@@ -132,6 +135,7 @@
         error = 'No tienes acceso a este tutorial o no estás inscrito.';
         return;
       }
+      */
 
       tutorial = { ...tutorialData, partes };
       await cargarInscripcion();

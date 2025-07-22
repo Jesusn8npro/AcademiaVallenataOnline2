@@ -6,6 +6,7 @@
   import { crearPublicacionAutomaticaSegura } from '$lib/services/publicacionesAutoService';
   import { goto } from '$app/navigation';
   import { mensajeriaService } from '$lib/services/mensajeriaService';
+  import { generarIniciales, obtenerAvatarPorDefecto, debeMostrarIniciales } from '$lib/utils/avatarUtils';
 
   // Crear dispatcher para comunicar el estado del modal
   const dispatch = createEventDispatcher();
@@ -418,6 +419,10 @@
     
     return `Miembro desde ${mes} ${año}`;
   }
+
+  // Verificar si debemos mostrar iniciales en lugar de imagen
+  $: mostrarIniciales = debeMostrarIniciales(urlAvatar) && nombreCompleto;
+  $: iniciales = mostrarIniciales ? generarIniciales(nombreCompleto) : '';
 </script>
 
 <!--
@@ -429,13 +434,13 @@
 <!-- Contenedor Principal -->
 <div class="contenedor-portada" on:mousemove={manejarDragPortada} on:touchmove={manejarDragPortada}>
   <img
-    src={vistaPortadaTemporal || urlPortada || 'https://i.ytimg.com/vi/lg9metXr5XQ/hq720.jpg'}
+    src={vistaPortadaTemporal || urlPortada || '/images/perfil-portada/Imagen de portada.png'}
     alt="Portada de perfil"
     class="imagen-portada"
     class:reposicionando={reposicionandoPortada}
-    style="object-position: 50% {posicionPortadaY}%; cursor: {!reposicionandoPortada && !vistaPortadaTemporal && urlPortada ? 'pointer' : 'default'};"
+    style="object-position: 50% {posicionPortadaY}%; cursor: {!reposicionandoPortada && !vistaPortadaTemporal && (urlPortada || !urlPortada) ? 'pointer' : 'default'};"
     on:click={() => {
-      if (!reposicionandoPortada && !vistaPortadaTemporal && urlPortada) {
+      if (!reposicionandoPortada && !vistaPortadaTemporal) {
         abrirModalImagen('portada');
       }
     }}
@@ -474,17 +479,25 @@
   <!-- Avatar -->
   <div class="contenedor-avatar">
     <div class="avatar-interactivo">
-      <img 
-        src={vistaAvatarTemporal || urlAvatar || 'https://randomuser.me/api/portraits/women/44.jpg'} 
-        alt="Avatar" 
-        class="imagen-avatar"
-        on:click={() => {
-          if (!vistaAvatarTemporal && urlAvatar) {
-            abrirModalImagen('avatar');
-          }
-        }}
-        style:cursor={!vistaAvatarTemporal && urlAvatar ? 'pointer' : 'default'}
-      />
+      {#if mostrarIniciales}
+        <!-- Avatar con iniciales cuando no hay imagen -->
+        <div 
+          class="avatar-iniciales"
+          on:click={() => abrirModalImagen('avatar')}
+          style:cursor="pointer"
+        >
+          {iniciales}
+        </div>
+      {:else}
+        <!-- Imagen de avatar -->
+        <img 
+          src={vistaAvatarTemporal || obtenerAvatarPorDefecto()} 
+          alt="Avatar" 
+          class="imagen-avatar"
+          on:click={() => abrirModalImagen('avatar')}
+          style:cursor="pointer"
+        />
+      {/if}
       <!-- Icono cámara perfil SIEMPRE visible y abre menú -->
       <span class="icono-camara-avatar" on:click|stopPropagation={abrirMenuAvatar}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="4"/><path d="M5 7h2l2-3h6l2 3h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/></svg>
@@ -705,7 +718,31 @@
     transition: all 0.3s ease;
     z-index: 100;
   }
-  .avatar-interactivo:hover .imagen-avatar { box-shadow: 0 12px 40px rgba(37, 99, 235, 0.2); }
+  
+  .avatar-iniciales {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 6px solid var(--fondo-blanco);
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 900;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 100;
+    cursor: pointer;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .avatar-interactivo:hover .imagen-avatar, 
+  .avatar-interactivo:hover .avatar-iniciales { 
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.2); 
+    transform: scale(1.02);
+  }
 
   .controles-avatar {
     display: flex;
@@ -1140,6 +1177,10 @@
     width: 140px;
     height: 140px;
     }
+    
+    .avatar-iniciales {
+      font-size: 2.5rem;
+    }
     .contenedor-avatar {
       position: absolute;
       transform: translateX(-50%) translateY(20%);
@@ -1314,6 +1355,10 @@
       box-shadow: none; /* Sin sombra - estilo Facebook */
     }
     .contenedor-avatar { bottom: -40px; }
+    
+    .avatar-iniciales {
+      font-size: 2rem;
+    }
   }
 </style>
 

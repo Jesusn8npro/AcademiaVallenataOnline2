@@ -3,6 +3,8 @@
   import { cerrarSesion as cerrarSesionSupabase } from '$lib/supabase/autenticacionSupabase';
   import { sidebarColapsado } from '$lib/stores/sidebarStore';
   import ModalBusqueda from '$lib/components/Busqueda/ModalBusqueda.svelte';
+  import ToggleModoOscuro from '$lib/components/ui/ToggleModoOscuro.svelte';
+  import Avatar from '$lib/components/ui/Avatar.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
@@ -13,7 +15,6 @@
   // Determinar el tipo de usuario
   $: tipoUsuario = $usuario?.rol === 'admin' ? 'admin' : 'estudiante';
   $: nombreUsuario = $usuario?.nombre || 'Usuario';
-  $: avatarUsuario = $usuario?.url_foto_perfil || '/images/avatar-generico.png';
 
   function alternarBarraLateral() {
     colapsado = !colapsado;
@@ -233,7 +234,8 @@
             </svg>
           </div>
           {#if !colapsado}
-            <span class="nav-text">Simulador</span>
+            <span class="nav-text">Simulador Gaming</span>
+            <div class="nav-badge nuevo">PRO</div>
           {/if}
         </a>
 
@@ -308,19 +310,8 @@
           <div class="section-title">Práctica</div>
         {/if}
         
-        <a href="/simulador-de-acordeon" class="nav-item">
-          <div class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-          </div>
-          {#if !colapsado}
-            <span class="nav-text">Simulador</span>
-            <div class="nav-badge gratis">GRATIS</div>
-          {/if}
-        </a>
+        <!-- 🎵 SIMULADOR REMOVIDO PARA ESTUDIANTES -->
+        <!-- Los estudiantes verán la landing page "Coming Soon" si intentan acceder -->
 
         <a href="/comunidad" class="nav-item">
           <div class="nav-icon">
@@ -408,8 +399,13 @@
   <!-- Perfil Usuario (Manteniendo funcionalidad original) -->
   <div class="perfil-usuario-moderno">
     <div class="perfil-btn-moderno" class:colapsado on:click={alternarMenuPerfil} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && alternarMenuPerfil(e)}>
-      <div class="avatar-container">
-        <img src={avatarUsuario} alt="Avatar" class="avatar-moderno" />
+      <div class="avatar-container-sidebar">
+        <Avatar 
+          src={$usuario?.url_foto_perfil}
+          alt="Avatar"
+          nombreCompleto={nombreUsuario}
+          size="medium"
+        />
         <div class="status-indicator"></div>
       </div>
       {#if !colapsado}
@@ -430,7 +426,14 @@
         <!-- Header del perfil -->
         <div class="perfil-header-moderno">
           <div class="avatar-header-container">
-            <img src={avatarUsuario} alt="Avatar" class="avatar-header-moderno" />
+            <div class="avatar-header-wrapper">
+              <Avatar 
+                src={$usuario?.url_foto_perfil}
+                alt="Avatar"
+                nombreCompleto={nombreUsuario}
+                size="large"
+              />
+            </div>
             <div class="status-indicator-header"></div>
           </div>
           <div class="info-header-moderno">
@@ -450,6 +453,18 @@
             </div>
             <span class="opcion-text">Mi Perfil</span>
           </button>
+          
+          <div class="opcion-moderna tema-option">
+            <div class="opcion-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </div>
+            <span class="opcion-text">Tema Oscuro</span>
+            <div class="toggle-sidebar-container">
+              <ToggleModoOscuro />
+            </div>
+          </div>
           
           <button class="opcion-moderna" on:click={irACursos}>
             <div class="opcion-icon">
@@ -930,18 +945,17 @@
   padding: 12px;
 }
 
-.avatar-container {
+.avatar-container-sidebar {
   position: relative;
   flex-shrink: 0;
-}
-
-.avatar-moderno {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  object-fit: cover;
-  border: 2px solid white;
+  overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-indicator {
@@ -1018,13 +1032,16 @@
   flex-shrink: 0;
 }
 
-.avatar-header-moderno {
+.avatar-header-wrapper {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  object-fit: cover;
+  overflow: hidden;
   border: 3px solid white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-indicator-header {
@@ -1109,6 +1126,116 @@
   height: 1px;
   background: #f0f2f5;
   margin: 8px 0;
+}
+
+/* Estilos para la opción del tema oscuro */
+.tema-option {
+  justify-content: space-between !important;
+  cursor: default !important;
+  background: #f8fffe !important;
+  border: 1px solid #e0f2f1;
+}
+
+.tema-option:hover {
+  background: #f0fdf4 !important;
+}
+
+.toggle-sidebar-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.toggle-sidebar-container :global(.toggle-modo-oscuro) {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+}
+
+/* Modo Oscuro */
+:global(.dark) .sidebar-moderno {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-right-color: #374151;
+}
+
+:global(.dark) .sidebar-header {
+  background: #1e293b;
+  border-bottom-color: #374151;
+}
+
+:global(.dark) .sidebar-label {
+  color: #f1f5f9;
+}
+
+:global(.dark) .nav-item {
+  color: #cbd5e1;
+}
+
+:global(.dark) .nav-item:hover {
+  background: rgba(51, 65, 85, 0.3);
+  color: #f1f5f9;
+}
+
+:global(.dark) .nav-item.destacado {
+  background: rgba(229, 231, 235, 0.1);
+  color: #f1f5f9;
+}
+
+:global(.dark) .section-title {
+  color: #94a3b8;
+}
+
+:global(.dark) .perfil-usuario-moderno .perfil-btn-moderno {
+  background: #334155;
+}
+
+:global(.dark) .perfil-usuario-moderno .perfil-btn-moderno:hover {
+  background: #475569;
+}
+
+:global(.dark) .perfil-nombre {
+  color: #f1f5f9;
+}
+
+:global(.dark) .perfil-rol {
+  color: #94a3b8;
+}
+
+:global(.dark) .menu-perfil-moderno {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global(.dark) .perfil-header-moderno {
+  background: linear-gradient(135deg, #475569 0%, #374151 100%);
+  border-bottom-color: #475569;
+}
+
+:global(.dark) .nombre-header-moderno {
+  color: #f1f5f9;
+}
+
+:global(.dark) .correo-header-moderno {
+  color: #94a3b8;
+}
+
+:global(.dark) .opcion-moderna {
+  color: #cbd5e1;
+}
+
+:global(.dark) .opcion-moderna:hover {
+  background: #475569 !important;
+  color: #f1f5f9;
+}
+
+:global(.dark) .tema-option {
+  background: rgba(34, 197, 94, 0.1) !important;
+  border-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+:global(.dark) .tema-option:hover {
+  background: rgba(34, 197, 94, 0.15) !important;
 }
 
 /* Animations */

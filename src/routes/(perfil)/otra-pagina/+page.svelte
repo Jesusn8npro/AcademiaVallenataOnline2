@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { eventosService } from '$lib/services/eventosService';
   import { usuario } from '$lib/UsuarioActivo/usuario';
-  import { temaOscuro } from '$lib/stores/temaStore';
+  import { modoOscuro } from '$lib/stores/temaStore';
   import type { EventoUsuario } from '$lib/services/eventosService';
 
   // Estados
@@ -139,7 +139,7 @@
   <meta name="description" content="Eventos y actividades en los que estás registrado" />
 </svelte:head>
 
-<div class="eventos-container" class:tema-oscuro={$temaOscuro}>
+<div class="eventos-container" class:tema-oscuro={$modoOscuro}>
   <!-- Encabezado -->
   <div class="encabezado">
     <div class="titulo-section">

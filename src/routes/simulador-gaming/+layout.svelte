@@ -7,12 +7,20 @@
   import BarraNavegacion from '$lib/components/SimuladorDefinitivo/components/comunes/BarraNavegacion.svelte';
   import { audioManager } from '$lib/components/SimuladorDefinitivo/audio/AudioManager';
   import FondoEspacial from '$lib/components/SimuladorDefinitivo/components/efectos/FondoEspacial.svelte';
+  import PaginaProximamente from '$lib/components/SimuladorDefinitivo/components/ui/PaginaProximamente.svelte';
+  import { usuario } from '$lib/UsuarioActivo/usuario';
   
   // Determinar si estamos en una página de juego
   $: esJuego = $page.route.id?.includes('/juego');
   
   // Determinar si estamos en la página de preview (sin navegación)
   $: esPreview = $page.route.id?.includes('/preview');
+  
+  // 🔒 CONTROL DE ACCESO: Solo admins pueden acceder al simulador
+  $: esAdmin = $usuario?.rol === 'admin';
+  $: simuladorDisponible = esAdmin;
+  
+  let cargandoAuth = true;
   
   onMount(() => {
     // Configurar el título de la página
@@ -21,24 +29,52 @@
     // Prevenir selección de texto en toda la aplicación
     document.body.classList.add('no-seleccionable');
     
-    // Inicializar música de fondo (exacto como Rhythm Plus)
-    setTimeout(() => {
-      audioManager.playBgm();
-    }, 1000); // Delay para permitir que la página se cargue completamente
+    // Verificar autenticación
+    const unsubscribe = usuario.subscribe((u) => {
+      cargandoAuth = false;
+    });
+    
+    // Inicializar música de fondo (exacto como Rhythm Plus) solo para admins
+    if (simuladorDisponible) {
+      setTimeout(() => {
+        audioManager.playBgm();
+      }, 1000);
+    }
+
+    return unsubscribe;
   });
 </script>
 
-<FondoEspacial />
+<!-- Verificar si debe mostrar el simulador o la página de "proximamente" -->
+{#if cargandoAuth}
+  <!-- Estado de carga -->
+  <div class="verificando-acceso">
+    <FondoEspacial />
+    <div class="loader-container">
+      <div class="spinner"></div>
+      <h2>Verificando acceso...</h2>
+      <p>Comprobando permisos del simulador</p>
+    </div>
+  </div>
 
-<!-- Barra de navegación (oculta en preview) -->
-{#if !esPreview}
-  <BarraNavegacion navegacionJuego={esJuego} />
+{:else if !simuladorDisponible}
+  <!-- Mostrar página "Coming Soon" para no-admins -->
+  <PaginaProximamente />
+
+{:else}
+  <!-- Simulador completo para admins -->
+  <FondoEspacial />
+
+  <!-- Barra de navegación (oculta en preview) -->
+  {#if !esPreview}
+    <BarraNavegacion navegacionJuego={esJuego} />
+  {/if}
+
+  <!-- Contenido de la página -->
+  <main class="contenido-principal">
+    <slot />
+  </main>
 {/if}
-
-<!-- Contenido de la página -->
-<main class="contenido-principal">
-  <slot />
-</main>
 
 <style>
   :global(body) {
@@ -260,5 +296,50 @@
       padding: 10px 20px;
       font-size: 0.9rem;
     }
+  }
+
+  /* Estilos para verificación de acceso */
+  .verificando-acceso {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .loader-container {
+    text-align: center;
+    z-index: 10;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(230, 168, 0, 0.3);
+    border-top: 4px solid #e6a800;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem auto;
+  }
+
+  .loader-container h2 {
+    color: #f1f5f9;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .loader-container p {
+    color: #94a3b8;
+    font-size: 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 </style>

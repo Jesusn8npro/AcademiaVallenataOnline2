@@ -13,10 +13,6 @@
   import { fade, fly } from 'svelte/transition';
   import BannerPermisosNotificacion from '$lib/components/NotificacionesRealTime/BannerPermisosNotificacion.svelte';
   import { inicializarTema } from '$lib/stores/temaStore';
-  
-  // 🚀 PWA COMPONENT
-  import InstaladorPWA from '$lib/components/PWA/InstaladorPWA.svelte';
-  import { funcionesPWA } from '$lib/stores/pwa-store';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -55,23 +51,34 @@
     // Inicializar tema al cargar
     inicializarTema();
     
-    // 🚀 Inicializar PWA
-    funcionesPWA.inicializar();
-    
-    // Sesión usuario
+    // Sesión usuario CON MANEJO DE ERRORES
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
-        const { perfil } = await obtenerPerfil(session.user.id);
-        if (perfil) {
-          setUsuario(perfil);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn('⚠️ Error de Supabase:', error.message);
+          limpiarUsuario();
+          cargandoSesion = false;
+          return;
+        }
+        
+        if (session && session.user) {
+          const { perfil } = await obtenerPerfil(session.user.id);
+          if (perfil) {
+            setUsuario(perfil);
+          } else {
+            limpiarUsuario();
+          }
         } else {
           limpiarUsuario();
         }
-      } else {
+      } catch (error) {
+        console.error('🚨 Error crítico de conexión a Supabase:', error);
         limpiarUsuario();
+      } finally {
+        cargandoSesion = false;
       }
-      cargandoSesion = false;
     })();
 
     // Barra de progreso global
@@ -91,9 +98,6 @@
 
 <!-- Banner de permisos de notificación -->
 <BannerPermisosNotificacion />
-
-<!-- 🚀 PWA INSTALADOR - DISPONIBLE GLOBALMENTE -->
-<InstaladorPWA />
 
 <!-- Barra de progreso de lectura global -->
 {#if !ocultarBarraProgreso}
