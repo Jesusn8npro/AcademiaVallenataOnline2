@@ -1,5 +1,2 @@
 [start]
-cmd = "npm run preview"
-
-[variables]
-NODE_ENV = "production" 
+cmd = "npm run preview" 
