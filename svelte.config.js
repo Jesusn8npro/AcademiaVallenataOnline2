@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const config = {
@@ -22,11 +22,11 @@ const config = {
 				'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
 				'font-src': ['self', 'https://fonts.gstatic.com'],
 				'img-src': ['self', 'data:', 'https:', 'blob:'],
-				'connect-src': ['self', 'https:', 'wss:', 'https://checkout.epayco.co', 'https://*.supabase.co', 'wss://*.supabase.co', 'https://www.google-analytics.com', 'https://www.googletagmanager.com'],
-				'frame-src': ['self', 'https://checkout.epayco.co', 'https://www.youtube.com', 'https://www.youtube-nocookie.com'],
-				'media-src': ['self', 'data:', 'blob:', 'https:'],
+				'connect-src': ['self', 'https://tbijzvtyyewhtwgakgka.supabase.co', 'https://api.epayco.co', 'https://www.google-analytics.com'],
+				'frame-src': ['self', 'https://checkout.epayco.co'],
 				'object-src': ['none'],
-				'base-uri': ['self']
+				'base-uri': ['self'],
+				'form-action': ['self']
 			}
 		}
 	}
