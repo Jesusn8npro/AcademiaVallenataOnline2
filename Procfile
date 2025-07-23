@@ -1,1 +1,1 @@
-web: node build/index.js 
+web: npm run preview -- --host 0.0.0.0 --port $PORT 

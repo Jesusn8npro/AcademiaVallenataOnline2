@@ -1,3 +1,2 @@
 build:
-  method: nixpacks
-port: 3000 
+  method: nixpacks 
