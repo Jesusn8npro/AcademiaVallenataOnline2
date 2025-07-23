@@ -11,14 +11,14 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"start": "vite preview --host 0.0.0.0 --port $PORT",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"build:prod": "npm run check && npm run lint && vite build",
-		"deploy:check": "npm run build:prod && npm run preview",
-		"start": "node build/index.js"
+		"deploy:check": "npm run build:prod && npm run preview"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
