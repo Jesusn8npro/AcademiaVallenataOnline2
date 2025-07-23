@@ -1,5 +1,0 @@
-# FORCE NIXPACKS - NO DOCKER
-Dockerfile
-.dockerignore
-docker-compose.yml
-*.dockerfile 
