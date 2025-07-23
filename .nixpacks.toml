@@ -1,12 +1,11 @@
 [phases.setup]
 nixPkgs = ['nodejs_18', 'nodePackages.npm']
-aptPkgs = ['nodejs', 'npm']
 
 [phases.install]
-cmds = ['npm ci --only=production']
+cmds = ['npm ci']
 
 [phases.build]
 cmds = ['npm run build']
 
 [start]
-cmd = 'npm run preview -- --host 0.0.0.0 --port 4173' 
+cmd = 'npm run preview -- --host 0.0.0.0 --port $PORT' 

@@ -1,3 +1,3 @@
 build:
   method: nixpacks
-port: 3000 
+port: 4173 
