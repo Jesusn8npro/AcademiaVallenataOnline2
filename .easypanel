@@ -1,3 +1,7 @@
 build:
   method: nixpacks
-port: 4173 
+  nixpacks:
+    version: "1.34.1"
+port: 4173
+deploy:
+  type: service 
