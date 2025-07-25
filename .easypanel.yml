@@ -1,0 +1,11 @@
+# Configuración Easypanel - Academia Vallenata Online
+name: academia_vallenata_online
+build:
+  type: dockerfile
+  dockerfile: Dockerfile
+  context: .
+deploy:
+  port: 3000
+  env:
+    NODE_ENV: production
+    PORT: 3000 
