@@ -2,13 +2,13 @@
 # Academia Vallenata Online - Solución definitiva
 
 [variables]
-NODE_VERSION = "20"
+NODE_VERSION = "18"
 
 [phases.setup]
-nixPkgs = ["nodejs-20_x"]
+nixPkgs = ["nodejs"]
 
 [phases.install]
-cmd = "npm ci --only=production=false"
+cmd = "npm install --force"
 
 [phases.build]
 cmd = "npm run build"
