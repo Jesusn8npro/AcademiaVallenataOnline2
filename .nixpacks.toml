@@ -1,11 +1,11 @@
 [phases.setup]
-nixPkgs = ['nodejs_18']
+nixPkgs = ['nodejs_18', 'python3', 'gcc']
 
 [phases.install]
-cmds = ['npm ci --production=false']
+cmds = ['npm ci --production=false --maxsockets 1']
 
 [phases.build]
-cmds = ['npm run build']
+cmds = ['NODE_OPTIONS="--max-old-space-size=4096" npm run build']
 
 [start]
 cmd = 'node build/index.js'
@@ -13,3 +13,9 @@ cmd = 'node build/index.js'
 [variables]
 NODE_ENV = 'production'
 PORT = '3000'
+NODE_OPTIONS = '--max-old-space-size=4096'
+
+[build]
+# Configuraciones adicionales para el build
+buildCommand = 'npm run build'
+distDir = 'build'

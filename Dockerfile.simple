@@ -1,0 +1,27 @@
+# Dockerfile Simple - Backup para Academia Vallenata Online
+FROM node:18
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copiar package.json
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm install
+
+# Copiar todo el código
+COPY . .
+
+# Build de la aplicación
+RUN npm run build
+
+# Puerto
+EXPOSE 3000
+
+# Variables de entorno
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Iniciar aplicación
+CMD ["npm", "start"] 
