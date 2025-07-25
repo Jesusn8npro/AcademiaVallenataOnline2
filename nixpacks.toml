@@ -8,7 +8,7 @@ NODE_VERSION = "18"
 nixPkgs = ["nodejs"]
 
 [phases.install]
-cmd = "npm install --force"
+cmd = "npm install --force --legacy-peer-deps"
 
 [phases.build]
 cmd = "npm run build"
