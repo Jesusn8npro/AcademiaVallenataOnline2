@@ -137,6 +137,35 @@ export const POST: RequestHandler = async ({ request }) => {
 
     console.log(`Usuario creado exitosamente: ${correo_electronico}`);
 
+    // 🔄 MARCAR LEAD COMO CONVERTIDO SI EXISTE
+    try {
+      const { data: leadExistente } = await supabase
+        .from('leads_chat_anonimos')
+        .select('id, chat_id')
+        .eq('email', correo_electronico.toLowerCase())
+        .eq('convertido_a_usuario', false)
+        .single();
+
+      if (leadExistente) {
+        const { error: errorConversion } = await supabase
+          .from('leads_chat_anonimos')
+          .update({
+            convertido_a_usuario: true,
+            usuario_id: authData.user.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadExistente.id);
+
+        if (!errorConversion) {
+          console.log(`✅ Lead ${correo_electronico} marcado como convertido automáticamente`);
+        } else {
+          console.log(`⚠️ Error marcando lead como convertido:`, errorConversion);
+        }
+      }
+    } catch (errorLead) {
+      console.log(`ℹ️ No se encontró lead previo para ${correo_electronico} o ya estaba convertido`);
+    }
+
     // Respuesta exitosa
     return json({
       success: true,

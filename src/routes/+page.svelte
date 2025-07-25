@@ -1,85 +1,78 @@
 <script lang="ts">
-	import ModalDeInicioDeSesion from '$lib/components/Autenticacion/ModalDeInicioDeSesion.svelte';
-	
-	// Componentes de la nueva Landing Page
-	import HeroHome from '$lib/components/Inicio/HeroHome.svelte';
-	import SeccionBeneficios from '$lib/components/ComponentesLanding/SeccionBeneficios.svelte';
-	// TODO: Crear estos componentes cuando sea necesario
-	// import SobreInstructor from '$lib/components/ComponentesLanding/SobreInstructor.svelte';
-	// import TestimoniosEstudiantes from '$lib/components/ComponentesLanding/TestimoniosEstudiantes.svelte';
-	// import PreguntasFrecuentes from '$lib/components/ComponentesLanding/PreguntasFrecuentes.svelte';
-	// import CTAFinal from '$lib/components/ComponentesLanding/CTAFinal.svelte';
-	// import FooterCompleto from '$lib/components/ComponentesLanding/FooterCompleto.svelte';
+  import { onMount } from 'svelte';
+  import HeroHome from '$lib/components/Inicio/HeroHome.svelte';
+  import SeccionOpciones from '$lib/components/Inicio/SeccionOpciones.svelte';
+  import SeccionInstructor from '$lib/components/Inicio/SeccionInstructor.svelte';
+  import SeccionStats from '$lib/components/Inicio/SeccionStats.svelte';
+  import SeccionCTAFinal from '$lib/components/Inicio/SeccionCTAFinal.svelte';
+  
+  let paginaCargada = false;
+  let mostrarModal = false;
 
-	let mostrarModal = false;
+  onMount(() => {
+    paginaCargada = true;
+    console.log('Página cargada correctamente');
+  });
 
-	// Función para hacer scroll suave a una sección
-	function scrollToSection(sectionId: string) {
-		const element = document.getElementById(sectionId);
-		if (element) {
-			element.scrollIntoView({ behavior: 'smooth' });
-		}
-	}
+  function scrollToSection(sectionId: string) {
+    console.log('Scroll to:', sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 80;
+      const elementPosition = element.offsetTop - offset;
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
 </script>
 
 <svelte:head>
-	<title>Academia Vallenata Online - Aprende Acordeón con Jesús González | Curso Completo</title>
-	<meta name="description" content="🎵 Aprende acordeón vallenato desde cero con el maestro Jesús González. +5,000 estudiantes, método único, clases online 24/7. ¡Empieza GRATIS hoy!" />
-	<meta name="keywords" content="acordeón vallenato, clases online, Jesús González, curso acordeón, vallenato Colombia, aprender acordeón" />
-	<meta property="og:title" content="Academia Vallenata Online - Aprende Acordeón Vallenato" />
-	<meta property="og:description" content="Únete a +5,000 estudiantes que ya tocan acordeón vallenato. Método único del maestro Jesús González." />
-	<meta property="og:image" content="/images/og-image-academia.jpg" />
-	<meta property="og:type" content="website" />
-	<meta name="twitter:card" content="summary_large_image" />
+  <title>Academia Vallenata Online - Aprende Acordeón desde Cero | Simulador Gaming</title>
+  <meta name="description" content="🎵 La Academia #1 de Acordeón Vallenato online. Simulador gaming único, comunidad de 5,000+ estudiantes. Primera canción en 7 días garantizado." />
 </svelte:head>
 
-<!-- Modal de inicio de sesión -->
-<ModalDeInicioDeSesion bind:abierto={mostrarModal} />
-
-<!-- Landing Page Completa -->
-<main>
-	<!-- 1. Hero Section -->
-	<HeroHome 
-		bind:mostrarModal 
-		{scrollToSection} 
-	/>
-
-	<!-- 2. Beneficios de la Academia -->
-	<SeccionBeneficios contenido={{}} tipo="curso" />
-
-	<!-- TODO: Activar estas secciones cuando los componentes estén creados -->
-	
-	<!-- 4. Sobre el Instructor -->
-	<!-- <SobreInstructor /> -->
-
-	<!-- 5. Testimonios de Estudiantes -->
-	<!-- <TestimoniosEstudiantes /> -->
-
-	<!-- 6. Preguntas Frecuentes -->
-	<!-- <PreguntasFrecuentes /> -->
-
-	<!-- 7. Call to Action Final -->
-	<!-- <CTAFinal /> -->
-
-	<!-- 8. Footer Completo -->
-	<!-- <FooterCompleto /> -->
-</main>
+{#if paginaCargada}
+  <main class="home-principal">
+    <!-- Hero Principal -->
+    <HeroHome {mostrarModal} {scrollToSection} />
+    
+    <!-- Sección de Opciones de Aprendizaje -->
+    <SeccionOpciones />
+    
+    <!-- Sección del Instructor - Jesús González -->
+    <SeccionInstructor />
+    
+    <!-- Sección de Estadísticas y Social Proof -->
+    <SeccionStats />
+    
+    <!-- Sección CTA Final - Conversión -->
+    <SeccionCTAFinal />
+  </main>
+{:else}
+  <div class="loading">
+    <p>Cargando...</p>
+  </div>
+{/if}
 
 <style>
-	main {
-		width: 100%;
-		min-height: 100vh;
-	}
-	
-	/* Asegurar que no haya espacios entre secciones */
-	:global(section) {
-		margin: 0;
-		padding: 0;
-	}
-	
-	/* Smooth scroll para toda la página */
-	:global(html) {
-		scroll-behavior: smooth;
-	}
+  .home-principal {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-size: 1.5rem;
+  }
+
+  /* Smooth scroll */
+  :global(html) {
+    scroll-behavior: smooth;
+  }
 </style>
-  

@@ -13,6 +13,7 @@
   import { fade, fly } from 'svelte/transition';
   import BannerPermisosNotificacion from '$lib/components/NotificacionesRealTime/BannerPermisosNotificacion.svelte';
   import { inicializarTema } from '$lib/stores/temaStore';
+  import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -152,6 +153,9 @@
   
 {/if}
 
+<!-- Chat Widget flotante - Disponible en toda la aplicación -->
+<ChatWidget />
+
 <style>
   .barra-progreso-lectura {
     position: fixed;
@@ -164,35 +168,93 @@
     width: 0%;
   }
 
-  /* === REFUERZO GLOBAL CONTRA CURSOR DE TEXTO === */
-  /* Aplicar a toda la aplicación para prevenir cursor de texto molesto */
+  /* =====================================================
+  🖱️ SISTEMA ANTI-CURSOR DE TEXTO GLOBAL - ACADEMIA VALLENATA  
+  ===================================================== */
   
+  /* Base global para todos los elementos */
   :global(*) {
-    /* Prevenir cursor de texto por defecto en todos los elementos */
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
   
-  :global(div):not(:global(.texto-seleccionable)):not(:global(.contenido-editable)):not(:global([contenteditable="true"])) {
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    cursor: default;
+  /* CRÍTICO: Evitar cursor de texto en TODOS los elementos por defecto */
+  :global(body),
+  :global(div),
+  :global(span),
+  :global(p),
+  :global(h1),
+  :global(h2),
+  :global(h3),
+  :global(h4),
+  :global(h5),
+  :global(h6),
+  :global(li),
+  :global(ul),
+  :global(ol),
+  :global(section),
+  :global(article),
+  :global(header),
+  :global(footer),
+  :global(nav),
+  :global(main),
+  :global(aside),
+  :global(img),
+  :global(svg),
+  :global(canvas) {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    cursor: default !important;
   }
   
-  /* Aplicar a elementos específicos de SvelteKit */
-  :global(.svelte-*) {
-    user-select: none;
-    -webkit-user-select: none;
-    cursor: default;
-  }
-  
-  /* Asegurar que elementos de la academia no muestren cursor de texto */
-  :global(.academia-vallenata) *:not(input):not(textarea):not([contenteditable="true"]):not(.texto-seleccionable) {
+  /* Elementos específicos de Svelte que causan problemas */
+  :global([class*="svelte-"]) {
     user-select: none !important;
     -webkit-user-select: none !important;
     cursor: default !important;
+  }
+  
+  /* EXCEPCIONES: Solo permitir cursor de texto donde SÍ se necesita */
+  :global(input),
+  :global(textarea),
+  :global([contenteditable="true"]),
+  :global(.texto-seleccionable),
+  :global(.contenido-editable),
+  :global(.ql-editor),
+  :global(.editor-contenido),
+  :global(.comentario-input),
+  :global(.busqueda-input),
+  :global(.input-busqueda),
+  :global(.input-busqueda-modal),
+  :global(.mensaje-input),
+  :global(.chat-input) {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    cursor: text !important;
+  }
+  
+  /* BOTONES Y ELEMENTOS CLICKEABLES: Cursor pointer */
+  :global(button),
+  :global(a),
+  :global([role="button"]),
+  :global(.btn),
+  :global(.boton),
+  :global(.clickeable),
+  :global(.tarjeta-curso),
+  :global(.tarjeta-tutorial),
+  :global(.tarjeta-evento),
+  :global(.tarjeta-resultado),
+  :global(.menu-item),
+  :global(.pestana),
+  :global(.tab),
+  :global(.acceso-rapido),
+  :global(.sugerencia-tag),
+  :global(.recomendacion) {
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
   }
   
   /* Layout containers específicos */
