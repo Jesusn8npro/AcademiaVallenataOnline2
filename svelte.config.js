@@ -5,7 +5,6 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: { 
 		adapter: adapter({
-			// Configuración para Easypanel/Docker
 			out: 'build',
 			precompress: false,
 			envPrefix: ''
