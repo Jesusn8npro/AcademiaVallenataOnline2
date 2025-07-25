@@ -1,17 +1,16 @@
-# 🚀 Configuración Nixpacks optimizada para SvelteKit
-# Academia Vallenata Online - Solución definitiva
-
-[variables]
-NODE_VERSION = "18"
 
 [phases.setup]
-nixPkgs = ["nodejs"]
+nixPkgs = ["nodejs_20", "npm"]
 
 [phases.install]
-cmd = "npm install --force --legacy-peer-deps"
+cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
-cmd = "npm run build"
+cmds = ["npm run build"]
 
 [start]
-cmd = "node build" 
+cmd = "npm run start"
+
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "false"
