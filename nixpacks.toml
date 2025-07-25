@@ -1,14 +1,11 @@
-# 🚀 Configuración Nixpacks optimizada para SvelteKit + Easypanel
-# Academia Vallenata Online
-
 [phases.setup]
-nixPkgs = ['nodejs-18_x', 'npm-9_x']
+nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
-cmd = 'npm ci --only=production=false'
+cmd = "npm install"
 
 [phases.build]
-cmd = 'npm run build'
+cmd = "npm run build"
 
 [start]
-cmd = 'node build' 
+cmd = "node build" 
