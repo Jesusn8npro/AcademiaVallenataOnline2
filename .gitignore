@@ -18,75 +18,101 @@ Thumbs.db
 !.env.example
 !.env.test
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
+# Nixpacks/Docker temporal files
+Dockerfile
+.dockerignore
 
-# Added by Task Master AI
+# Build artifacts
+dist/
+.next/
+.nuxt/
+
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-dev-debug.log
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
 # Dependency directories
 node_modules/
-# Environment variables
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-# OS specific
+jspm_packages/
 
-# Task files
-# tasks.json
-# tasks/ 
+# TypeScript v1 declaration files
+typings/
 
-# Archivos ejecutables y grandes
-*.exe
-*.msi
-*.dmg
-*.pkg
-*.deb
-*.rpm
-*.zip
-*.rar
-*.7z
-*.tar.gz
-*.tar.bz2
+# TypeScript cache
+*.tsbuildinfo
 
-# Archivos de video/audio grandes
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.flv
-*.mkv
-*.webm
-*.mp3
-*.wav
-*.flac
-*.ogg
+# Optional npm cache directory
+.npm
 
-# Archivos de imagen muy grandes (más de 10MB típicamente)
-*.psd
-*.ai
-*.sketch
-*.fig
+# Optional eslint cache
+.eslintcache
 
-# Archivos temporales
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
+# Optional REPL history
+.node_repl_history
 
-# Archivos de backup
-*.bak
-*.backup
-*.old 
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/ 
