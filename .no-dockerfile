@@ -1,3 +1,0 @@
-# NO DOCKER - USE NIXPACKS ONLY
-# This file prevents Docker detection
-# Force Nixpacks with Node.js provider 
