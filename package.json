@@ -7,6 +7,9 @@
 		"node": "18.x",
 		"npm": ">=8.0.0"
 	},
+	"nixpacks": {
+		"start": "npm run start"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
