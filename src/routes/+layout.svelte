@@ -11,9 +11,10 @@
   import MenuInferiorResponsivo from '$lib/components/Navegacion/MenuInferiorResponsivo.svelte';
   import { page } from '$app/stores';
   import { fade, fly } from 'svelte/transition';
-  import BannerPermisosNotificacion from '$lib/components/NotificacionesRealTime/BannerPermisosNotificacion.svelte';
+  import ModalPermisos from '$lib/components/ModalPermisos.svelte';
   import { inicializarTema } from '$lib/stores/temaStore';
   import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
+  import { browser } from '$app/environment';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -41,6 +42,9 @@
   let progresoLectura = 0;
 
   function manejarScroll() {
+    // CORRECCIÓN: Proteger acceso a document/window en SSR
+    if (!browser) return;
+    
     // Excluir si la barra está oculta
     if (ocultarBarraProgreso) return;
     const alturaDocumento = document.documentElement.scrollHeight - window.innerHeight;
@@ -98,7 +102,7 @@
 </script>
 
 <!-- Banner de permisos de notificación -->
-<BannerPermisosNotificacion />
+<ModalPermisos />
 
 <!-- Barra de progreso de lectura global -->
 {#if !ocultarBarraProgreso}

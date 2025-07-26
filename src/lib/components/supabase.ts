@@ -5,8 +5,13 @@ import { supabase } from '$lib/supabase/clienteSupabase';
 // de supabaseClient.ts para evitar el error "Multiple GoTrueClient instances"
 
 // Obtener variables de entorno usando import.meta.env (para Vite)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tbijzvtyyewhtwgakgka.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiaWp6dnR5eWV3aHR3Z2FrZ2thIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NTQyNjIsImV4cCI6MjA1ODUzMDI2Mn0.P09L8OpLpcrm5XzTLAN0oQllhl_bePk5bxbUUpoG-cQ';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Verificar que las variables de entorno estén configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Variables de entorno de Supabase no configuradas. Verifique VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY');
+}
 
 // IMPORTANTE: Ya no creamos otra instancia de Supabase aquí
 // En su lugar, exportamos la referencia de supabaseClient.ts

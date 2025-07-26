@@ -39,7 +39,7 @@
   let datosEncuesta: any = null;
 
   // Constantes
-  const GIPHY_KEY = 'Kj3vAtPH8E0gWaVO2amamR5xazoGL36q';
+  	const GIPHY_KEY = import.meta.env.VITE_GIPHY_API_KEY || '';
   const DURACIONES = ['1 día', '3 días', '7 días', '14 días'];
   const dispatch = createEventDispatcher();
 

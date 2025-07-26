@@ -1867,7 +1867,11 @@ Usa el botón "Verificar Estado de Supabase" para diagnosticar
       
       // Para pruebas rápidas, crear un usuario temporal
       const email = prompt('Ingresa tu email:') || 'test@example.com';
-      const password = prompt('Ingresa tu contraseña:') || 'password123';
+      const password = prompt('Ingresa tu contraseña:');
+      if (!password) {
+        mostrarMensaje('❌ Contraseña requerida para continuar', 'error');
+        return;
+      }
       
       mostrarMensaje('🔐 Iniciando sesión...', 'info');
       
