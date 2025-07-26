@@ -290,7 +290,7 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    z-index: 10000;
+    z-index: 50000; /* Por debajo del cursor (999999) */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -567,33 +567,159 @@
     cursor: not-allowed;
   }
 
-  /* Responsive */
+  /* Responsive - Mejorado para móvil */
   @media (max-width: 768px) {
+    .modal-overlay {
+      padding: 0;
+      align-items: flex-end; /* Modal desde abajo en móvil */
+    }
+    
     .modal-contenido {
-      margin: 1rem;
-      max-width: none;
+      margin: 0;
+      max-width: 100%;
+      width: 100%;
+      border-radius: 20px 20px 0 0; /* Solo redondear arriba */
+      max-height: 85vh;
+      animation: slideUp 0.3s ease-out;
     }
 
-    .modal-header,
-    .modal-body,
-    .modal-footer,
+    .modal-header {
+      padding: 1.5rem 1.25rem 1rem;
+    }
+
+    .modal-header h3 {
+      font-size: 1.3rem;
+    }
+
+    .modal-header p {
+      font-size: 0.9rem;
+    }
+
+    .icono-modal {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-body {
+      padding: 0.75rem 1.25rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.25rem 1.5rem;
+      gap: 0.75rem;
+    }
+
     .modal-body-personalizar {
-      padding-left: 1.5rem;
-      padding-right: 1.5rem;
+      padding: 0.75rem 1.25rem;
     }
 
     .btn-volver {
-      left: 1.5rem;
+      left: 1.25rem;
+      top: 1rem;
     }
 
     .permiso-item {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
+      padding: 1rem 0;
+      gap: 0.75rem;
     }
 
-    .permiso-toggle {
-      align-self: flex-end;
+    .permiso-info {
+      gap: 0.75rem;
+    }
+
+    .permiso-info h4 {
+      font-size: 0.95rem;
+    }
+
+    .permiso-info p {
+      font-size: 0.8rem;
+    }
+
+    .permiso-icono {
+      font-size: 1.3rem;
+      width: 35px;
+    }
+
+    .btn-primario,
+    .btn-secundario {
+      padding: 0.875rem 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .btn-personalizar {
+      padding: 0.875rem;
+      font-size: 0.85rem;
+      margin: 0.75rem 1.25rem 1.25rem;
+    }
+
+    .toggle-switch {
+      width: 45px;
+      height: 22px;
+    }
+
+    .toggle-slider {
+      border-radius: 22px;
+    }
+
+    .toggle-slider:before {
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(23px);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Para pantallas muy pequeñas */
+  @media (max-width: 480px) {
+    .modal-header {
+      padding: 1.25rem 1rem 0.75rem;
+    }
+
+    .modal-body {
+      padding: 0.5rem 1rem;
+    }
+
+    .modal-footer {
+      padding: 0.75rem 1rem 1.25rem;
+    }
+
+    .modal-body-personalizar {
+      padding: 0.5rem 1rem;
+    }
+
+    .btn-volver {
+      left: 1rem;
+    }
+
+    .btn-personalizar {
+      margin: 0.5rem 1rem 1rem;
+    }
+
+    .permiso-item {
+      padding: 0.875rem 0;
+    }
+
+    .modal-header h3 {
+      font-size: 1.2rem;
+    }
+
+    .icono-modal {
+      font-size: 2.2rem;
     }
   }
 </style> 

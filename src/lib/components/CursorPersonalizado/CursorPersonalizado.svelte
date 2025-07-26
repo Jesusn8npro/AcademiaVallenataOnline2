@@ -237,6 +237,15 @@
     cursor: none !important;
   }
 
+  /* Asegurar que el cursor esté visible incluso sobre modales y overlays */
+  :global(.modal-overlay) {
+    cursor: none !important;
+  }
+
+  :global(.modal-overlay *) {
+    cursor: none !important;
+  }
+
   /* Punto central del cursor */
   .cursor-punto-central {
     position: fixed;
@@ -246,7 +255,7 @@
     height: 8px;
     border-radius: 50%;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 999999; /* Máximo z-index para estar sobre modales */
     will-change: transform;
     transition: background-color 0.15s ease;
     box-shadow: 
@@ -265,7 +274,7 @@
     border: 3px solid;
     border-radius: 50%;
     pointer-events: none;
-    z-index: 9998;
+    z-index: 999998; /* Máximo z-index para estar sobre modales */
     will-change: transform, opacity;
     transition: 
       transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -324,7 +333,7 @@
     border: 3px solid; /* Más delgado y elegante */
     border-radius: 50%;
     pointer-events: none;
-    z-index: 9997;
+    z-index: 999997; /* Máximo z-index para estar sobre modales */
     opacity: 1;
     animation: cursor-ripple-expand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     box-shadow: 
