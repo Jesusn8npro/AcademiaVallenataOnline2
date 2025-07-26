@@ -15,6 +15,7 @@
   import { inicializarTema } from '$lib/stores/temaStore';
   import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
   import { browser } from '$app/environment';
+  import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -103,6 +104,9 @@
 
 <!-- Banner de permisos de notificación -->
 <ModalPermisos />
+
+<!-- Cursor personalizado global -->
+<CursorPersonalizado />
 
 <!-- Barra de progreso de lectura global -->
 {#if !ocultarBarraProgreso}
@@ -327,5 +331,28 @@
       -webkit-user-select: text !important;
       user-select: text !important;
     }
+  }
+
+  /* Variables CSS para cursor personalizado */
+  :global(:root) {
+    --color-primary: #6366f1;
+    --color-accent: #8b5cf6;
+    --color-text: #374151;
+    --color-warning: #f59e0b;
+    --color-primary-rgb: 99, 102, 241;
+    --color-accent-rgb: 139, 92, 246;
+    --color-text-rgb: 55, 65, 81;
+    --color-warning-rgb: 245, 158, 11;
+  }
+
+  :global(.dark) {
+    --color-primary: #8b5cf6;
+    --color-accent: #a855f7;
+    --color-text: #e5e7eb;
+    --color-warning: #fbbf24;
+    --color-primary-rgb: 139, 92, 246;
+    --color-accent-rgb: 168, 85, 247;
+    --color-text-rgb: 229, 231, 235;
+    --color-warning-rgb: 251, 191, 36;
   }
 </style>
