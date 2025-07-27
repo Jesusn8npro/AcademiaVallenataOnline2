@@ -570,7 +570,7 @@
   /* Responsive - Mejorado para móvil */
   @media (max-width: 768px) {
     .modal-overlay {
-      padding: 0;
+      padding: 0 0 2rem 0; /* Padding bottom para separar del fondo */
       align-items: flex-end; /* Modal desde abajo en móvil */
     }
     
@@ -579,7 +579,7 @@
       max-width: 100%;
       width: 100%;
       border-radius: 20px 20px 0 0; /* Solo redondear arriba */
-      max-height: 85vh;
+      max-height: 80vh; /* Reducido para que no ocupe tanto */
       animation: slideUp 0.3s ease-out;
     }
 

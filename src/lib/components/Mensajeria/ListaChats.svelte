@@ -17,6 +17,12 @@
 	let error = '';
 	let terminoBusqueda = '';
 	let mostrarModalNuevoChat = false;
+
+	// Estados para menú contextual
+	let menuContextualVisible = false;
+	let chatMenuSeleccionado: Chat | null = null;
+	let posicionMenu = { x: 0, y: 0 };
+	let eliminandoChat = false;
 	
 	// Estados del modal
 	let usuariosBusqueda: any[] = [];
@@ -46,6 +52,95 @@
 		}
 	}
 	
+	// Funciones del menú contextual
+	function mostrarMenuContextual(event: MouseEvent, chat: Chat) {
+		event.preventDefault();
+		event.stopPropagation();
+		
+		chatMenuSeleccionado = chat;
+		posicionMenu = { x: event.clientX, y: event.clientY };
+		menuContextualVisible = true;
+		
+		// Cerrar el menú al hacer clic fuera
+		setTimeout(() => {
+			document.addEventListener('click', cerrarMenuContextual);
+		}, 0);
+	}
+
+	function cerrarMenuContextual() {
+		menuContextualVisible = false;
+		chatMenuSeleccionado = null;
+		document.removeEventListener('click', cerrarMenuContextual);
+	}
+
+	async function confirmarEliminarChat() {
+		if (!chatMenuSeleccionado || eliminandoChat) return;
+		
+		const nombreChat = obtenerNombreChat(chatMenuSeleccionado);
+		const esGrupo = chatMenuSeleccionado.es_grupal;
+		
+		// Usar confirm más específico
+		const mensaje = esGrupo 
+			? `🗑️ ELIMINAR GRUPO\n\n¿Eliminar "${nombreChat}"?\n\n⚠️ Esta acción NO se puede deshacer:\n• Se eliminarán todos los mensajes\n• Se eliminarán todos los miembros\n• El grupo desaparecerá permanentemente\n\n¿Continuar?`
+			: `🚪 SALIR DEL CHAT\n\n¿Salir del chat con "${nombreChat}"?\n\nPodrás volver a unirte más tarde.`;
+		
+		const confirmar = confirm(mensaje);
+		
+		if (!confirmar) {
+			cerrarMenuContextual();
+			return;
+		}
+		
+		await eliminarChat();
+	}
+
+	async function eliminarChat() {
+		if (!chatMenuSeleccionado) return;
+		
+		try {
+			eliminandoChat = true;
+			cerrarMenuContextual();
+			
+			console.log('🗑️ Eliminando chat:', chatMenuSeleccionado.id);
+			
+			const { exito, error: errorEliminacion } = await mensajeriaService.eliminarChat(chatMenuSeleccionado.id);
+			
+			if (exito) {
+				// Actualizar la lista de chats
+				await cargarChats();
+				
+				// Si el chat eliminado era el seleccionado, limpiar selección
+				if (chatSeleccionado === chatMenuSeleccionado.id) {
+					chatSeleccionado = null;
+					// Redirigir a la página principal de mensajes si estamos en el chat eliminado
+					if ($page.url.pathname.includes(chatMenuSeleccionado.id)) {
+						goto('/mensajes');
+					}
+				}
+				
+				// Mostrar mensaje de éxito
+				const esGrupo = chatMenuSeleccionado.es_grupal;
+				const mensaje = esGrupo 
+					? `✅ Grupo eliminado exitosamente`
+					: `✅ Has salido del chat exitosamente`;
+				
+				// Usar setTimeout para mostrar el mensaje después del cierre del menú
+				setTimeout(() => alert(mensaje), 100);
+				
+				console.log('✅ Chat eliminado exitosamente');
+			} else {
+				console.error('❌ Error eliminando chat:', errorEliminacion);
+				alert(`❌ Error: ${errorEliminacion || 'Error desconocido al eliminar el chat'}`);
+			}
+		} catch (err) {
+			console.error('❌ Error inesperado:', err);
+			alert('Error inesperado eliminando el chat');
+		} finally {
+			eliminandoChat = false;
+			chatMenuSeleccionado = null;
+		}
+	}
+
 	// Filtrar chats por búsqueda
 	$: chatsFiltrados = $chats.filter(chat => {
 		if (!terminoBusqueda) return true;
@@ -279,7 +374,7 @@
 	onMount(async () => {
 		await cargarChats();
 		
-		const chatIdFromUrl = $page.params.chatId;
+		const chatIdFromUrl = $page.params.chat_id;
 		if (chatIdFromUrl) {
 			const chatEncontrado = $chats.find(c => c.id === chatIdFromUrl);
 			if (chatEncontrado) {
@@ -338,7 +433,7 @@
 	</div>
 	
 	<!-- Lista de chats -->
-	<div class="flex-1 overflow-y-auto">
+	<div class="flex-1 overflow-y-auto min-h-0">
 		{#if cargando}
 			<!-- Estado de carga -->
 			<div class="px-4 py-2">
@@ -410,6 +505,7 @@
 						   hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md transform hover:scale-[1.02]
 						   {chatSeleccionado === chat.id ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-l-4 border-blue-500 shadow-lg' : 'hover:border-l-4 hover:border-transparent'}"
 					on:click={() => seleccionarChat(chat)}
+					on:contextmenu={(event) => mostrarMenuContextual(event, chat)}
 					role="button"
 					tabindex="0"
 					on:keydown={(e) => e.key === 'Enter' && seleccionarChat(chat)}
@@ -645,6 +741,45 @@
 	</div>
 {/if}
 
+<!-- Menú Contextual -->
+{#if menuContextualVisible && chatMenuSeleccionado}
+	<div 
+		class="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50"
+		style="left: {posicionMenu.x}px; top: {posicionMenu.y}px;"
+		on:click|stopPropagation
+	>
+		<!-- Opción eliminar -->
+		<button
+			class="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+			on:click={confirmarEliminarChat}
+			disabled={eliminandoChat}
+		>
+			{#if eliminandoChat}
+				<div class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+				<span>Eliminando...</span>
+			{:else}
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+				</svg>
+				<span>
+					{chatMenuSeleccionado.es_grupal ? 'Eliminar grupo' : 'Salir del chat'}
+				</span>
+			{/if}
+		</button>
+		
+		<!-- Opción información (futura) -->
+		<button
+			class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
+			on:click={cerrarMenuContextual}
+		>
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+			</svg>
+			<span>Información</span>
+		</button>
+	</div>
+{/if}
+
 <style>
 	/* Transiciones suaves */
 	.transition-colors {
@@ -668,5 +803,47 @@
 	@keyframes pulso {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0.5; }
+	}
+
+	/* Estilos de scroll mejorados */
+	.flex-1.overflow-y-auto {
+		height: 0; /* Fuerza el contenedor flex a respetar min-height */
+		flex-grow: 1;
+		flex-shrink: 1;
+		flex-basis: 0%;
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+		scrollbar-width: thin; /* Firefox */
+		scrollbar-color: rgba(156, 163, 175, 0.3) transparent; /* Firefox */
+	}
+
+	/* Scrollbar para navegadores WebKit */
+	.flex-1.overflow-y-auto::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.flex-1.overflow-y-auto::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
+		background-color: rgba(156, 163, 175, 0.3);
+		border-radius: 4px;
+		border: 2px solid transparent;
+		background-clip: content-box;
+	}
+
+	.flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(156, 163, 175, 0.5);
+	}
+
+	/* Para modo oscuro */
+	.dark .flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
+		background-color: rgba(75, 85, 99, 0.5);
+	}
+
+	.dark .flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(75, 85, 99, 0.7);
 	}
 </style> 

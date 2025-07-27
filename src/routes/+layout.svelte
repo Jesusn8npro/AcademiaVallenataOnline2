@@ -53,6 +53,104 @@
     progresoLectura = alturaDocumento > 0 ? Math.min((scrollTop / alturaDocumento) * 100, 100) : 0;
   }
 
+  /**
+   * 🚀 CRITICAL: Corregir problemas de renderización y scroll
+   */
+  function corregirRenderizacion() {
+    if (!browser) return;
+    
+    // Múltiples intentos para asegurar renderización correcta
+    const intentarCorreccion = () => {
+      try {
+        console.log('🔧 [LAYOUT] Corrigiendo renderización...');
+        
+        // 1. Forzar reflow del documento
+        const body = document.body;
+        const html = document.documentElement;
+        
+        // 2. Corregir overflow y scroll
+        body.style.overflow = 'auto';
+        html.style.overflow = 'auto';
+        body.style.height = 'auto';
+        html.style.height = '100%';
+        
+        // 3. Forzar recálculo de layout
+        body.offsetHeight; // Trigger reflow
+        html.offsetHeight; // Trigger reflow
+        
+        // 4. Corregir scroll behavior
+        body.style.scrollBehavior = 'smooth';
+        html.style.scrollBehavior = 'smooth';
+        
+        // 5. Asegurar que el scroll funcione
+        if (body.scrollHeight <= window.innerHeight) {
+          body.style.minHeight = '100vh';
+        }
+        
+        console.log('✅ [LAYOUT] Renderización corregida');
+      } catch (err) {
+        console.warn('⚠️ [LAYOUT] Error corrigiendo renderización:', err);
+      }
+    };
+    
+    // Ejecutar inmediatamente
+    intentarCorreccion();
+    
+    // Ejecutar después de que el DOM esté completamente listo
+    setTimeout(intentarCorreccion, 100);
+    
+    // Ejecutar después de que la hidratación esté completa
+    setTimeout(intentarCorreccion, 500);
+    
+    // Escuchar cambios de ruta para re-corregir
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', intentarCorreccion);
+      
+      // 🚨 EMERGENCY: Detectar si el scroll no funciona y corregirlo
+      setTimeout(() => {
+        detectarYCorregirScrollProblemas();
+      }, 1000);
+    }
+  }
+
+  /**
+   * 🚨 EMERGENCY: Detectar y corregir problemas de scroll automáticamente
+   */
+  function detectarYCorregirScrollProblemas() {
+    if (!browser) return;
+    
+    try {
+      const body = document.body;
+      const html = document.documentElement;
+      
+      // Verificar si el contenido es más alto que la ventana pero no se puede hacer scroll
+      const contenidoAlto = body.scrollHeight > window.innerHeight;
+      const scrollPosible = window.scrollY > 0 || body.scrollTop > 0 || html.scrollTop > 0;
+      
+      if (contenidoAlto && !scrollPosible) {
+        console.warn('🚨 [LAYOUT] Problema de scroll detectado, corrigiendo...');
+        
+        // Corrección de emergencia
+        body.style.overflow = 'auto !important';
+        html.style.overflow = 'auto !important';
+        body.style.height = 'auto !important';
+        body.style.minHeight = '100vh';
+        
+        // Forzar reflow agresivo
+        body.offsetHeight;
+        html.offsetHeight;
+        
+        // Intentar scroll de prueba
+        window.scrollTo(0, 1);
+        setTimeout(() => window.scrollTo(0, 0), 100);
+        
+        console.log('✅ [LAYOUT] Corrección de emergencia aplicada');
+      }
+    } catch (err) {
+      console.warn('⚠️ [LAYOUT] Error en detección de scroll:', err);
+    }
+  }
+
   onMount(() => {
     // Inicializar tema al cargar
     inicializarTema();
@@ -90,6 +188,9 @@
     // Barra de progreso global
     window.addEventListener('scroll', manejarScroll, { passive: true });
 
+    // 🚀 CRITICAL: Corregir problemas de renderización
+    corregirRenderizacion();
+
     return () => {
       window.removeEventListener('scroll', manejarScroll);
     };
@@ -99,6 +200,15 @@
   function debeMostrarTransicion(ruta: string): boolean {
     const rutasPerfilFijo = ['/mi-perfil', '/mis-cursos', '/publicaciones', '/configuracion'];
     return !rutasPerfilFijo.includes(ruta);
+  }
+
+  // 🚀 REACTIVE: Corregir renderización al cambiar de página
+  $: if (browser && $page.url.pathname) {
+    // Pequeño delay para que la página se renderice primero
+    setTimeout(() => {
+      corregirRenderizacion();
+      console.log(`🔄 [LAYOUT] Renderización corregida para: ${$page.url.pathname}`);
+    }, 50);
   }
 </script>
 
@@ -161,8 +271,10 @@
   
 {/if}
 
-<!-- Chat Widget flotante - Disponible en toda la aplicación -->
-<ChatWidget />
+<!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería) -->
+{#if !$page.url.pathname.includes('/mensajes')}
+  <ChatWidget />
+{/if}
 
 <style>
   .barra-progreso-lectura {
@@ -180,10 +292,52 @@
   🖱️ SISTEMA ANTI-CURSOR DE TEXTO GLOBAL - ACADEMIA VALLENATA  
   ===================================================== */
   
-  /* Base global para todos los elementos */
+  /* Base global para todos los elementos - OPTIMIZADO */
   :global(*) {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    /* ✅ CRITICAL: Asegurar scroll y renderización correcta */
+    box-sizing: border-box;
+  }
+  
+  /* ✅ CRITICAL: Forzar renderización correcta del body y html */
+  :global(html) {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    scroll-behavior: smooth;
+    /* Corregir renderización inicial */
+    transform: translateZ(0);
+  }
+  
+  :global(body) {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    scroll-behavior: smooth;
+    /* Forzar reflow para corregir renderización */
+    will-change: scroll-position;
+    /* Corregir problemas de layout */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  /* ✅ CRITICAL: Corregir elementos que pueden interferir con el scroll */
+  :global([style*="position: fixed"]),
+  :global([style*="position: absolute"]) {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  /* ✅ CRITICAL: Asegurar que los containers principales funcionen correctamente */
+  :global(.container),
+  :global(.contenedor),
+  :global(.main-content),
+  :global(.contenido-principal),
+  :global(main) {
+    min-height: auto;
+    overflow: visible;
+    transform: translateZ(0);
   }
   
   /* CRÍTICO: Evitar cursor de texto en TODOS los elementos por defecto */

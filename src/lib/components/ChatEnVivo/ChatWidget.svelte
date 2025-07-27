@@ -27,6 +27,92 @@
 		tipoConsulta: 'general' 
 	};
 
+	// 📱 CONFIGURACIÓN DE PAÍSES Y CÓDIGOS
+	let paisSeleccionado = {
+		codigo: '+57',
+		pais: 'CO',
+		bandera: '🇨🇴',
+		digitos: 10,
+		formato: '3XX XXX XXXX'
+	};
+	
+	const paisesPrincipales = [
+		{ codigo: '+57', pais: 'Colombia', bandera: '🇨🇴', digitos: 10, formato: '3XX XXX XXXX' },
+		{ codigo: '+58', pais: 'Venezuela', bandera: '🇻🇪', digitos: 10, formato: '4XX XXX XXXX' },
+		{ codigo: '+1', pais: 'Estados Unidos', bandera: '🇺🇸', digitos: 10, formato: 'XXX XXX XXXX' },
+		{ codigo: '+56', pais: 'Chile', bandera: '🇨🇱', digitos: 9, formato: '9X XXX XXXX' },
+		{ codigo: '+52', pais: 'México', bandera: '🇲🇽', digitos: 10, formato: '1 XXX XXX XXXX' },
+		{ codigo: '+54', pais: 'Argentina', bandera: '🇦🇷', digitos: 10, formato: '9 XX XXXX XXXX' },
+		{ codigo: '+51', pais: 'Perú', bandera: '🇵🇪', digitos: 9, formato: '9XX XXX XXX' },
+		{ codigo: '+593', pais: 'Ecuador', bandera: '🇪🇨', digitos: 8, formato: '9X XXX XXXX' },
+		{ codigo: '+55', pais: 'Brasil', bandera: '🇧🇷', digitos: 11, formato: 'XX 9XXXX XXXX' }
+	];
+	
+	let numeroTelefono = '';
+	let selectorVisible = false;
+	let selectorConsultaVisible = false;
+	
+	const tiposConsulta = [
+		{ valor: 'general', texto: '💬 Consulta general' },
+		{ valor: 'cursos', texto: '📚 Información sobre cursos' },
+		{ valor: 'precios', texto: '💰 Precios y membresías' },
+		{ valor: 'tecnico', texto: '🔧 Soporte técnico' },
+		{ valor: 'otro', texto: '❓ Otro tema' }
+	];
+
+	// 📱 FUNCIONES SELECTOR DE PAÍSES
+	function seleccionarPais(pais) {
+		paisSeleccionado = pais;
+		numeroTelefono = '';
+		selectorVisible = false;
+	}
+
+	function alternarSelector() {
+		console.log('🔄 Alternando selector de países. Estado anterior:', selectorVisible);
+		selectorVisible = !selectorVisible;
+		console.log('🔄 Nuevo estado del selector:', selectorVisible);
+	}
+
+	function validarNumeroTelefono(numero) {
+		// Limpiar el número (solo dígitos)
+		const numeroLimpio = numero.replace(/\D/g, '');
+		
+		// Validar longitud según el país seleccionado
+		if (numeroLimpio.length === paisSeleccionado.digitos) {
+			datosGuest.whatsapp = paisSeleccionado.codigo + numeroLimpio;
+			return true;
+		}
+		return false;
+	}
+
+	function formatearNumeroInput(event) {
+		const input = event.target;
+		let valor = input.value.replace(/\D/g, '');
+		
+		// Limitar longitud según país seleccionado
+		if (valor.length > paisSeleccionado.digitos) {
+			valor = valor.slice(0, paisSeleccionado.digitos);
+		}
+		
+		numeroTelefono = valor;
+		validarNumeroTelefono(valor);
+	}
+
+	// 📋 FUNCIONES SELECTOR DE CONSULTAS
+	function alternarSelectorConsulta() {
+		selectorConsultaVisible = !selectorConsultaVisible;
+	}
+
+	function seleccionarConsulta(consulta) {
+		datosGuest.tipoConsulta = consulta.valor;
+		selectorConsultaVisible = false;
+	}
+
+	function obtenerTextoConsulta() {
+		const consulta = tiposConsulta.find(c => c.valor === datosGuest.tipoConsulta);
+		return consulta ? consulta.texto : '💬 Consulta general';
+	}
+
 	// 🎯 CONFIGURACIÓN
 	const URL_WEBHOOK = 'https://velostrategix-n8n.lnrubg.easypanel.host/webhook/chat';
 	console.log('🌐 URL del Webhook configurada:', URL_WEBHOOK);
@@ -41,8 +127,20 @@
 		// 📡 ESCUCHAR EVENTOS DEL MODAL DE BÚSQUEDA
 		window.addEventListener('abrirChatWidget', manejarEventoAbrirChat);
 		
+		// 📱 CERRAR SELECTORES AL HACER CLIC FUERA
+		function cerrarSelectores(event) {
+			if (!event.target.closest('.campo-whatsapp')) {
+				selectorVisible = false;
+			}
+			if (!event.target.closest('.selector-consulta-container')) {
+				selectorConsultaVisible = false;
+			}
+		}
+		document.addEventListener('click', cerrarSelectores);
+		
 		return () => {
 			window.removeEventListener('abrirChatWidget', manejarEventoAbrirChat);
+			document.removeEventListener('click', cerrarSelectores);
 		};
 	});
 
@@ -765,8 +863,8 @@ INSTRUCCIONES PARA EL AGENTE:
 		const mensajeBienvenida = {
 			id: Date.now(),
 			texto: infoUsuario 
-				? `¡Hola ${infoUsuario.nombre}! 👋 Soy tu asistente de Academia Vallenata Online. ¿En qué puedo ayudarte hoy?`
-				: `¡Hola! 👋 Soy tu asistente de Academia Vallenata Online. ¿En qué puedo ayudarte hoy?`,
+				? `🎵 Asistente IA de Academia Vallenata Online listo para ayudarte, ${infoUsuario.nombre}. ¿Qué necesitas saber sobre acordeón o la academia?`
+				: `🎵 Asistente IA de Academia Vallenata Online listo para ayudarte. ¿Qué necesitas saber sobre acordeón o la academia?`,
 			esBot: true,
 			timestamp: new Date()
 		};
@@ -822,10 +920,16 @@ INSTRUCCIONES PARA EL AGENTE:
 				console.log('No hay datos de guest o error parseando');
 			}
 			
-			// Obtener contexto completo del usuario
-			console.log('🚀 [CHAT] Llamando obtenerContextoCompleto()...');
-			const contextoCompleto = await obtenerContextoCompleto();
-			console.log('✅ [CHAT] Contexto completo obtenido. Longitud:', contextoCompleto.length);
+			// Obtener contexto completo del usuario (solo si está autenticado)
+			let contextoCompleto = '';
+			if (infoUsuario?.id) {
+				console.log('🚀 [CHAT] Usuario autenticado - Llamando obtenerContextoCompleto()...');
+				contextoCompleto = await obtenerContextoCompleto();
+				console.log('✅ [CHAT] Contexto completo obtenido. Longitud:', contextoCompleto.length);
+			} else {
+				console.log('👤 [CHAT] Usuario anónimo - saltando contexto completo');
+				contextoCompleto = '';
+			}
 			
 			// Preparar datos para N8N con contexto enriquecido
 			const datosChat = {
@@ -963,7 +1067,7 @@ ${textoMensaje}`,
 			localStorage.setItem('datosGuestChat', JSON.stringify(datosGuest));
 			
 			// Guardar en base de datos
-			await leadsService.crear({
+			await leadsService.crearLead({
 				chat_id: chatId,
 				nombre: datosGuest.nombre,
 				email: datosGuest.email,
@@ -1192,6 +1296,9 @@ ${textoMensaje}`,
 		<div class="pulso"></div>
 	</button>
 {:else}
+	<!-- 🎭 Overlay con desenfoque de fondo -->
+	<div class="chat-overlay" on:click={cerrarChat}></div>
+	
 	<!-- 💬 Ventana del chat -->
 	<div class="ventana-chat">
 		<!-- Encabezado -->
@@ -1263,6 +1370,16 @@ ${textoMensaje}`,
 			<div class="encabezado-modal">
 				<h3>¡Bienvenido a Academia Vallenata! 🎵</h3>
 				<p>Para brindarte una mejor atención, cuéntanos un poco sobre ti:</p>
+				
+				<!-- 🤖 MENSAJE SOBRE REGISTRO PARA IA -->
+				<div class="aviso-ia">
+					<div class="icono-ia">🤖</div>
+					<div class="texto-ia">
+						<p><strong>¡Chatea con nuestra IA!</strong></p>
+						<p>Para acceder a toda la información personalizada y chatear con nuestra inteligencia artificial, 
+						necesitas registrarte. <span class="highlight">¡Es rápido y sin complicaciones!</span></p>
+					</div>
+				</div>
 			</div>
 			
 			<div class="formulario-datos">
@@ -1281,19 +1398,70 @@ ${textoMensaje}`,
 					required
 				/>
 				
-				<input
-					bind:value={datosGuest.whatsapp}
-					placeholder="WhatsApp (opcional)"
-					class="campo-datos"
-				/>
+				<!-- 📱 SELECTOR DE WHATSAPP CON CÓDIGOS DE PAÍS -->
+				<div class="campo-whatsapp">
+					<button 
+						type="button"
+						class="selector-pais" 
+						on:click|stopPropagation={alternarSelector}
+					>
+						<span class="bandera">{paisSeleccionado.bandera}</span>
+						<span class="codigo">{paisSeleccionado.codigo}</span>
+						<span class="nombre-pais">{paisSeleccionado.pais}</span>
+						<span class="flecha">{selectorVisible ? '▲' : '▼'}</span>
+					</button>
+					
+					<input
+						bind:value={numeroTelefono}
+						on:input={formatearNumeroInput}
+						placeholder={paisSeleccionado.formato}
+						class="input-telefono"
+						type="tel"
+						maxlength={paisSeleccionado.digitos}
+					/>
+					
+					{#if selectorVisible}
+						<div class="dropdown-paises">
+							{#each paisesPrincipales as pais}
+								<button 
+									type="button"
+									class="opcion-pais" 
+									on:click|stopPropagation={() => seleccionarPais(pais)}
+								>
+									<span class="bandera">{pais.bandera}</span>
+									<span class="codigo">{pais.codigo}</span>
+									<span class="nombre">{pais.pais}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 				
-				<select bind:value={datosGuest.tipoConsulta} class="campo-datos">
-					<option value="general">Consulta general</option>
-					<option value="cursos">Información sobre cursos</option>
-					<option value="precios">Precios y membresías</option>
-					<option value="tecnico">Soporte técnico</option>
-					<option value="otro">Otro tema</option>
-				</select>
+				<!-- 📋 SELECTOR DE TIPO DE CONSULTA -->
+				<div class="selector-consulta-container">
+					<button 
+						type="button"
+						class="selector-consulta" 
+						on:click|stopPropagation={alternarSelectorConsulta}
+					>
+						<span class="texto-consulta">{obtenerTextoConsulta()}</span>
+						<span class="flecha-consulta">{selectorConsultaVisible ? '▲' : '▼'}</span>
+					</button>
+					
+					{#if selectorConsultaVisible}
+						<div class="dropdown-consultas">
+							{#each tiposConsulta as consulta}
+								<button 
+									type="button"
+									class="opcion-consulta" 
+									on:click|stopPropagation={() => seleccionarConsulta(consulta)}
+								>
+									{consulta.texto}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			</div>
 			
 			<div class="botones-modal">
@@ -1310,6 +1478,20 @@ ${textoMensaje}`,
 
 <style>
 	/* 🎨 ESTILOS DEL CHAT */
+	.chat-overlay {
+		position: fixed !important;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		z-index: 9997 !important;
+		transition: all 0.3s ease;
+		cursor: pointer;
+	}
+
 	.boton-chat {
 		position: fixed !important;
 		bottom: 65px !important;
@@ -1361,7 +1543,7 @@ ${textoMensaje}`,
 		background: rgba(15, 15, 35, 0.95);
 		border-radius: 20px;
 		border: 1px solid rgba(138, 43, 226, 0.3);
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
 		backdrop-filter: blur(20px);
 		z-index: 9998 !important;
 		display: flex;
@@ -1577,6 +1759,9 @@ ${textoMensaje}`,
 		width: 100%;
 		max-width: 400px;
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		z-index: 1002;
+		position: relative;
+		overflow: visible !important;
 	}
 
 	.encabezado-modal h3 {
@@ -1596,6 +1781,7 @@ ${textoMensaje}`,
 		flex-direction: column;
 		gap: 12px;
 		margin-bottom: 20px;
+		overflow: visible !important;
 	}
 
 	.campo-datos {
@@ -1616,6 +1802,265 @@ ${textoMensaje}`,
 
 	.campo-datos::placeholder {
 		color: rgba(224, 224, 255, 0.5);
+	}
+
+	/* 📱 ESTILOS SELECTOR DE PAÍSES */
+	.campo-whatsapp {
+		position: relative;
+		display: flex;
+		gap: 0;
+		border: 1px solid rgba(138, 43, 226, 0.3);
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.1);
+		overflow: visible !important;
+		transition: all 0.3s ease;
+	}
+
+	.campo-whatsapp:focus-within {
+		border-color: #8a2be2;
+		background: rgba(255, 255, 255, 0.15);
+	}
+
+	.selector-pais {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 12px 12px;
+		background: rgba(138, 43, 226, 0.2);
+		cursor: pointer;
+		transition: all 0.3s ease;
+		border-right: 1px solid rgba(138, 43, 226, 0.3);
+		min-width: 85px;
+	}
+
+	.selector-pais:hover {
+		background: rgba(138, 43, 226, 0.3);
+	}
+
+	.bandera {
+		font-size: 16px;
+	}
+
+	.codigo {
+		color: #e0e0ff;
+		font-size: 13px;
+		font-weight: 500;
+	}
+
+	.nombre-pais {
+		color: #e0e0ff;
+		font-weight: 400;
+		font-size: 13px;
+		flex: 1;
+		text-align: left;
+		margin-left: 8px;
+	}
+
+	.flecha {
+		color: rgba(224, 224, 255, 0.6);
+		font-size: 10px;
+		transition: transform 0.3s ease;
+	}
+
+	.input-telefono {
+		flex: 1;
+		padding: 12px 16px;
+		border: none;
+		background: transparent;
+		color: #e0e0ff;
+		font-size: 14px;
+		outline: none;
+	}
+
+	.input-telefono::placeholder {
+		color: rgba(224, 224, 255, 0.5);
+	}
+
+	.dropdown-paises {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		background: rgba(15, 15, 35, 0.98);
+		border: 1px solid rgba(138, 43, 226, 0.3);
+		border-radius: 12px;
+		margin-top: 4px;
+		max-height: 200px;
+		overflow-y: auto;
+		z-index: 1003;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+		backdrop-filter: blur(10px);
+		animation: dropdown-appear 0.2s ease-out;
+	}
+
+	@keyframes dropdown-appear {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.opcion-pais {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 12px 16px;
+		border: none;
+		background: transparent;
+		color: #e0e0ff;
+		font-size: 14px;
+		text-align: left;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		border-bottom: 1px solid rgba(138, 43, 226, 0.1);
+	}
+
+	.opcion-pais:last-child {
+		border-bottom: none;
+	}
+
+	.opcion-pais:hover {
+		background: rgba(138, 43, 226, 0.2);
+		color: #ffffff;
+	}
+
+	.nombre {
+		color: rgba(224, 224, 255, 0.8);
+		font-size: 13px;
+		flex: 1;
+	}
+
+	/* 🤖 ESTILOS AVISO IA */
+	.aviso-ia {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		background: linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(75, 0, 130, 0.15));
+		border: 1px solid rgba(138, 43, 226, 0.3);
+		border-radius: 12px;
+		padding: 16px;
+		margin: 16px 0;
+		backdrop-filter: blur(5px);
+	}
+
+	.icono-ia {
+		font-size: 24px;
+		animation: pulse-ia 2s infinite;
+	}
+
+	@keyframes pulse-ia {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.1); }
+	}
+
+	.texto-ia p {
+		margin: 0 0 8px 0;
+		color: #e0e0ff;
+		font-size: 13px;
+		line-height: 1.4;
+	}
+
+	.texto-ia p:last-child {
+		margin-bottom: 0;
+	}
+
+	.highlight {
+		color: #dda0dd;
+		font-weight: 600;
+	}
+
+	/* 📋 ESTILOS SELECTOR DE CONSULTAS */
+	.selector-consulta-container {
+		position: relative;
+		width: 100%;
+	}
+
+	.selector-consulta {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 12px 16px;
+		border: 1px solid rgba(138, 43, 226, 0.3);
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.1);
+		color: #e0e0ff;
+		font-size: 14px;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		outline: none;
+	}
+
+	.selector-consulta:hover,
+	.selector-consulta:focus {
+		border-color: #8a2be2;
+		background: rgba(255, 255, 255, 0.15);
+	}
+
+	.texto-consulta {
+		flex: 1;
+		text-align: left;
+	}
+
+	.flecha-consulta {
+		color: rgba(224, 224, 255, 0.6);
+		font-size: 10px;
+		transition: transform 0.3s ease;
+		margin-left: 8px;
+	}
+
+	.dropdown-consultas {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		background: rgba(15, 15, 35, 0.98);
+		border: 1px solid rgba(138, 43, 226, 0.3);
+		border-radius: 12px;
+		margin-top: 4px;
+		z-index: 1003;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+		backdrop-filter: blur(10px);
+		overflow: hidden;
+	}
+
+	.opcion-consulta {
+		width: 100%;
+		display: block;
+		padding: 12px 16px;
+		border: none;
+		background: transparent;
+		color: #e0e0ff;
+		font-size: 14px;
+		text-align: left;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		border-bottom: 1px solid rgba(138, 43, 226, 0.1);
+	}
+
+	.opcion-consulta:last-child {
+		border-bottom: none;
+	}
+
+	.opcion-consulta:hover {
+		background: rgba(138, 43, 226, 0.2);
+	}
+
+	/* 🔧 AJUSTES PARA BOTONES EN SELECTORES */
+	.selector-pais,
+	.opcion-pais {
+		border: none;
+		outline: none;
+	}
+
+	.opcion-pais {
+		width: 100%;
+		background: transparent;
 	}
 
 	.botones-modal {
@@ -1763,10 +2208,10 @@ ${textoMensaje}`,
 	}
 
 	/* 📱 RESPONSIVE */
-	@media (max-width: 480px) {
+	@media (max-width: 768px) and (min-width: 481px) {
 		.ventana-chat {
-			width: calc(100vw - 32px) !important;
-			height: calc(100vh - 120px) !important;
+			width: 360px !important;
+			height: 480px !important;
 			bottom: 80px !important;
 			right: 16px !important;
 		}
@@ -1774,6 +2219,47 @@ ${textoMensaje}`,
 		.boton-chat {
 			bottom: 80px !important;
 			right: 16px !important;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.chat-overlay {
+			background: rgba(0, 0, 0, 0.6);
+			backdrop-filter: blur(4px);
+			-webkit-backdrop-filter: blur(4px);
+		}
+
+		.ventana-chat {
+			width: calc(100vw - 24px) !important;
+			height: 70vh !important;
+			bottom: 20px !important;
+			right: 12px !important;
+			left: 12px !important;
+			border-radius: 16px !important;
+			box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+		}
+		
+		.boton-chat {
+			bottom: 75px !important;
+			right: 20px !important;
+			width: 56px !important;
+			height: 56px !important;
+		}
+
+		.encabezado-chat {
+			padding: 12px 16px !important;
+		}
+
+		.contenedor-mensajes {
+			padding: 12px !important;
+		}
+
+		.entrada-mensaje {
+			padding: 12px !important;
+		}
+
+		.input-mensaje {
+			font-size: 16px !important; /* Evita zoom en iOS */
 		}
 	}
 </style> 

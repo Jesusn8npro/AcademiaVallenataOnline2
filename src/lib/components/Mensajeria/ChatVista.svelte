@@ -8,6 +8,7 @@
 	import EntradaMensaje from './EntradaMensaje.svelte';
 	import { goto } from '$app/navigation';
 	import { obtenerSlugUsuario } from '$lib/utilidades/utilidadesSlug';
+	import { audioManager, TipoEfectoUI, TipoEfectoUI2 } from '$lib/components/SimuladorDefinitivo/audio/AudioManager';
 	
 	// Crear dispatcher para eventos
 	const dispatch = createEventDispatcher();
@@ -29,6 +30,7 @@
 	let mostrarInfoPanel = false;
 	let mostrarConfiguracion = false;
 	let buscandoMiembros = '';
+	let estadoConexion = 'DESCONECTADO';
 
 	// ============================================
 	// INFORMACIÓN DEL OTRO USUARIO
@@ -56,23 +58,73 @@
 	})();
 
 	// ============================================
-	// OBTENER AVATAR DE USUARIO POR ID
+	// OBTENER AVATAR DE USUARIO POR ID - ROBUSTO
 	// ============================================
 	function obtenerAvatarUsuario(usuarioId: string): string {
-		if (!chat?.miembros) return '/favicon.png';
-		
-		const miembro = chat.miembros.find(m => m.usuario_id === usuarioId) as any;
-		return miembro?.usuario?.url_foto_perfil || '/favicon.png';
+		try {
+			if (!usuarioId) {
+				console.warn(`⚠️ [AVATAR] usuarioId vacío`);
+				return '/favicon.png';
+			}
+
+			if (!chat?.miembros || !Array.isArray(chat.miembros)) {
+				console.warn(`⚠️ [AVATAR] No hay miembros en chat`);
+				return '/favicon.png';
+			}
+			
+			const miembro = chat.miembros.find(m => m && m.usuario_id === usuarioId) as any;
+			
+			if (!miembro) {
+				console.warn(`⚠️ [AVATAR] Miembro no encontrado para ID: ${usuarioId}`);
+				return '/favicon.png';
+			}
+
+			const avatar = miembro?.usuario?.url_foto_perfil;
+			return avatar && typeof avatar === 'string' ? avatar : '/favicon.png';
+		} catch (err) {
+			console.error(`❌ [AVATAR] Error obteniendo avatar para ${usuarioId}:`, err);
+			return '/favicon.png';
+		}
 	}
 
 	// ============================================
-	// OBTENER NOMBRE DE USUARIO POR ID
+	// OBTENER NOMBRE DE USUARIO POR ID - ROBUSTO
 	// ============================================
 	function obtenerNombreUsuario(usuarioId: string): string {
-		if (!chat?.miembros) return 'Usuario';
-		
-		const miembro = chat.miembros.find(m => m.usuario_id === usuarioId) as any;
-		return miembro?.usuario?.nombre_completo || miembro?.usuario?.nombre_usuario || 'Usuario';
+		try {
+			if (!usuarioId) {
+				console.warn(`⚠️ [NOMBRE] usuarioId vacío`);
+				return 'Usuario';
+			}
+
+			if (!chat?.miembros || !Array.isArray(chat.miembros)) {
+				console.warn(`⚠️ [NOMBRE] No hay miembros en chat`);
+				return 'Usuario';
+			}
+			
+			const miembro = chat.miembros.find(m => m && m.usuario_id === usuarioId) as any;
+			
+			if (!miembro) {
+				console.warn(`⚠️ [NOMBRE] Miembro no encontrado para ID: ${usuarioId}`);
+				return 'Usuario';
+			}
+
+			const nombreCompleto = miembro?.usuario?.nombre_completo;
+			const nombreUsuario = miembro?.usuario?.nombre_usuario;
+			
+			if (nombreCompleto && typeof nombreCompleto === 'string') {
+				return nombreCompleto;
+			}
+			
+			if (nombreUsuario && typeof nombreUsuario === 'string') {
+				return nombreUsuario;
+			}
+			
+			return 'Usuario';
+		} catch (err) {
+			console.error(`❌ [NOMBRE] Error obteniendo nombre para ${usuarioId}:`, err);
+			return 'Usuario';
+		}
 	}
 
 	// ============================================
@@ -128,21 +180,37 @@
 			usuarioActual = perfil;
 		}
 
-		if (chat) {
-			await cargarMensajes();
-			await configurarTiempoReal();
-		}
+		// ✅ NO configurar aquí - se hace en la reactividad
 	});
 
 	onDestroy(async () => {
-		if (chat) {
+		console.log('🧹 [CHAT-VISTA-BI] Limpiando componente...');
+		if (chat?.id && usuarioActual?.id) {
+			console.log(`🔌 [CHAT-VISTA-BI] Desconectando usuario ${usuarioActual.id} de chat: ${chat.id}`);
 			await mensajeriaService.desuscribirseDeChat(chat.id);
+			console.log(`✅ [CHAT-VISTA-BI] Usuario ${usuarioActual.id} desconectado del chat: ${chat.id}`);
 		}
 	});
 
-	// Reactividad para cambios de chat
-	$: if (chat && usuarioActual) {
-		cargarMensajes();
+	// ✅ SIMPLE: Solo cuando cambia el chat
+	let ultimoChatId = '';
+	$: if (chat && usuarioActual && chat.id !== ultimoChatId) {
+		ultimoChatId = chat.id;
+		inicializarChat();
+	}
+
+	/**
+	 * 🚀 Inicializar chat SIMPLE
+	 */
+	async function inicializarChat() {
+		if (!chat || !usuarioActual) return;
+		
+		console.log(`🚀 Iniciando chat ${chat.id}`);
+		
+		// Cargar mensajes
+		await cargarMensajes();
+		
+		// Configurar tiempo real
 		configurarTiempoReal();
 	}
 
@@ -151,13 +219,15 @@
 	// ============================================
 
 	/**
-	 * 📥 Cargar mensajes del chat
+	 * 📥 Cargar mensajes SIMPLE
 	 */
 	async function cargarMensajes() {
 		if (!chat || !usuarioActual) return;
 
+		console.log(`📥 Cargando mensajes para: ${chat.id}`);
+
 		try {
-				cargando = true;
+			cargando = true;
 			error = '';
 
 			const { mensajes: mensajesObtenidos, error: errorObtenido } = 
@@ -165,9 +235,11 @@
 
 			if (errorObtenido) {
 				error = errorObtenido;
+				console.error(`❌ Error:`, errorObtenido);
 			} else {
-				// Marcar mensajes como propios y agregar información de usuario
-				const mensajesConOwnership = mensajesObtenidos.map(mensaje => ({
+				console.log(`✅ ${mensajesObtenidos.length} mensajes cargados`);
+				
+				const mensajesCompletos = mensajesObtenidos.map(mensaje => ({
 					...mensaje,
 					es_mio: mensaje.usuario_id === usuarioActual.id,
 					usuario: {
@@ -176,21 +248,21 @@
 						nombre_usuario: mensaje.usuario?.nombre_usuario || '',
 						url_foto_perfil: obtenerAvatarUsuario(mensaje.usuario_id)
 					}
-				} as any));
+				}));
 				
-				mensajes.set(mensajesConOwnership);
-					setTimeout(scrollAlFinal, 100);
+				mensajes.set(mensajesCompletos);
+				setTimeout(scrollAlFinal, 100);
 			}
 		} catch (err) {
+			console.error('❌ Error cargando:', err);
 			error = 'Error cargando mensajes';
-			console.error('Error:', err);
 		} finally {
 			cargando = false;
 		}
 	}
 
 	/**
-	 * 📤 Enviar mensaje
+	 * 📤 Enviar mensaje - ROBUSTO
 	 */
 	async function enviarMensaje(datos: {
 		contenido: string;
@@ -198,68 +270,62 @@
 		url_media?: string;
 		metadata?: any;
 	}) {
-		if (!chat || !usuarioActual) return;
+		try {
+			// ✅ VALIDACIONES CRÍTICAS
+			if (!chat || !chat.id) {
+				console.error(`❌ [ENVIO] Chat no disponible`);
+				alert('Error: Chat no disponible');
+				return;
+			}
 
-		const datosCompletos = {
-			chat_id: chat.id,
-			contenido: datos.contenido,
-			tipo: datos.tipo || 'texto',
-			url_media: datos.url_media,
-			metadata: datos.metadata || {},
-			mensaje_padre_id: mensajeEnRespuesta?.id
-		};
+			if (!usuarioActual || !usuarioActual.id) {
+				console.error(`❌ [ENVIO] Usuario no disponible`);
+				alert('Error: Usuario no disponible');
+				return;
+			}
 
-		// Crear mensaje temporal para mostrar inmediatamente
-		const mensajeTemporal: Mensaje = {
-			id: 'temp-' + Date.now(),
-			chat_id: chat.id,
-			usuario_id: usuarioActual.id,
-			contenido: datos.contenido,
-			tipo: (datos.tipo as any) || 'texto',
-			url_media: datos.url_media,
-			metadata: datos.metadata || {},
-			mensaje_padre_id: mensajeEnRespuesta?.id,
-			editado: false,
-			eliminado: false,
-			creado_en: new Date().toISOString(),
-			usuario: {
-				id: usuarioActual.id,
-				nombre_completo: usuarioActual.nombre_completo,
-				nombre_usuario: usuarioActual.nombre_usuario,
-				url_foto_perfil: usuarioActual.url_foto_perfil || '/favicon.png'
-			},
-			es_mio: true
-		};
+			if (!datos || !datos.contenido || typeof datos.contenido !== 'string' || datos.contenido.trim() === '') {
+				console.error(`❌ [ENVIO] Contenido inválido:`, datos);
+				alert('Error: Contenido del mensaje inválido');
+				return;
+			}
 
-		// Agregar mensaje temporal inmediatamente
-		mensajes.update(mensajesActuales => [...mensajesActuales, mensajeTemporal]);
-		scrollAlFinal();
+			const datosCompletos = {
+				chat_id: chat.id,
+				contenido: datos.contenido.trim(),
+				tipo: datos.tipo || 'texto',
+				url_media: datos.url_media || undefined,
+				metadata: datos.metadata || {},
+				mensaje_padre_id: mensajeEnRespuesta?.id || undefined
+			};
 
-		// Enviar mensaje real
-		const { mensaje, error: errorEnvio } = await mensajeriaService.enviarMensaje(datosCompletos);
+			console.log(`📤 [CHAT-VISTA-BI] Enviando mensaje: "${datos.contenido}"`);
+			
+			// ✅ ENVIAR mensaje directamente (sin temporal)
+			// El mensaje aparecerá via TIEMPO REAL para AMBOS usuarios
+			const { mensaje, error: errorEnvio } = await mensajeriaService.enviarMensaje(datosCompletos);
 
-		if (errorEnvio) {
-			// Remover mensaje temporal si hay error
-			mensajes.update(mensajesActuales => 
-				mensajesActuales.filter(m => m.id !== mensajeTemporal.id)
-			);
-			console.error('Error enviando mensaje:', errorEnvio);
-		} else if (mensaje) {
-			// Reemplazar mensaje temporal con el real
-			mensajes.update(mensajesActuales => 
-				mensajesActuales.map(m => 
-					m.id === mensajeTemporal.id ? { 
-						...mensaje, 
-						es_mio: true,
-						usuario: {
-							id: usuarioActual.id,
-							nombre_completo: usuarioActual.nombre_completo,
-							nombre_usuario: usuarioActual.nombre_usuario,
-							url_foto_perfil: usuarioActual.url_foto_perfil || '/favicon.png'
-						}
-					} as any : m
-				)
-			);
+			if (errorEnvio) {
+				console.error(`❌ [CHAT-VISTA-BI] Error enviando mensaje:`, errorEnvio);
+				alert('Error enviando mensaje: ' + errorEnvio);
+			} else if (mensaje) {
+				console.log(`✅ [CHAT-VISTA-BI] Mensaje enviado exitosamente: ${mensaje.id}`);
+				console.log(`⏱️ [CHAT-VISTA-BI] Esperando llegada via tiempo real...`);
+				
+				// 🔊 SONIDO DE ENVÍO EXITOSO
+				try {
+					audioManager.reproducirEfectoUI2(TipoEfectoUI2.EXITO);
+					console.log(`🔊 [CHAT-VISTA-BI] Sonido de envío reproducido`);
+				} catch (err) {
+					console.warn(`⚠️ [CHAT-VISTA-BI] Error reproduciendo sonido de envío:`, err);
+				}
+			} else {
+				console.warn(`⚠️ [CHAT-VISTA-BI] Respuesta inesperada del servidor`);
+				alert('Advertencia: Respuesta inesperada del servidor');
+			}
+		} catch (err) {
+			console.error(`❌ [CHAT-VISTA-BI] Error crítico enviando mensaje:`, err);
+			alert('Error crítico enviando mensaje. Ver consola para detalles.');
 		}
 
 		// Limpiar respuesta
@@ -267,44 +333,207 @@
 	}
 
 	/**
-	 * 📜 Scroll al final
+	 * 📜 Scroll al final - ROBUSTO
 	 */
 	function scrollAlFinal() {
-		if (contenedorMensajes) {
-			contenedorMensajes.scrollTop = contenedorMensajes.scrollHeight;
+		try {
+			if (contenedorMensajes && contenedorMensajes.scrollTo) {
+				// Usar scrollTo con smooth para mejor UX
+				contenedorMensajes.scrollTo({
+					top: contenedorMensajes.scrollHeight,
+					behavior: 'smooth'
+				});
+			} else if (contenedorMensajes) {
+				// Fallback para navegadores más antiguos
+				contenedorMensajes.scrollTop = contenedorMensajes.scrollHeight;
+			} else {
+				console.warn(`⚠️ [SCROLL] Contenedor de mensajes no disponible`);
+			}
+		} catch (err) {
+			console.error(`❌ [SCROLL] Error haciendo scroll:`, err);
+			// Intento de fallback básico
+			try {
+				if (contenedorMensajes) {
+					contenedorMensajes.scrollTop = contenedorMensajes.scrollHeight;
+				}
+			} catch (fallbackErr) {
+				console.error(`❌ [SCROLL] Error en fallback:`, fallbackErr);
+			}
 		}
 	}
 
 	/**
-	 * 🔴 Configurar tiempo real
+	 * 🚀 Configurar Realtime BIDIRECCIONAL - ROBUSTO
 	 */
-	async function configurarTiempoReal() {
-		if (!chat || !usuarioActual) return;
+	function configurarTiempoReal() {
+		try {
+			// ✅ VALIDACIONES CRÍTICAS
+			if (!chat || !chat.id) {
+				console.error(`❌ [CONFIG] Chat no disponible para realtime`);
+				return;
+			}
 
-		await mensajeriaService.suscribirseAChat(chat.id, {
-			onNuevoMensaje: (mensaje: Mensaje) => {
-				// Evitar duplicados y marcar ownership
-				mensajes.update(mensajesActuales => {
-					const existe = mensajesActuales.some(m => m.id === mensaje.id);
-					if (existe) return mensajesActuales;
+			if (!usuarioActual || !usuarioActual.id) {
+				console.error(`❌ [CONFIG] Usuario actual no disponible para realtime`);
+				return;
+			}
+
+			console.log(`🚀 [CHAT-VISTA-BI] Configurando REALTIME BIDIRECCIONAL para chat: ${chat.id}`);
+			console.log(`👤 [CHAT-VISTA-BI] Usuario actual: ${usuarioActual.id}`);
+			
+			estadoConexion = 'CONECTANDO';
+
+		mensajeriaService.suscribirseAChat(chat.id, {
+			onNuevoMensaje: (payload: any) => {
+				try {
+					// ✅ VALIDACIONES CRÍTICAS
+					if (!payload) {
+						console.error(`❌ [CHAT-VISTA-BI] Payload nulo o indefinido`);
+						return;
+					}
+
+					if (!payload.id || !payload.usuario_id || !payload.contenido) {
+						console.error(`❌ [CHAT-VISTA-BI] Payload incompleto:`, payload);
+						return;
+					}
+
+					if (!usuarioActual || !usuarioActual.id) {
+						console.error(`❌ [CHAT-VISTA-BI] Usuario actual no disponible`);
+						return;
+					}
+
+					console.log(`🎉 [CHAT-VISTA-BI] ¡MENSAJE RECIBIDO EN TIEMPO REAL!`);
+					console.log(`📝 [CHAT-VISTA-BI] "${payload.contenido}" de ${payload.usuario_id}`);
+					console.log(`🤔 [CHAT-VISTA-BI] ¿Es mi mensaje?: ${payload.usuario_id === usuarioActual.id}`);
+					console.log(`👤 [CHAT-VISTA-BI] Mi usuario actual: ${usuarioActual.id}`);
 					
-					const mensajeConOwnership = {
-						...mensaje,
-						es_mio: mensaje.usuario_id === usuarioActual.id,
-						usuario: {
-							id: mensaje.usuario_id,
-							nombre_completo: obtenerNombreUsuario(mensaje.usuario_id),
-							nombre_usuario: mensaje.usuario?.nombre_usuario || '',
-							url_foto_perfil: obtenerAvatarUsuario(mensaje.usuario_id)
+					// ✅ PROCESAR TODOS LOS MENSAJES (propios y de otros)
+					mensajes.update(lista => {
+						try {
+							// Verificar si ya existe (evitar duplicados)
+							const existe = lista.some(m => m && m.id === payload.id);
+							if (existe) {
+								console.log(`⚠️ [CHAT-VISTA-BI] Mensaje duplicado ignorado: ${payload.id}`);
+								return lista;
+							}
+							
+							// ✅ Si es MI mensaje, agregarlo directamente
+							if (payload.usuario_id === usuarioActual.id) {
+								console.log(`👤 [CHAT-VISTA-BI] Es mi mensaje, agregando...`);
+								
+								// Crear mensaje mío con validaciones
+								const miMensaje = {
+									...payload,
+									es_mio: true,
+									usuario: {
+										id: usuarioActual.id,
+										nombre_completo: usuarioActual.nombre_completo || 'Usuario',
+										nombre_usuario: usuarioActual.nombre_usuario || '',
+										url_foto_perfil: usuarioActual.url_foto_perfil || '/favicon.png'
+									}
+								};
+								
+								console.log(`✅ [CHAT-VISTA-BI] MI MENSAJE AGREGADO: "${miMensaje.contenido}"`);
+								
+								// Auto-scroll
+								setTimeout(() => {
+									try {
+										scrollAlFinal();
+									} catch (err) {
+										console.error(`❌ [CHAT-VISTA-BI] Error en scroll:`, err);
+									}
+								}, 100);
+								
+								return [...lista, miMensaje];
+							} 
+							// ✅ Si es de OTRO usuario, agregarlo normalmente
+							else {
+								console.log(`👥 [CHAT-VISTA-BI] Mensaje de otro usuario, agregando...`);
+								
+								// Obtener datos del usuario con validaciones
+								const nombreUsuario = obtenerNombreUsuario(payload.usuario_id) || 'Usuario';
+								const avatarUsuario = obtenerAvatarUsuario(payload.usuario_id) || '/favicon.png';
+								
+								const nuevoMensaje = {
+									...payload,
+									es_mio: false,
+									usuario: {
+										id: payload.usuario_id,
+										nombre_completo: nombreUsuario,
+										nombre_usuario: '',
+										url_foto_perfil: avatarUsuario
+									}
+								};
+								
+								console.log(`✅ [CHAT-VISTA-BI] MENSAJE DE OTRO AGREGADO: "${nuevoMensaje.contenido}"`);
+								
+								// 🔊 SONIDO DE MENSAJE RECIBIDO
+								try {
+									audioManager.reproducirEfectoUI(TipoEfectoUI.ALERTA_PING);
+									console.log(`🔊 [CHAT-VISTA-BI] Sonido de mensaje recibido reproducido`);
+								} catch (err) {
+									console.warn(`⚠️ [CHAT-VISTA-BI] Error reproduciendo sonido de recepción:`, err);
+								}
+								
+								// Auto-scroll
+								setTimeout(() => {
+									try {
+										scrollAlFinal();
+									} catch (err) {
+										console.error(`❌ [CHAT-VISTA-BI] Error en scroll:`, err);
+									}
+								}, 100);
+								
+								return [...lista, nuevoMensaje];
+							}
+						} catch (err) {
+							console.error(`❌ [CHAT-VISTA-BI] Error procesando mensaje:`, err);
+							return lista; // Retornar lista sin cambios si hay error
 						}
-					} as any;
+					});
+				} catch (err) {
+					console.error(`❌ [CHAT-VISTA-BI] Error crítico en callback:`, err);
+				}
+			},
+
+			onConexionCambiada: (estado: string) => {
+				try {
+					console.log(`🔗 [CHAT-VISTA-BI] Estado de conexión: ${estado}`);
 					
-					const nuevaLista = [...mensajesActuales, mensajeConOwnership];
-					setTimeout(scrollAlFinal, 100);
-					return nuevaLista;
-				});
+					// Validar que tenemos los datos necesarios
+					if (!estado || typeof estado !== 'string') {
+						console.warn(`⚠️ [CHAT-VISTA-BI] Estado de conexión inválido:`, estado);
+						return;
+					}
+					
+					estadoConexion = estado;
+					
+					switch (estado) {
+						case 'SUBSCRIBED':
+							console.log(`🎉 [CHAT-VISTA-BI] ¡TIEMPO REAL BIDIRECCIONAL ACTIVADO! Chat: ${chat?.id} Usuario: ${usuarioActual?.id}`);
+							break;
+						case 'CHANNEL_ERROR':
+							console.error(`❌ [CHAT-VISTA-BI] Error en canal realtime para usuario ${usuarioActual?.id}`);
+							break;
+						case 'TIMED_OUT':
+							console.warn(`⏱️ [CHAT-VISTA-BI] Timeout para usuario ${usuarioActual?.id}, reintentando...`);
+							break;
+						case 'CLOSED':
+							console.log(`🔴 [CHAT-VISTA-BI] Canal cerrado para usuario ${usuarioActual?.id}`);
+							break;
+						default:
+							console.log(`🔄 [CHAT-VISTA-BI] Estado desconocido: ${estado}`);
+							break;
+					}
+				} catch (err) {
+					console.error(`❌ [CHAT-VISTA-BI] Error en callback de conexión:`, err);
+				}
 			}
 		});
+		} catch (err) {
+			console.error(`❌ [CONFIG] Error crítico configurando realtime:`, err);
+			estadoConexion = 'ERROR';
+		}
 	}
 
 	/**
@@ -406,6 +635,17 @@
 							</p>
 						</div>
 				{/if}
+				
+				<!-- Indicador simple de tiempo real -->
+				<div class="indicador-conexion" class:conectado={estadoConexion === 'SUBSCRIBED'}>
+					{#if estadoConexion === 'SUBSCRIBED'}
+						<span class="icono-estado">🟢</span>
+						<span class="texto-estado">En vivo</span>
+					{:else}
+						<span class="icono-estado">🔴</span>
+						<span class="texto-estado">Conectando...</span>
+					{/if}
+				</div>
 			</div>
 			
 					<div class="acciones-header">
@@ -794,6 +1034,88 @@
 	.btn-tema:hover, .btn-info:hover {
 		background: rgba(255, 255, 255, 0.2);
 		transform: scale(1.1);
+	}
+
+	/* ============================================ */
+	/* INDICADOR DE CONEXIÓN EN TIEMPO REAL */
+	/* ============================================ */
+	.indicador-conexion {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(10px);
+		font-size: 12px;
+		font-weight: 500;
+		color: white;
+		transition: all 0.3s ease;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		margin-left: 8px;
+	}
+
+	.indicador-conexion.conectado {
+		background: rgba(34, 197, 94, 0.2);
+		border-color: rgba(34, 197, 94, 0.4);
+		color: #dcfce7;
+	}
+
+	.indicador-conexion.conectando {
+		background: rgba(234, 179, 8, 0.2);
+		border-color: rgba(234, 179, 8, 0.4);
+		color: #fef3c7;
+	}
+
+	.indicador-conexion.reconectando {
+		background: rgba(249, 115, 22, 0.2);
+		border-color: rgba(249, 115, 22, 0.4);
+		color: #fed7aa;
+		animation: pulse-reconnect 2s infinite;
+	}
+
+	.indicador-conexion.error {
+		background: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.4);
+		color: #fecaca;
+	}
+
+	@keyframes pulse-reconnect {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.6; }
+	}
+
+	.icono-estado {
+		font-size: 10px;
+		line-height: 1;
+	}
+
+	.texto-estado {
+		font-size: 11px;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.indicador-conexion.reconectando .icono-estado {
+		animation: rotate-icon 1s linear infinite;
+	}
+
+	@keyframes rotate-icon {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+
+	/* Responsive para móviles */
+	@media (max-width: 768px) {
+		.indicador-conexion {
+			padding: 3px 6px;
+			font-size: 10px;
+			margin-left: 4px;
+		}
+		
+		.texto-estado {
+			display: none; /* Solo mostrar icono en móvil */
+		}
 	}
 
 	/* ============================================ */

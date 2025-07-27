@@ -26,7 +26,7 @@ const config = {
 				'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
 				'font-src': ['self', 'https://fonts.gstatic.com'],
 				'img-src': ['self', 'data:', 'https:', 'blob:'],
-				'connect-src': ['self', process.env.VITE_SUPABASE_URL || 'https://tbijzvtyyewhtwgakgka.supabase.co', 'https://api.epayco.co', 'https://www.google-analytics.com'],
+				'connect-src': ['self', process.env.VITE_SUPABASE_URL || 'https://tbijzvtyyewhtwgakgka.supabase.co', 'wss://*.supabase.co', 'https://api.epayco.co', 'https://www.google-analytics.com'],
 				'frame-src': ['self', 'https://checkout.epayco.co'],
 				'object-src': ['none'],
 				'base-uri': ['self'],

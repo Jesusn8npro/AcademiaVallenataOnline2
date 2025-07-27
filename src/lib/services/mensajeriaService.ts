@@ -115,7 +115,6 @@ export interface ChatConfiguracion {
 
 class MensajeriaService {
 	private channels: Map<string, RealtimeChannel> = new Map();
-	private callbacks: Map<string, Function[]> = new Map();
 
 	// ============================================
 	// GESTIÓN DE CHATS
@@ -654,154 +653,146 @@ class MensajeriaService {
 	// ============================================
 
 	/**
-	 * 🔴 Suscribirse a un chat en tiempo real
+	 * 🚀 REALTIME BIDIRECCIONAL FUNCIONAL
 	 */
 	async suscribirseAChat(
 		chatId: string, 
 		callbacks: {
-			onNuevoMensaje?: (mensaje: Mensaje) => void;
-			onMensajeEditado?: (mensaje: Mensaje) => void;
-			onMensajeEliminado?: (mensajeId: string) => void;
-			onReaccionCambiada?: (mensajeId: string, reacciones: MensajeReaccion[]) => void;
-			onUsuarioEscribiendo?: (usuario: any) => void;
+			onNuevoMensaje?: (mensaje: any) => void;
+			onConexionCambiada?: (estado: string) => void;
 		}
 	): Promise<void> {
 		try {
-			// Desuscribirse del canal anterior si existe
-			if (this.channels.has(chatId)) {
-				await this.desuscribirseDeChat(chatId);
-			}
+			console.log(`🚀 [REALTIME-BI] Iniciando suscripción BIDIRECCIONAL al chat: ${chatId}`);
 
-			// Crear nuevo canal
+			// 1. LIMPIAR suscripción anterior completamente
+			await this.limpiarSuscripcion(chatId);
+
+			// 2. OBTENER usuario actual para logs
+			const { data: { user } } = await supabase.auth.getUser();
+			const userId = user?.id || 'unknown';
+			console.log(`👤 [REALTIME-BI] Usuario conectándose: ${userId}`);
+
+			// 3. CREAR canal único con timestamp para evitar conflictos
+			const channelName = `bidirectional_chat_${chatId}_${userId}_${Date.now()}`;
+			console.log(`📡 [REALTIME-BI] Creando canal: ${channelName}`);
+
 			const channel = supabase
-				.channel(`chat_${chatId}`)
+				.channel(channelName)
+				// 4. VERIFICAR conexión del sistema
+				.on('system', { event: 'connected' }, () => {
+					console.log(`🔌 [REALTIME-BI] Canal conectado al sistema Supabase para usuario ${userId}`);
+				})
+				// 5. ESCUCHAR TODOS los mensajes del chat (sin filtrar por usuario)
 				.on(
 					'postgres_changes',
 					{
 						event: 'INSERT',
 						schema: 'public',
 						table: 'mensajes',
-						filter: `chat_id=eq.${chatId}`
+						filter: `chat_id=eq.${chatId}` // ✅ FILTRO CORRECTO - SOLO POR CHAT
 					},
-					async (payload) => {
-						if (callbacks.onNuevoMensaje) {
-							// Obtener datos completos del mensaje
-							const { data: mensajeCompleto } = await supabase
-								.from('mensajes')
-								.select(`
-									*,
-									usuario:perfiles!mensajes_usuario_id_fkey(
-										nombre_completo,
-										url_foto_perfil,
-										nombre_usuario
-									)
-								`)
-								.eq('id', payload.new.id)
-								.single();
-
-							if (mensajeCompleto) {
-								callbacks.onNuevoMensaje(mensajeCompleto);
+					(payload: any) => {
+						console.log(`🎉 [REALTIME-BI] ¡MENSAJE DETECTADO! Usuario: ${userId}`);
+						console.log(`📝 [REALTIME-BI] "${payload.new?.contenido}" por ${payload.new?.usuario_id}`);
+						console.log(`💬 [REALTIME-BI] Chat: ${payload.new?.chat_id}`);
+						console.log(`🔄 [REALTIME-BI] ¿Es mi mensaje?: ${payload.new?.usuario_id === userId}`);
+						
+						// Verificar que es del chat correcto
+						if (payload.new?.chat_id === chatId) {
+							console.log(`✅ [REALTIME-BI] Mensaje del chat correcto, enviando a callback`);
+							
+							// IMPORTANTE: Enviar TODOS los mensajes al callback
+							// El filtrado se hace en el componente ChatVista
+							if (callbacks.onNuevoMensaje) {
+								callbacks.onNuevoMensaje(payload.new);
 							}
+						} else {
+							console.log(`⚠️ [REALTIME-BI] Mensaje de otro chat ignorado`);
 						}
 					}
 				)
-				.on(
-					'postgres_changes',
-					{
-						event: 'UPDATE',
-						schema: 'public',
-						table: 'mensajes',
-						filter: `chat_id=eq.${chatId}`
-					},
-					async (payload) => {
-						if (callbacks.onMensajeEditado && payload.new.editado) {
-							const { data: mensajeCompleto } = await supabase
-								.from('mensajes')
-								.select(`
-									*,
-									usuario:perfiles!mensajes_usuario_id_fkey(
-										nombre_completo,
-										url_foto_perfil,
-										nombre_usuario
-									)
-								`)
-								.eq('id', payload.new.id)
-								.single();
-
-							if (mensajeCompleto) {
-								callbacks.onMensajeEditado(mensajeCompleto);
-							}
-						}
-
-						if (callbacks.onMensajeEliminado && payload.new.eliminado) {
-							callbacks.onMensajeEliminado(payload.new.id);
-						}
+				// 6. MANEJAR estados de conexión
+				.subscribe((status: any) => {
+					console.log(`🔗 [REALTIME-BI] Estado para usuario ${userId}: ${status}`);
+					
+					switch (status) {
+						case 'SUBSCRIBED':
+							console.log(`✅ [REALTIME-BI] ¡${userId} CONECTADO Y ESCUCHANDO CHAT ${chatId}!`);
+							break;
+						case 'CHANNEL_ERROR':
+							console.error(`❌ [REALTIME-BI] Error en canal para usuario ${userId} en chat ${chatId}`);
+							break;
+						case 'TIMED_OUT':
+							console.warn(`⏱️ [REALTIME-BI] Timeout para ${userId} en chat ${chatId}, reintentando...`);
+							// Auto-reconectar en caso de timeout
+							setTimeout(() => this.suscribirseAChat(chatId, callbacks), 3000);
+							break;
+						case 'CLOSED':
+							console.log(`🔴 [REALTIME-BI] Canal cerrado para ${userId} en chat ${chatId}`);
+							break;
 					}
-				)
-				.on(
-					'postgres_changes',
-					{
-						event: '*',
-						schema: 'public',
-						table: 'mensajes_reacciones',
-						filter: `mensaje_id=in.(${chatId})`
-					},
-					async (payload) => {
-						if (callbacks.onReaccionCambiada) {
-							// Obtener todas las reacciones actualizadas del mensaje
-							const { data: reacciones } = await supabase
-								.from('mensajes_reacciones')
-								.select(`
-									*,
-									usuario:perfiles!mensajes_reacciones_usuario_id_fkey(
-										nombre_completo,
-										url_foto_perfil
-									)
-								`)
-								.eq('mensaje_id', payload.new?.mensaje_id || payload.old?.mensaje_id);
-
-							if (reacciones) {
-								callbacks.onReaccionCambiada(
-									payload.new?.mensaje_id || payload.old?.mensaje_id,
-									reacciones
-								);
-							}
-						}
+					
+					if (callbacks.onConexionCambiada) {
+						callbacks.onConexionCambiada(status);
 					}
-				);
+				});
 
-			// Suscribirse al canal
-			await channel.subscribe((status) => {
-				if (status === 'SUBSCRIBED') {
-					console.log(`✅ Suscrito al chat ${chatId}`);
-				}
-			});
-
-			// Guardar referencia del canal
+			// 7. GUARDAR referencia del canal
 			this.channels.set(chatId, channel);
-			
-			// Guardar callbacks
-			this.callbacks.set(chatId, Object.values(callbacks).filter(Boolean));
+			console.log(`💾 [REALTIME-BI] Canal bidireccional guardado para usuario ${userId} en chat ${chatId}`);
 
-		} catch (err) {
-			console.error('Error suscribiéndose al chat:', err);
+		} catch (error) {
+			console.error(`❌ [REALTIME-BI] Error crítico:`, error);
+			if (callbacks.onConexionCambiada) {
+				callbacks.onConexionCambiada('ERROR');
+			}
 		}
 	}
 
 	/**
-	 * 🔴 Desuscribirse de un chat
+	 * 🧹 LIMPIAR suscripción anterior
+	 */
+	private async limpiarSuscripcion(chatId: string): Promise<void> {
+		if (this.channels.has(chatId)) {
+			const oldChannel = this.channels.get(chatId);
+			console.log(`🧹 [REALTIME-BI] Limpiando canal anterior para chat ${chatId}`);
+			
+			try {
+				await oldChannel?.unsubscribe();
+				this.channels.delete(chatId);
+				console.log(`✅ [REALTIME-BI] Canal anterior limpiado correctamente`);
+			} catch (error) {
+				console.error(`❌ [REALTIME-BI] Error limpiando canal:`, error);
+			}
+		} else {
+			console.log(`🔍 [REALTIME-BI] No hay canal previo para limpiar en chat ${chatId}`);
+		}
+	}
+
+
+
+	/**
+	 * 🔴 Desuscribirse de un chat BIDIRECCIONAL
 	 */
 	async desuscribirseDeChat(chatId: string): Promise<void> {
 		try {
+			const { data: { user } } = await supabase.auth.getUser();
+			const userId = user?.id || 'unknown';
+			
+			console.log(`🔕 [REALTIME-BI] Usuario ${userId} desuscribiéndose del chat: ${chatId}`);
+			
 			const channel = this.channels.get(chatId);
 			if (channel) {
+				console.log(`📡 [REALTIME-BI] Canal encontrado, desconectando...`);
 				await channel.unsubscribe();
 				this.channels.delete(chatId);
-				this.callbacks.delete(chatId);
-				console.log(`🔕 Desuscrito del chat ${chatId}`);
+				console.log(`✅ [REALTIME-BI] Usuario ${userId} desconectado exitosamente del chat ${chatId}`);
+			} else {
+				console.log(`⚠️ [REALTIME-BI] No hay canal activo para chat ${chatId}`);
 			}
 		} catch (err) {
-			console.error('Error desuscribiéndose del chat:', err);
+			console.error(`❌ [REALTIME-BI] Error desuscribiendo del chat ${chatId}:`, err);
 		}
 	}
 
@@ -891,6 +882,48 @@ class MensajeriaService {
 		} catch (err) {
 			console.error('Error obteniendo estadísticas:', err);
 			return { estadisticas: null, error: 'Error inesperado' };
+		}
+	}
+
+	// ============================================
+	// ELIMINAR CHAT
+	// ============================================
+
+	async eliminarChat(chatId: string): Promise<{ exito: boolean; error: string | null }> {
+		try {
+			console.log('🗑️ [MENSAJERIA] Eliminando chat:', chatId);
+
+			// Obtener usuario actual
+			const { data: { user } } = await supabase.auth.getUser();
+			if (!user) {
+				return { exito: false, error: 'Usuario no autenticado' };
+			}
+
+			// Usar la función SQL que omite las políticas RLS
+			const { data, error } = await supabase.rpc('eliminar_chat_completo', {
+				p_chat_id: chatId,
+				p_usuario_id: user.id
+			});
+
+			if (error) {
+				console.error('❌ Error llamando función eliminar_chat_completo:', error);
+				return { exito: false, error: 'Error eliminando el chat: ' + error.message };
+			}
+
+			// La función devuelve JSON con el resultado
+			const resultado = data;
+			
+			if (resultado.exito) {
+				console.log('✅ Chat eliminado exitosamente:', resultado.mensaje);
+				return { exito: true, error: null };
+			} else {
+				console.error('❌ Error eliminando chat:', resultado.error);
+				return { exito: false, error: resultado.error };
+			}
+
+		} catch (err) {
+			console.error('❌ Error inesperado eliminando chat:', err);
+			return { exito: false, error: 'Error inesperado eliminando chat' };
 		}
 	}
 }
