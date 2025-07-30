@@ -1,5 +1,6 @@
 <script lang="ts">
   import FeedPublicaciones from '$lib/components/Comunidad/FeedPublicaciones.svelte';
+  import { supabase } from '$lib/supabase/clienteSupabase';
   
   export let data: any;
   
@@ -11,22 +12,31 @@
   let error = '';
   
   // Función para cargar publicaciones del usuario
-  async function cargarPublicacionesUsuario() {
-    if (!usuarioPublico?.id) {
-      error = 'No se pudo identificar al usuario';
-      cargando = false;
-      return;
-    }
+  async function cargarPublicaciones() {
     
     try {
       cargando = true;
       error = '';
       
-      // TODO: Implementar carga de publicaciones desde Supabase
-      // Por ahora simulamos datos vacíos
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simular carga
+      // Cargar publicaciones reales del usuario desde Supabase
+      const { data, error: errorSupabase } = await supabase
+        .from('comunidad_publicaciones')
+        .select(`
+          *,
+          perfiles(nombre_usuario, nombre, apellido, url_foto_perfil)
+        `)
+        .eq('usuario_id', usuarioPublico.id)
+        .not('tipo', 'in', '("foto_perfil","foto_portada")')
+        .order('fecha_creacion', { ascending: false })
+        .limit(20);
       
-      publicaciones = []; // Aquí irían las publicaciones reales
+      if (errorSupabase) {
+        console.error('Error cargando publicaciones:', errorSupabase);
+        error = 'Error al cargar las publicaciones';
+        return;
+      }
+      
+      publicaciones = data || [];
       
     } catch (err: any) {
       console.error('Error cargando publicaciones del usuario:', err);
@@ -38,7 +48,7 @@
   
   // Cargar publicaciones cuando el componente se monte o cambien los datos
   $: if (usuarioPublico?.id) {
-    cargarPublicacionesUsuario();
+    cargarPublicaciones();
   }
 </script>
 
@@ -65,7 +75,7 @@
       <div class="error-icono">⚠️</div>
       <h3>Error al cargar publicaciones</h3>
       <p>{error}</p>
-      <button on:click={cargarPublicacionesUsuario} class="btn-reintentar">
+      <button on:click={cargarPublicaciones} class="btn-reintentar">
         🔄 Reintentar
       </button>
     </div>

@@ -6,35 +6,51 @@
 export class UtilidadesCursor {
   
   /**
-   * Detecta si el dispositivo es táctil (móvil/tablet)
+   * Detecta si el dispositivo es táctil REAL (móvil/tablet)
+   * ✅ MEJORADO: Diferencia entre móvil real vs computador con ventana pequeña
    */
   static esDispositivoTactil(): boolean {
-    // Múltiples métodos de detección para máxima compatibilidad
+    // 🎯 DETECCIÓN INTELIGENTE MEJORADA
     
-    // 1. Media query CSS hover: none
+    // 1. ✅ PRIORIDAD MÁXIMA: User Agent (dispositivo real)
+    const userAgent = navigator.userAgent.toLowerCase();
+    const esDispositivoMovilReal = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    // 2. ✅ Detección de capacidades táctiles REALES
+    const tieneCapacidadTactil = 'ontouchstart' in window || 
+                                navigator.maxTouchPoints > 0 || 
+                                (navigator as any).msMaxTouchPoints > 0;
+    
+    // 3. ✅ Media queries más precisas
     const noTieneHover = window.matchMedia('(hover: none)').matches;
-    
-    // 2. Media query CSS pointer: coarse
     const pointerGrueso = window.matchMedia('(pointer: coarse)').matches;
     
-    // 3. Detección táctil nativa
-    const soportaToque = 'ontouchstart' in window || 
-                        navigator.maxTouchPoints > 0 || 
-                        (navigator as any).msMaxTouchPoints > 0;
+    // 4. ✅ NUEVA: Detección de mouse disponible
+    const tieneMouseDisponible = window.matchMedia('(any-hover: hover)').matches;
     
-    // 4. User Agent básico
-    const userAgent = navigator.userAgent.toLowerCase();
-    const esMovilUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    // 5. ✅ NUEVA: Tipo de dispositivo por resolución Y densidad de píxeles
+    const esPantallaMovilReal = window.innerWidth <= 768 && window.devicePixelRatio >= 2;
     
-    // 5. Resolución de pantalla pequeña
-    const pantallaPequena = window.innerWidth <= 768;
+    // 6. ✅ LÓGICA INTELIGENTE MEJORADA:
+    // Es móvil REAL solo si:
+    const esMovilReal = esDispositivoMovilReal || // User agent confirma móvil
+                       (noTieneHover && pointerGrueso && !tieneMouseDisponible) || // Sin capacidades de hover Y sin mouse
+                       (tieneCapacidadTactil && esPantallaMovilReal && !tieneMouseDisponible); // Táctil + pantalla móvil + sin mouse
     
-    // Es táctil si cumple múltiples condiciones
-    const esTactil = (noTieneHover && pointerGrueso) || 
-                     (soportaToque && pantallaPequena) || 
-                     esMovilUA;
+    // 🖱️ SI TIENE MOUSE DISPONIBLE → SIEMPRE mostrar cursor personalizado
+    if (tieneMouseDisponible) {
+      console.log('🖱️ Mouse detectado - Cursor personalizado ACTIVADO');
+      return false;
+    }
     
-    return esTactil;
+    // 📱 Log para debugging
+    if (esMovilReal) {
+      console.log('📱 Dispositivo móvil real detectado - Cursor personalizado DESACTIVADO');
+    } else {
+      console.log('💻 Computador detectado - Cursor personalizado ACTIVADO');
+    }
+    
+    return esMovilReal;
   }
 
   /**

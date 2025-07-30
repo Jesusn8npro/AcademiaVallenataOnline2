@@ -9,6 +9,8 @@
   export let leccionActiva: string;
   export let progreso: any = {};
   export let tipo: 'curso' | 'tutorial' = 'curso';
+  export let cerrarSidebarFuncion: (() => void) | null = null;
+  export let mostrarSidebar: boolean = true;
   
   // Estado
   let modulosExpandidos: Record<string, boolean> = {};
@@ -138,7 +140,41 @@
 <div class="curso-sidebar">
   <div class="sidebar-header">
     <h2>{curso.titulo}</h2>
-    <button class="cerrar-sidebar" on:click={() => dispatch('cerrar-sidebar')} aria-label="Cerrar menú del curso">
+    <button 
+      class="cerrar-sidebar" 
+      on:click|stopPropagation={() => {
+        console.log('🔥 [BOTON X] HACIENDO LO MISMO QUE CLIC AFUERA');
+        
+        // SIMULAR EL CLIC AFUERA QUE SÍ FUNCIONA
+        const overlay = document.querySelector('.sidebar-mobile-overlay') as HTMLElement;
+        if (overlay) {
+          overlay.click(); // ¡Simular el clic que SÍ funciona!
+        } else {
+          // Fallback: hacer lo que hace el clic afuera directamente
+          mostrarSidebar = false;
+          if (cerrarSidebarFuncion) {
+            cerrarSidebarFuncion();
+          }
+        }
+      }} 
+      on:touchstart|preventDefault|stopPropagation={() => {
+        console.log('🔥 [BOTON X] TOUCH - HACIENDO LO MISMO QUE CLIC AFUERA');
+        
+        // SIMULAR EL CLIC AFUERA QUE SÍ FUNCIONA
+        const overlay = document.querySelector('.sidebar-mobile-overlay') as HTMLElement;
+        if (overlay) {
+          overlay.click(); // ¡Simular el clic que SÍ funciona!
+        } else {
+          // Fallback: hacer lo que hace el clic afuera directamente
+          mostrarSidebar = false;
+          if (cerrarSidebarFuncion) {
+            cerrarSidebarFuncion();
+          }
+        }
+      }}
+      aria-label="Cerrar menú del curso"
+      type="button"
+    >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"/>
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -308,17 +344,39 @@
     border: none;
     color: #fff;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    width: 44px; /* Área más grande para móvil */
+    height: 44px; /* Área más grande para móvil */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease;
+    position: relative;
+    z-index: 999; /* Asegurar que esté por encima */
+    touch-action: manipulation; /* Mejorar respuesta táctil */
+    -webkit-tap-highlight-color: transparent; /* Quitar highlight azul en iOS */
+    flex-shrink: 0; /* No reducir tamaño */
   }
 
-  .cerrar-sidebar:hover {
+  .cerrar-sidebar:hover,
+  .cerrar-sidebar:active,
+  .cerrar-sidebar:focus {
     background-color: rgba(255, 255, 255, 0.1);
+    outline: none;
+  }
+
+  /* Estilos específicos para móvil */
+  @media (max-width: 768px) {
+    .cerrar-sidebar {
+      width: 48px; /* Aún más grande en móvil */
+      height: 48px;
+      background-color: rgba(0, 0, 0, 0.3); /* Fondo semi-transparente para mayor visibilidad */
+    }
+    
+    .cerrar-sidebar:active {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(0.95); /* Feedback visual al tocar */
+    }
   }
 
   /* Contenido del sidebar */

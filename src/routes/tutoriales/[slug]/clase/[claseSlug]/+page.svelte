@@ -66,7 +66,14 @@ function cambiarLeccion(event: any) {
     };
   });
   function toggleSidebar() {
+    console.log('🔧 [TUTORIAL] Cerrando sidebar móvil');
     mostrarSidebar = !mostrarSidebar;
+  }
+
+  // Función específica para cerrar (desde el botón X)
+  function cerrarSidebar() {
+    console.log('❌ [TUTORIAL] Cerrando sidebar desde botón X');
+    mostrarSidebar = false;
   }
 
   // Store reactivo para el progreso general (por lección)
@@ -244,6 +251,29 @@ function cambiarLeccion(event: any) {
     />
 
   </div>
+  <!-- OVERLAY móvil que FUNCIONA (igual que EncabezadoLeccion) -->
+  {#if mostrarSidebar}
+    <div class="sidebar-mobile-overlay" on:click={() => mostrarSidebar = false}>
+      <div class="sidebar-mobile-panel" on:click|stopPropagation>
+        <BarraLateralCurso
+          curso={{
+            ...tutorial,
+            clases_tutorial: data.clases
+          }}
+          moduloActivo={''}
+          leccionActiva={clase?.id}
+          progreso={$progresoLecciones}
+          on:cambiar-leccion={cambiarLeccion}
+          on:cerrar-sidebar={cerrarSidebar}
+          cerrarSidebarFuncion={cerrarSidebar}
+          bind:mostrarSidebar
+          tipo="tutorial"
+        />
+      </div>
+    </div>
+  {/if}
+  
+  <!-- SIDEBAR original (mantener para desktop) -->
   <div class="leccion-sidebar" class:visible={mostrarSidebar}>
     <BarraLateralCurso
       curso={{
@@ -254,7 +284,9 @@ function cambiarLeccion(event: any) {
       leccionActiva={clase?.id}
       progreso={$progresoLecciones}
       on:cambiar-leccion={cambiarLeccion}
-      on:cerrar-sidebar={toggleSidebar}
+      on:cerrar-sidebar={cerrarSidebar}
+      cerrarSidebarFuncion={cerrarSidebar}
+      bind:mostrarSidebar
       tipo="tutorial"
     />
   </div>
@@ -264,8 +296,24 @@ function cambiarLeccion(event: any) {
   .contenido-container {
     display: flex;
     flex: 1;
-    min-height: 0;
     background: #f4f6fa;
+  }
+  
+  /* ✅ MÓVILES: Layout fijo estilo Platzi */
+  @media (max-width: 900px) {
+    .contenido-container {
+      height: 100vh; /* FORZAR altura fija de viewport */
+      max-height: 100vh; /* NO puede ser más alto */
+      overflow: hidden; /* SIN SCROLL en el contenedor principal */
+    }
+  }
+  
+  /* ✅ ESCRITORIO: Layout con scroll natural */
+  @media (min-width: 901px) {
+    .contenido-container {
+      min-height: 100vh; /* MÍNIMO una pantalla, pero puede crecer */
+      overflow: visible; /* PERMITIR SCROLL NATURAL */
+    }
   }
   .contenido-principal {
     flex: 1;
@@ -276,6 +324,30 @@ function cambiarLeccion(event: any) {
     background-color: #1a1a1a !important;
     color: #fff;
   }
+  
+  /* ✅ MÓVILES: Contenido principal fijo */
+  @media (max-width: 900px) {
+    .contenido-principal {
+      height: 100vh; /* ALTURA FIJA = tamaño de pantalla */
+      max-height: 100vh; /* NO puede crecer más */
+      overflow: hidden; /* SIN SCROLL aquí */
+    }
+  }
+  
+  /* ✅ ESCRITORIO: Contenido principal con scroll */
+  @media (min-width: 901px) {
+    .contenido-principal {
+      min-height: 100vh; /* MÍNIMO una pantalla */
+      overflow: visible; /* PERMITIR SCROLL */
+    }
+  }
+
+  /* NUEVO: Asegurar que el video player no se encoja */
+  .contenido-principal :global(.reproductor-container),
+  .contenido-principal :global(.reproductor-lecciones) {
+    flex-shrink: 0; /* CLAVE: Video siempre visible, no se encoge */
+  }
+
   .leccion-sidebar {
     display: none;
     width: 0;
@@ -312,6 +384,110 @@ function cambiarLeccion(event: any) {
         width: 85%;
         max-width: 320px;
     }
+}
+
+/* NUEVO: Estilos específicos para el botón X en móvil */
+@media (max-width: 768px) {
+    .leccion-sidebar.visible {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        z-index: 9999 !important; /* Z-index muy alto para móvil */
+        background: #181818 !important;
+        overflow-y: auto !important; /* Permitir scroll interno */
+    }
+    
+    /* Asegurar que el contenido del sidebar esté bien posicionado */
+    .leccion-sidebar.visible :global(.sidebar-header) {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10000 !important; /* Aún más alto para el header */
+        background: linear-gradient(135deg, #1e40af, #7c3aed) !important;
+    }
+    
+    /* Botón X específico para móvil */
+    .leccion-sidebar.visible :global(.cerrar-sidebar) {
+        width: 50px !important;
+        height: 50px !important;
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        border: 2px solid rgba(255, 255, 255, 0.5) !important;
+        position: relative !important;
+        z-index: 10001 !important; /* El más alto de todos */
+        font-size: 20px !important;
+    }
+    
+    .leccion-sidebar.visible :global(.cerrar-sidebar):active {
+        background-color: rgba(255, 0, 0, 0.3) !important;
+        transform: scale(0.9) !important;
+    }
+}
+
+/* ESTILOS DEL OVERLAY MÓVIL (copiados del que SÍ FUNCIONA) */
+.sidebar-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sidebar-mobile-panel {
+  width: 90%;
+  max-width: 400px;
+  height: 100vh;
+  background: #1a1a1a;
+  overflow-y: auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 769px) {
+  .sidebar-mobile-overlay {
+    display: none;
+  }
+}
+
+/* ✅ SCROLL CONTROLADO: Solo bloquear en móviles, permitir en escritorio */
+@media (max-width: 900px) {
+  :global(body) {
+    overflow: hidden !important; /* SIN SCROLL en móviles */
+    height: 100vh !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+
+  :global(html) {
+    overflow: hidden !important; /* SIN SCROLL en HTML móviles */
+    height: 100vh !important;
+  }
+}
+
+/* ✅ ESCRITORIO: Scroll normal y funcional */
+@media (min-width: 901px) {
+  :global(body) {
+    overflow: auto !important;
+    height: auto !important;
+    position: relative !important;
+  }
+
+  :global(html) {
+    overflow: auto !important;
+    height: auto !important;
+  }
+}
+
+/* El scroll SOLO en las pestañas */
+:global(.tab-content) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 </style>

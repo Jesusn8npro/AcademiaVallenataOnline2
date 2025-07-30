@@ -120,22 +120,28 @@
         return;
       }
 
-      // TEMPORALMENTE DESHABILITADO: Verificar si el usuario está inscrito
-      // TODO: Implementar lógica de acceso más granular (gratuito vs premium)
-      
-      /* 
-      const { data: inscripcionTutorial } = await supabase
-        .from('inscripciones')
-        .select('*')
-        .eq('usuario_id', $usuario!.id)
-        .eq('tutorial_id', tutorialData.id)
-        .single();
-
-      if (!inscripcionTutorial) {
-        error = 'No tienes acceso a este tutorial o no estás inscrito.';
+      // Verificar acceso al tutorial
+      if (tutorialData.es_premium && !$usuario?.es_premium) {
+        // Tutorial premium pero usuario no premium
+        await goto('/membresias?upgrade=tutorial_premium');
         return;
       }
-      */
+
+      // Verificar si el usuario está inscrito (para tutoriales que lo requieran)
+      if (tutorialData.requiere_inscripcion) {
+        const { data: inscripcionTutorial } = await supabase
+          .from('inscripciones')
+          .select('*')
+          .eq('usuario_id', $usuario!.id)
+          .eq('tutorial_id', tutorialData.id)
+          .single();
+          
+        if (!inscripcionTutorial) {
+          // Usuario no inscrito, redirigir a inscripción
+          await goto(`/tutoriales/${tutorialData.slug}?inscribirse=true`);
+          return;
+        }
+      }
 
       tutorial = { ...tutorialData, partes };
       await cargarInscripcion();

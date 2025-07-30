@@ -151,7 +151,7 @@
     <div class="menu-container">
       {#each menuItems as item}
         <button 
-          class="menu-item" 
+          class="menu-item cursor-hover" 
           class:activo={esRutaActiva(item.ruta)}
           on:click={() => navegarA(item.ruta)}
           aria-label={item.texto}
@@ -173,23 +173,23 @@
 
 <style>
   .menu-inferior-responsivo {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid #e2e8f0;
-    z-index: 1000;
-    padding: 0;
-    display: none; /* Oculto por defecto */
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    z-index: 999999 !important;
+    padding: 0 !important;
+    display: none !important; /* Oculto por defecto */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
   }
 
   /* Mostrar solo en pantallas móviles */
   @media (max-width: 900px) {
     .menu-inferior-responsivo {
-      display: block;
+      display: block !important;
     }
   }
 
@@ -356,10 +356,23 @@
     }
   }
 
-  /* Ajuste para evitar que el contenido se oculte detrás del menú */
+  /* ✅ PADDING EFECTIVO para evitar que el contenido se oculte detrás del menú */
   @media (max-width: 900px) {
     :global(body) {
-      padding-bottom: 80px;
+      padding-bottom: 130px !important;
+    }
+    
+    /* Asegurar padding en containers principales */
+    :global(.pantalla-completa),
+    :global(.main-content),
+    :global(main),
+    :global(.contenido-principal) {
+      padding-bottom: 110px !important;
+    }
+    
+    /* Específico para páginas de clases y lecciones */
+    :global(.pantalla-completa) {
+      min-height: calc(100vh - 110px) !important;
     }
   }
 </style> 

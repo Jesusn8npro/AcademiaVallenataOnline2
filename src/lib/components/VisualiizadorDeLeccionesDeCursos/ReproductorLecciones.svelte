@@ -66,7 +66,8 @@
       }
       
       if (videoId) {
-        const youtubeUrl = `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0&modestbranding=1&iv_load_policy=3`;
+        // URL mejorada con parámetros optimizados
+        const youtubeUrl = `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&showinfo=0&modestbranding=1&iv_load_policy=3&controls=1&enablejsapi=1&origin=${window.location.origin}`;
         console.log('✅ [REPRODUCTOR] URL de YouTube procesada:', youtubeUrl);
         tieneError = false;
         return youtubeUrl;
@@ -77,44 +78,52 @@
       }
     }
     
-    // Si es Bunny.net
-    if (url.includes('iframe.mediadelivery.net') || url.includes('bunnycdn.com')) {
-      console.log('🐰 [REPRODUCTOR] URL de Bunny.net detectada');
+    // Si es Bunny.net - ARREGLO CRÍTICO
+    if (url.includes('iframe.mediadelivery.net') || url.includes('bunnycdn.com') || url.includes('mediadelivery.net')) {
+      console.log('🐰 [REPRODUCTOR] URL de Bunny.net detectada:', url);
       esYouTube = false;
       esBunny = true;
       
-      // Extraer libraryId y videoId
-      const bunnyPattern = /iframe\.mediadelivery\.net\/embed\/([0-9]+)\/([a-zA-Z0-9-]+)/;
-      const match = url.match(bunnyPattern);
-      if (match) {
-        libraryId = match[1];
-        videoId = match[2];
-        console.log('🐰 [REPRODUCTOR] IDs de Bunny extraídos:', { libraryId, videoId });
+      // Extraer libraryId y videoId con patrones MEJORADOS para /play/ y /embed/
+      const bunnyPatterns = [
+        /iframe\.mediadelivery\.net\/(?:play|embed)\/([0-9]+)\/([a-zA-Z0-9-]+)/,
+        /mediadelivery\.net\/(?:play|embed)\/([0-9]+)\/([a-zA-Z0-9-]+)/,
+        /bunnycdn\.com\/.*\/([0-9]+)\/([a-zA-Z0-9-]+)/
+      ];
+      
+      let match = null;
+      for (const pattern of bunnyPatterns) {
+        match = url.match(pattern);
+        if (match) {
+          libraryId = match[1];
+          videoId = match[2];
+          console.log('🐰 [REPRODUCTOR] IDs de Bunny extraídos:', { libraryId, videoId });
+          break;
+        }
       }
       
-      // Asegurarse de que la URL use /embed/ en lugar de /play/
-      if (url.includes('/play/')) {
-        url = url.replace('/play/', '/embed/');
+      // Si no se encontraron IDs, intentar extraer de manera más agresiva
+      if (!libraryId || !videoId) {
+        const generalPattern = /\/([0-9]+)\/([a-zA-Z0-9-]+)/;
+        const generalMatch = url.match(generalPattern);
+        if (generalMatch) {
+          libraryId = generalMatch[1];
+          videoId = generalMatch[2];
+          console.log('🔄 [REPRODUCTOR] IDs extraídos con patrón general:', { libraryId, videoId });
+        }
       }
       
-      try {
-        // Agregar o actualizar parámetros para optimizar la carga
-        const urlObj = new URL(url);
-        urlObj.searchParams.set('autoplay', 'false');
-        urlObj.searchParams.set('preload', 'true');
-        urlObj.searchParams.set('responsive', 'true');
-        urlObj.searchParams.set('muted', 'false');
-        urlObj.searchParams.set('quality', 'auto');
-        urlObj.searchParams.set('loading', 'eager');
-        
-        const bunnyUrl = urlObj.toString();
-        console.log('✅ [REPRODUCTOR] URL de Bunny.net procesada:', bunnyUrl);
+      // CRÍTICO: Construir URL correcta para iframe
+      if (libraryId && videoId) {
+        // Siempre usar el formato /embed/ para iframes
+        const bunnyUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?autoplay=0&controls=1&responsive=1`;
+        console.log('✅ [REPRODUCTOR] URL de Bunny.net construida:', bunnyUrl);
         tieneError = false;
         return bunnyUrl;
-      } catch (error) {
-        console.error('❌ [REPRODUCTOR] Error procesando URL de Bunny:', error);
+      } else {
+        console.error('❌ [REPRODUCTOR] No se pudieron extraer los IDs de Bunny.net');
         tieneError = true;
-        return url; // Devolver URL original como fallback
+        return '';
       }
     }
     
@@ -126,33 +135,76 @@
     return url;
   }
 
+  // Reactividad mejorada
+  $: {
+    console.log('🔄 [REPRODUCTOR] Cambio detectado en videoUrl:', videoUrl);
+    if (videoUrl) {
+      // Resetear estados
+      tieneError = false;
+      cargando = true;
+      
+      urlVideoLimpia = limpiarUrlVideo(videoUrl);
+      detectarTipoVideo(videoUrl);
+      
+      console.log('🔍 [REPRODUCTOR] Tipo detectado:', { esYouTube, esBunny, esEmbed });
+    }
+  }
+
   $: urlProcesada = procesarUrl(videoUrl);
 
-  // Funciones de utilidad
+  // MEJORADO: Funciones de utilidad para limpiar URLs
   function limpiarUrlVideo(url: string): string {
     if (!url) return '';
     
-    console.log('🔍 Procesando URL:', url);
+    console.log('🔍 [LIMPIEZA] Procesando URL:', url);
     
-    // Detectar si es una URL de Bunny.net
-    if (url.includes('iframe.mediadelivery.net') || url.includes('video.bunnycdn.com')) {
-      console.log('🐰 Detectada URL de Bunny.net');
+    // Detectar si es una URL de Bunny.net - SINCRONIZADO CON procesarUrl
+    if (url.includes('iframe.mediadelivery.net') || url.includes('video.bunnycdn.com') || url.includes('mediadelivery.net')) {
+      console.log('🐰 [LIMPIEZA] Detectada URL de Bunny.net:', url);
       esBunny = true;
       esYouTube = false;
       esEmbed = false;
 
-      // Extraer library ID y video ID
-      const matches = url.match(/\/embed\/([^\/]+)\/([^\/\?]+)/);
-      if (matches) {
-        libraryId = matches[1];
-        videoId = matches[2];
-        console.log('📊 IDs extraídos:', { libraryId, videoId });
+      // Usar los mismos patrones que procesarUrl para consistencia
+      const bunnyPatterns = [
+        /iframe\.mediadelivery\.net\/(?:play|embed)\/([0-9]+)\/([a-zA-Z0-9-]+)/,
+        /mediadelivery\.net\/(?:play|embed)\/([0-9]+)\/([a-zA-Z0-9-]+)/,
+        /bunnycdn\.com\/.*\/([0-9]+)\/([a-zA-Z0-9-]+)/
+      ];
+      
+      for (const pattern of bunnyPatterns) {
+        const matches = url.match(pattern);
+        if (matches) {
+          libraryId = matches[1];
+          videoId = matches[2];
+          console.log('📊 [LIMPIEZA] IDs extraídos:', { libraryId, videoId });
+          break;
+        }
       }
 
+      // Fallback: patrón general
+      if (!libraryId || !videoId) {
+        const generalPattern = /\/([0-9]+)\/([a-zA-Z0-9-]+)/;
+        const generalMatch = url.match(generalPattern);
+        if (generalMatch) {
+          libraryId = generalMatch[1];
+          videoId = generalMatch[2];
+          console.log('🔄 [LIMPIEZA] IDs extraídos con patrón general:', { libraryId, videoId });
+        }
+      }
+
+      // Construir URL correcta para iframe
+      if (libraryId && videoId) {
+        const cleanUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?autoplay=0&controls=1&responsive=1`;
+        console.log('✅ [LIMPIEZA] URL de Bunny normalizada:', cleanUrl);
+        return cleanUrl;
+      }
+
+      console.warn('⚠️ [LIMPIEZA] No se pudieron extraer IDs, devolviendo URL original');
       return url;
     }
 
-    // Detectar YouTube
+    // Detectar YouTube (sin cambios, ya funciona)
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       esYouTube = true;
       esBunny = false;
@@ -176,95 +228,64 @@
       return `https://www.youtube.com/embed/${idYouTube}?autoplay=1&rel=0`;
     }
 
+    console.log('🎬 [LIMPIEZA] URL directa detectada');
     return url;
   }
 
+  // SIMPLIFICADO: Para Bunny.net usar iframe directo es más confiable
   function inicializarBunnyPlayer() {
-    if (!videoId || !libraryId) {
-      console.error('❌ No se encontraron los IDs necesarios');
-      tieneError = true;
-      return;
-    }
-    
-    // @ts-ignore
-    if (window.BunnyPlayer) {
-      console.log('🎬 Inicializando Bunny Player:', { videoId, libraryId });
-      try {
-        // @ts-ignore
-        new window.BunnyPlayer({
-          videoId,
-          libraryId,
-          container: document.getElementById('bunny-player-container'),
-          autoplay: true,
-          preload: true,
-          loop: false,
-          muted: false,
-          title: titulo,
-          enabledViews: true,
-          enabledControls: true,
-          loadingStyle: 'center'
-        });
-        cargando = false;
-      } catch (error) {
-        console.error('❌ Error al inicializar BunnyPlayer:', error);
-        tieneError = true;
-      }
-    } else {
-      console.error('❌ BunnyPlayer no está disponible');
-      tieneError = true;
-    }
+    console.log('🐰 [BUNNY] Inicializando reproductor Bunny mediante iframe');
+    // El iframe se maneja automáticamente, no necesitamos el script player
+    cargando = false;
+    tieneError = false;
   }
 
-  // Cargar el script de Bunny.net
+  // MEJORADO: Cargar el script de Bunny.net con fallback a iframe directo
   function cargarScriptBunny() {
-    if (document.getElementById('bunny-player-script')) {
-      inicializarBunnyPlayer();
+    console.log('🐰 [BUNNY] Intentando cargar reproductor de Bunny.net');
+    
+    // Para Bunny.net, usar iframe directo es más confiable que el script player
+    if (esBunny) {
+      console.log('🐰 [BUNNY] Usando iframe directo para Bunny.net');
+      cargando = false;
+      tieneError = false;
       return;
     }
-
-    const script = document.createElement('script');
-    script.id = 'bunny-player-script';
-    script.src = 'https://iframe.mediadelivery.net/embed/player.js';
-    script.async = true;
-    script.onload = () => {
-      console.log('✅ Script de Bunny cargado');
-      inicializarBunnyPlayer();
-    };
-    script.onerror = (error) => {
-      console.error('❌ Error al cargar el script de Bunny:', error);
-      tieneError = true;
-    };
-    document.body.appendChild(script);
   }
 
   // Reactividad
-  $: {
-    urlVideoLimpia = limpiarUrlVideo(videoUrl);
-    if (esBunny) {
-      cargarScriptBunny();
-    }
-  }
-
   onMount(() => {
-    if (esBunny) {
-      cargarScriptBunny();
-    }
+    console.log('🔄 [REPRODUCTOR] Componente montado');
+    // Ya no necesitamos cargar script para Bunny, usamos iframe directo
   });
 
   function reintentar() {
     console.log('🔄 Reintentando cargar el video...');
+    console.log('📺 URL a reintentar:', videoUrl);
     tieneError = false;
     cargando = true;
     
-    if (esBunny) {
-      inicializarBunnyPlayer();
-    } else if (elementoIframe) {
-      const urlActual = elementoIframe.src;
-      elementoIframe.src = '';
-      setTimeout(() => {
-        elementoIframe.src = urlActual;
-      }, 100);
-    }
+    // Reprocesar completamente
+    esYouTube = false;
+    esBunny = false;
+    esEmbed = false;
+    libraryId = '';
+    videoId = '';
+    idYouTube = '';
+    
+    // Detectar tipo de nuevo
+    detectarTipoVideo(videoUrl);
+    urlVideoLimpia = limpiarUrlVideo(videoUrl);
+    
+    console.log('🔄 [REINTENTAR] Nuevos valores:', { 
+      esYouTube, 
+      esBunny, 
+      libraryId, 
+      videoId, 
+      urlVideoLimpia: urlVideoLimpia.substring(0, 100) + '...' 
+    });
+    
+    console.log('✅ Reinicio completo del reproductor');
   }
 
   function alCargarIframe() {
@@ -306,12 +327,22 @@
       return;
     }
 
-    // Detectar Bunny.net
+    // Detectar Bunny.net - MEJORADO
     if (url.includes('iframe.mediadelivery.net') || url.includes('bunnycdn.com') || url.includes('mediadelivery.net')) {
       esBunny = true;
       esYouTube = false;
       esEmbed = true;
-      console.log('✅ Bunny.net detectado');
+      console.log('✅ [DETECTOR] Bunny.net detectado');
+      
+      // Extraer IDs para debugging
+      const bunnyPattern = /(?:iframe\.)?mediadelivery\.net\/embed\/([0-9]+)\/([a-zA-Z0-9-]+)/;
+      const match = url.match(bunnyPattern);
+      if (match) {
+        libraryId = match[1];
+        videoId = match[2];
+        console.log('📊 [DETECTOR] IDs de Bunny detectados:', { libraryId, videoId });
+      }
+      
       return;
     }
 
@@ -404,6 +435,11 @@
               Hubo un problema al cargar el video. Por favor, inténtalo más tarde.
             {/if}
           </p>
+          {#if videoUrl}
+            <button class="btn-reintentar" on:click={reintentar}>
+              🔄 Reintentar carga
+            </button>
+          {/if}
           <div class="debug-info">
             <details>
               <summary>Información de depuración</summary>
@@ -412,6 +448,9 @@ URL original: {videoUrl || 'No proporcionada'}
 URL procesada: {urlProcesada || 'No procesada'}
 YouTube: {esYouTube}
 Bunny: {esBunny}
+Library ID: {libraryId || 'No detectado'}
+Video ID: {videoId || 'No detectado'}
+YouTube ID: {idYouTube || 'No detectado'}
               </pre>
             </details>
           </div>
@@ -422,18 +461,23 @@ Bunny: {esBunny}
         title={titulo}
         src={urlProcesada}
         class="video-frame"
-        allow="accelerometer;gyroscope;encrypted-media;picture-in-picture;"
-        allowfullscreen={true}
-        referrerpolicy="no-referrer-when-downgrade"
-        sandbox="allow-scripts allow-same-origin allow-presentation"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+        allowfullscreen
+        frameborder="0"
+        referrerpolicy={esBunny ? "no-referrer-when-downgrade" : "strict-origin-when-cross-origin"}
         loading="eager"
         on:load={() => {
           console.log('✅ [REPRODUCTOR] Video iframe cargado exitosamente');
+          console.log('📺 Tipo:', { esYouTube, esBunny });
+          console.log('📺 URL cargada:', urlProcesada);
           cargando = false;
           tieneError = false;
         }}
-        on:error={() => {
+        on:error={(event) => {
           console.error('❌ [REPRODUCTOR] Error cargando iframe');
+          console.error('📺 Tipo que falló:', { esYouTube, esBunny });
+          console.error('📺 URL que falló:', urlProcesada);
+          console.error('📺 Error details:', event);
           tieneError = true;
           cargando = false;
         }}
@@ -599,6 +643,23 @@ Bunny: {esBunny}
     color: #aaa;
     text-align: left;
     white-space: pre-wrap;
+  }
+
+  .btn-reintentar {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+  }
+
+  .btn-reintentar:hover {
+    background: #43A047;
+    transform: translateY(-2px);
   }
 
   .spinner {

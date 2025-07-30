@@ -30,7 +30,22 @@ export class GestorEfectosCursor {
       '.boton',
       '.btn',
       '.enlace',
-      '.link'
+      '.link',
+      // ✅ MENÚ INFERIOR RESPONSIVO
+      '.menu-item',
+      '.menu-container button',
+      // ✅ VISUALIZADOR DE CURSOS
+      '.leccion-item',
+      '.modulo-header',
+      '.tab-btn',
+      '.cerrar-sidebar',
+      // ✅ ELEMENTOS ESPECÍFICOS DE LA ACADEMIA
+      '.tarjeta-curso',
+      '.tarjeta-tutorial',
+      '.tarjeta-evento',
+      '.pestana',
+      '.tab',
+      '.acceso-rapido'
     ].join(', '),
     
     texto: [
@@ -57,7 +72,13 @@ export class GestorEfectosCursor {
       '.cursor-pointer',
       '.cursor-grab',
       '.efecto-magnetico',
-      '.hover-especial'
+      '.hover-especial',
+      // ✅ CLASES ESPECIALES ACADEMIA VALLENATA
+      '.menu-item',
+      '.leccion-item',
+      '.modulo-header',
+      '.tab-btn',
+      '.boton-hover-especial'
     ].join(', ')
   };
 

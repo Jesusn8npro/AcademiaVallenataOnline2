@@ -36,10 +36,28 @@
   onMount(async () => {
     if (!browser) return;
 
-    // Verificar si es dispositivo móvil/táctil
-    if (UtilidadesCursor.esDispositivoTactil()) {
-      console.log('🖱️ Cursor personalizado deshabilitado en dispositivo táctil');
+    // ✅ DETECCIÓN INTELIGENTE: Verificar si es dispositivo móvil/táctil REAL
+    const esDispositivoTactilReal = UtilidadesCursor.esDispositivoTactil();
+    
+    // 🔧 MODO DESARROLLO: Forzar cursor si estamos en localhost o dev
+    const esModoDesarrollo = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.hostname.includes('dev');
+    
+    if (esDispositivoTactilReal && !esModoDesarrollo) {
+      console.log('🖱️ Cursor personalizado deshabilitado en dispositivo táctil real');
       return;
+    }
+    
+    if (esModoDesarrollo && esDispositivoTactilReal) {
+      console.log('🔧 MODO DESARROLLO: Forzando cursor personalizado para pruebas');
+    }
+    
+    // ✅ MODO PRUEBAS: Cursor más visible en pantallas pequeñas con mouse
+    const esPantallaPequenaConMouse = window.innerWidth <= 768 && window.matchMedia('(any-hover: hover)').matches;
+    if (esPantallaPequenaConMouse) {
+      console.log('🔍 MODO PRUEBAS: Cursor optimizado para pantalla pequeña con mouse');
+      document.documentElement.style.setProperty('--cursor-test-mode', 'active');
     }
 
     // Inicializar gestor de efectos
@@ -126,9 +144,12 @@
       const elementoPrincipal = encontrarElementoInteractivoPadre(elemento);
       
       if (elementoPrincipal) {
+        // Obtener tipo de sonido específico según el elemento
+        const tipoSonido = obtenerTipoSonidoElemento(elementoPrincipal);
+        
         // Solo reproducir sonido si es un botón nuevo que no ha sonado en esta sesión
         if (!elementosYaSonaron.has(elementoPrincipal)) {
-          audioManager.reproducirEfectoUI(TipoEfectoUI.HOVER_SUTIL);
+          audioManager.reproducirEfectoUI(tipoSonido);
           elementosYaSonaron.add(elementoPrincipal);
         }
         elementoActualHover = elementoPrincipal;
@@ -136,12 +157,55 @@
     } else if (!entrando && elementoActualHover) {
       // Verificar si realmente salimos del elemento principal
       const elementoSalida = elemento;
-      if (elementoSalida && !elementoActualHover.contains(elementoSalida)) {
-        // Ya no estamos en el botón principal, resetear para que pueda sonar de nuevo
-        elementosYaSonaron.delete(elementoActualHover);
+      if (elementoSalida && elementoActualHover && !elementoActualHover.contains(elementoSalida)) {
+        // Para elementos de menú, permitir sonido más frecuentemente
+        if (elementoActualHover && elementoActualHover.classList.contains('menu-item')) {
+          setTimeout(() => {
+            if (elementoActualHover) {
+              elementosYaSonaron.delete(elementoActualHover);
+            }
+          }, 1000); // 1 segundo para menú
+        } else {
+          // Ya no estamos en el botón principal, resetear para que pueda sonar de nuevo
+          elementosYaSonaron.delete(elementoActualHover);
+        }
         elementoActualHover = null;
       }
     }
+  }
+
+  // Función para determinar el tipo de sonido según el elemento
+  function obtenerTipoSonidoElemento(elemento: HTMLElement): TipoEfectoUI {
+    // Menú inferior responsivo - sonido específico de navegación
+    if (elemento.classList.contains('menu-item')) {
+      return TipoEfectoUI.HOVER_NAVEGACION;
+    }
+    
+    // Elementos de curso/tutorial - sonidos más sutiles
+    if (elemento.classList.contains('leccion-item')) {
+      return TipoEfectoUI.SLIDE_1; // Usar slide para elementos de curso
+    }
+    
+    if (elemento.classList.contains('modulo-header')) {
+      return TipoEfectoUI.SLIDE_2; // Usar slide para módulos
+    }
+    
+    if (elemento.classList.contains('tab-btn')) {
+      return TipoEfectoUI.POP; // Usar pop para tabs
+    }
+    
+    // Botones generales
+    if (elemento.tagName === 'BUTTON' || elemento.classList.contains('btn') || elemento.classList.contains('boton')) {
+      return TipoEfectoUI.HOVER_SUTIL;
+    }
+    
+    // Enlaces
+    if (elemento.tagName === 'A' || elemento.classList.contains('enlace')) {
+      return TipoEfectoUI.HOVER_NAVEGACION;
+    }
+    
+    // Por defecto - hover sutil
+    return TipoEfectoUI.HOVER_SUTIL;
   }
 
   // Función para encontrar el elemento interactivo padre más cercano
@@ -158,7 +222,15 @@
         elementoActual.classList.contains('btn') ||
         elementoActual.classList.contains('enlace') ||
         elementoActual.classList.contains('clickeable') ||
-        elementoActual.hasAttribute('tabindex')
+        elementoActual.hasAttribute('tabindex') ||
+        // ✅ ELEMENTOS ESPECÍFICOS DE LA ACADEMIA
+        elementoActual.classList.contains('menu-item') ||
+        elementoActual.classList.contains('leccion-item') ||
+        elementoActual.classList.contains('modulo-header') ||
+        elementoActual.classList.contains('tab-btn') ||
+        elementoActual.classList.contains('tarjeta-curso') ||
+        elementoActual.classList.contains('tarjeta-tutorial') ||
+        elementoActual.classList.contains('cerrar-sidebar')
       ) {
         return elementoActual;
       }
@@ -176,8 +248,16 @@
     // Efecto visual de ripple
     mostrarRipple = true;
     
-    // Sonido de clic según el tipo de elemento
-    if (elemento?.tagName === 'BUTTON' || elemento?.classList.contains('boton')) {
+    // Sonido de clic según el tipo de elemento con más especificidad
+    if (elemento?.classList.contains('menu-item')) {
+      audioManager.reproducirEfectoUI(TipoEfectoUI.CLICK_BOTON);
+    } else if (elemento?.classList.contains('leccion-item')) {
+      audioManager.reproducirEfectoUI(TipoEfectoUI.POWER);
+    } else if (elemento?.classList.contains('tab-btn')) {
+      audioManager.reproducirEfectoUI(TipoEfectoUI.POP);
+    } else if (elemento?.classList.contains('modulo-header')) {
+      audioManager.reproducirEfectoUI(TipoEfectoUI.SLIDE_1);
+    } else if (elemento?.tagName === 'BUTTON' || elemento?.classList.contains('boton')) {
       audioManager.reproducirEfectoUI(TipoEfectoUI.CLICK_BOTON);
     } else if (elemento?.tagName === 'A' || elemento?.classList.contains('enlace')) {
       audioManager.reproducirEfectoUI(TipoEfectoUI.HOVER_NAVEGACION);
@@ -391,12 +471,63 @@
     }
   }
 
-  /* Optimizaciones para móvil - Ocultar completamente */
-  @media (max-width: 768px), (hover: none) {
+  /* ✅ OPTIMIZADO: Solo ocultar en móviles REALES sin mouse */
+  @media (max-width: 768px) and (hover: none) and (pointer: coarse) {
     .cursor-punto-central,
     .cursor-anillo-externo,
     .cursor-ripple {
       display: none !important;
+    }
+  }
+  
+     /* ✅ PANTALLAS PEQUEÑAS CON MOUSE: Cursor más visible para pruebas */
+  @media (max-width: 768px) and (any-hover: hover) {
+    .cursor-punto-central {
+      width: 10px !important;
+      height: 10px !important;
+      background: var(--color-accent, #FF6B35) !important;
+      box-shadow: 
+        0 0 20px currentColor,
+        0 0 40px rgba(var(--color-accent-rgb), 0.8),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.6) !important;
+      animation: cursor-pulse-enhanced 2s ease-in-out infinite !important;
+    }
+    
+    .cursor-anillo-externo {
+      width: 40px !important;
+      height: 40px !important;
+      border: 3px solid var(--color-accent, #FF6B35) !important;
+      box-shadow: 
+        0 0 30px rgba(var(--color-accent-rgb), 0.8),
+        0 0 60px rgba(var(--color-accent-rgb), 0.4) !important;
+    }
+  }
+  
+  /* ✅ MODO PRUEBAS ACTIVADO: Cursor súper visible */
+  :root[style*="--cursor-test-mode: active"] .cursor-punto-central {
+    background: #00FF88 !important;
+    box-shadow: 
+      0 0 25px #00FF88,
+      0 0 50px rgba(0, 255, 136, 0.6),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.8) !important;
+  }
+  
+  :root[style*="--cursor-test-mode: active"] .cursor-anillo-externo {
+    border-color: #00FF88 !important;
+    box-shadow: 
+      0 0 35px rgba(0, 255, 136, 0.8),
+      0 0 70px rgba(0, 255, 136, 0.4) !important;
+  }
+  
+  /* Animación mejorada para modo pruebas */
+  @keyframes cursor-pulse-enhanced {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: scale(1.2);
+      opacity: 0.8;
     }
   }
 

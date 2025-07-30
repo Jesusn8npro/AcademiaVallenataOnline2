@@ -16,26 +16,41 @@
   import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
   import { browser } from '$app/environment';
   import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
+  import { TiempoService } from '$lib/services/tiempoService';
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
-  $: rutaEsClaseTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+\/clase\/[^\/]+$/) !== null;
+  
+  // 🕒 Tracking de tiempo por página
+  $: if (browser && $page.url.pathname) {
+    TiempoService.iniciarTiempoPagina($page.url.pathname);
+  }
+  $: rutaEsClaseTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+\/clase\/[^\/]+/) !== null;
+  $: rutaEsContenidoTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+\/contenido/) !== null;
   $: rutaEsDetalleCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+$/) !== null;
-  $: rutaEsClaseCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/clase\/[^\/]+$/) !== null;
-  $: rutaEsLeccionCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/[^\/]+\/[^\/]+$/) !== null;
+  $: rutaEsClaseCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/clase\/[^\/]+/) !== null;
+  $: rutaEsLeccionCurso = $page.url.pathname.match(/^\/cursos\/[^\/]+\/[^\/]+\/[^\/]+/) !== null;
   $: rutaEsSimuladorAcordeon = $page.url.pathname === '/simulador-de-acordeon' || 
                                $page.url.pathname.startsWith('/simulador-acordeon') || 
                                $page.url.pathname.startsWith('/simulador-gaming');
   
-  // Páginas que NO deben tener menú ni sidebar (PANTALLA COMPLETA)
-  $: esPaginaSinMenu = rutaEsDetalleTutorial || rutaEsClaseTutorial || rutaEsDetalleCurso || rutaEsClaseCurso || rutaEsLeccionCurso || rutaEsSimuladorAcordeon;
+  // ✅ LÓGICA GRANULAR PARA DIFERENTES TIPOS DE PÁGINAS
+  
+  // Páginas de PANTALLA COMPLETA TOTAL (sin nada)
+  $: esPaginaPantallaCompleta = rutaEsDetalleTutorial || rutaEsContenidoTutorial || rutaEsDetalleCurso || rutaEsSimuladorAcordeon;
+  
+  // Páginas que solo deben tener MENÚ INFERIOR (clases y lecciones)
+  $: esPaginaSoloMenuInferior = rutaEsClaseTutorial || rutaEsClaseCurso || rutaEsLeccionCurso;
+  
+  // Variable combinada para compatibilidad
+  $: esPaginaSinMenu = esPaginaPantallaCompleta;
 
   // Detectar si es una página del perfil fijo
   $: rutaActual = $page.url.pathname;
   $: esPaginaPerfilFijo = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'].includes(rutaActual);
   
   // Detectar si se debe ocultar la barra de progreso
-  $: ocultarBarraProgreso = esPaginaSinMenu;
+  $: ocultarBarraProgreso = esPaginaPantallaCompleta;
 
   let cargandoSesion = true;
 
@@ -171,6 +186,10 @@
           const { perfil } = await obtenerPerfil(session.user.id);
           if (perfil) {
             setUsuario(perfil);
+            
+            // 🕒 Inicializar tracking de tiempo
+            TiempoService.iniciarSesion(session.user.id);
+            console.log('⏱️ Tracking de tiempo iniciado para:', perfil.nombre);
           } else {
             limpiarUsuario();
           }
@@ -228,13 +247,22 @@
   <div style="height:64px"></div>
 {:else}
   
-  {#if esPaginaSinMenu}
-    <!-- PÁGINAS SIN MENÚ NI SIDEBAR (Cursos, Tutoriales, Clases) -->
+  {#if esPaginaPantallaCompleta}
+    <!-- PÁGINAS DE PANTALLA COMPLETA TOTAL (Simulador, etc.) - SIN NADA -->
     {#key $page.url.pathname}
-      <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
+      <div class="pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
         <slot />
       </div>
     {/key}
+    
+  {:else if esPaginaSoloMenuInferior && $usuario}
+    <!-- PÁGINAS DE CLASES/LECCIONES - SOLO MENÚ INFERIOR -->
+    {#key $page.url.pathname}
+      <div class="pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
+        <slot />
+      </div>
+    {/key}
+    <MenuInferiorResponsivo />
     
   {:else if $usuario}
     <!-- USUARIO AUTENTICADO - CON MENÚ Y SIDEBAR -->
@@ -271,8 +299,8 @@
   
 {/if}
 
-<!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería) -->
-{#if !$page.url.pathname.includes('/mensajes')}
+<!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería, pantalla completa y clases) -->
+{#if !$page.url.pathname.includes('/mensajes') && !esPaginaPantallaCompleta && !esPaginaSoloMenuInferior}
   <ChatWidget />
 {/if}
 
@@ -306,8 +334,6 @@
     overflow-x: hidden;
     overflow-y: auto !important;
     scroll-behavior: smooth;
-    /* Corregir renderización inicial */
-    transform: translateZ(0);
   }
   
   :global(body) {
@@ -317,15 +343,11 @@
     scroll-behavior: smooth;
     /* Forzar reflow para corregir renderización */
     will-change: scroll-position;
-    /* Corregir problemas de layout */
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
   
   /* ✅ CRITICAL: Corregir elementos que pueden interferir con el scroll */
   :global([style*="position: fixed"]),
   :global([style*="position: absolute"]) {
-    transform: translateZ(0);
     backface-visibility: hidden;
   }
   
@@ -337,7 +359,6 @@
   :global(main) {
     min-height: auto;
     overflow: visible;
-    transform: translateZ(0);
   }
   
   /* CRÍTICO: Evitar cursor de texto en TODOS los elementos por defecto */
@@ -485,6 +506,16 @@
       -webkit-user-select: text !important;
       user-select: text !important;
     }
+  }
+
+  /* ✅ NUEVA: Clase para páginas de pantalla completa */
+  .pantalla-completa {
+    width: 100vw;
+    min-height: 100vh;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden;
+    background: #000;
   }
 
   /* Variables CSS para cursor personalizado */

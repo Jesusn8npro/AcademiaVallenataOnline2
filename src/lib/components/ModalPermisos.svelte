@@ -26,7 +26,7 @@
     if (!preferenciasGuardadas) {
       // Mostrar modal después de 2 segundos si no hay preferencias
       setTimeout(() => {
-        mostrarModal = true;
+        abrirModal();
       }, 2000);
     } else {
       // Cargar preferencias guardadas
@@ -127,6 +127,23 @@
     mostrarModal = false;
     mostrarPersonalizacion = false;
     cargando = false;
+    // MEJORADO: Restaurar scroll del body y html de manera más efectiva
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-abierto');
+      document.documentElement.classList.remove('modal-abierto');
+    }
+  }
+
+  // NUEVO: Función para abrir modal de manera más efectiva
+  function abrirModal() {
+    mostrarModal = true;
+    // Prevenir scroll del body y html de manera más efectiva
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add('modal-abierto');
+      document.documentElement.classList.add('modal-abierto');
+    }
   }
 
   function togglePersonalizacion() {
@@ -282,19 +299,36 @@
 {/if}
 
 <style>
+  /* NUEVO: Estilos globales para asegurar que el modal funcione */
+  :global(body.modal-abierto) {
+    overflow: hidden !important;
+    height: 100vh !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+
+  :global(html.modal-abierto) {
+    overflow: hidden !important;
+    height: 100vh !important;
+  }
+
+  /* NUEVO: Asegurar que el modal esté siempre visible y por encima de todo */
   .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    z-index: 50000; /* Por debajo del cursor (999999) */
+    z-index: 999998; /* Muy alto para estar siempre al frente */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    overflow: hidden; /* Prevenir scroll interno */
   }
 
   .modal-contenido {
@@ -306,6 +340,8 @@
     max-height: 90vh;
     overflow: hidden;
     position: relative;
+    z-index: 999999; /* Máximo z-index */
+    transform: translateZ(0); /* Forzar nueva capa de stacking */
   }
 
   .modal-header {
@@ -570,17 +606,18 @@
   /* Responsive - Mejorado para móvil */
   @media (max-width: 768px) {
     .modal-overlay {
-      padding: 0 0 2rem 0; /* Padding bottom para separar del fondo */
-      align-items: flex-end; /* Modal desde abajo en móvil */
+      padding: 1rem; /* Padding uniforme */
+      align-items: center; /* CAMBIADO: Centrado también en móvil */
+      justify-content: center;
     }
     
     .modal-contenido {
       margin: 0;
       max-width: 100%;
-      width: 100%;
-      border-radius: 20px 20px 0 0; /* Solo redondear arriba */
-      max-height: 80vh; /* Reducido para que no ocupe tanto */
-      animation: slideUp 0.3s ease-out;
+      width: calc(100% - 2rem); /* Respeto del padding */
+      border-radius: 20px; /* CAMBIADO: Bordes redondeados en todos lados */
+      max-height: 85vh; /* Altura ajustada */
+      animation: modalFadeIn 0.3s ease-out; /* CAMBIADO: Animación suave */
     }
 
     .modal-header {
@@ -673,19 +710,29 @@
     }
   }
 
-  @keyframes slideUp {
+  /* NUEVA animación más suave para el modal */
+  @keyframes modalFadeIn {
     from {
-      transform: translateY(100%);
+      transform: scale(0.9) translateY(-20px);
       opacity: 0;
     }
     to {
-      transform: translateY(0);
+      transform: scale(1) translateY(0);
       opacity: 1;
     }
   }
 
   /* Para pantallas muy pequeñas */
   @media (max-width: 480px) {
+    .modal-overlay {
+      padding: 0.75rem; /* Menos padding en pantallas muy pequeñas */
+    }
+    
+    .modal-contenido {
+      width: calc(100% - 1.5rem); /* Ajuste del ancho */
+      max-height: 90vh; /* Más altura disponible */
+    }
+
     .modal-header {
       padding: 1.25rem 1rem 0.75rem;
     }

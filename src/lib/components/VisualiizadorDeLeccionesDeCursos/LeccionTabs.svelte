@@ -44,30 +44,9 @@
     const mediaQuery = window.matchMedia('(max-width: 768px)');
     
     function applyScrollBehavior(isMobile: boolean) {
-      if (isMobile) {
-        // Móvil: bloquear scroll de la página principal solamente
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.width = '100%';
-        document.body.style.height = '100vh';
-        document.documentElement.style.overflow = 'hidden';
-        document.documentElement.style.height = '100vh';
-        
-        // Permitir scroll en elementos específicos
-        const tabContent = document.querySelector('.tab-content') as HTMLElement;
-        if (tabContent) {
-          tabContent.style.overflowY = 'auto';
-          (tabContent.style as any).webkitOverflowScrolling = 'touch';
-        }
-      } else {
-        // Desktop: permitir scroll
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.width = '';
-        document.body.style.height = '';
-        document.documentElement.style.overflow = '';
-        document.documentElement.style.height = '';
-      }
+      // YA NO BLOQUEAMOS EL SCROLL GLOBAL
+      // El scroll se maneja localmente en el CSS
+      console.log('📱 Scroll behavior aplicado:', isMobile ? 'móvil' : 'desktop');
     }
     
     function handleMobileScroll(e: MediaQueryListEvent) {
@@ -203,19 +182,18 @@
   color: #222;
   border-radius: 0;
   box-shadow: none;
-  height: calc(100vh - 370px); /* Altura fija en lugar de min-height */
-  max-height: calc(100vh - 370px);
+  flex: 1; /* OCUPAR todo el espacio disponible */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Evitar scroll del contenedor principal */
+  overflow: hidden; /* SIN scroll aquí - solo en tab-content */
   position: relative;
   z-index: 100;
 }
 .tabs {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100%; /* CLAVE: Ocupar toda la altura */
   overflow: hidden;
 }
 .tab-headers {
@@ -351,12 +329,25 @@
 }
 
 
-@media (max-width: 1024px) {
+/* ✅ TABLETS Y MÓVILES: Altura fija solo para móviles */
+@media (max-width: 900px) and (min-width: 769px) {
+  .leccion-contenido {
+    padding: 1rem 1.5rem 0 1.5rem !important;
+    /* Sin altura fija para tablets - permitir scroll natural */
+    min-height: calc(100vh - 320px);
+  }
+}
+
+@media (max-width: 768px) {
   .leccion-contenido {
     padding: 1rem 1.5rem 0 1.5rem !important;
     height: calc(100vh - 320px);
     max-height: calc(100vh - 320px);
   }
+}
+
+/* ✅ ESTILOS PARA TABLETS Y MÓVILES (< 900px) */
+@media (max-width: 900px) {
   .tab-headers {
     gap: 0.5rem;
     overflow-x: auto;
@@ -442,10 +433,20 @@
 }
 
 /* Estilos específicos para móvil - el JavaScript maneja el bloqueo de scroll */
-@media (max-width: 768px) {
-  :global(.contenido-principal) {
-    height: 100vh !important;
-    overflow: hidden !important;
+  /* ✅ SOLO aplicar overflow hidden en móviles (consistente con menu inferior) */
+  @media (max-width: 900px) {
+    :global(.contenido-principal) {
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
   }
-}
+  
+  /* ✅ ESCRITORIO: permitir scroll natural (> 900px) */
+  @media (min-width: 901px) {
+    :global(.contenido-principal) {
+      overflow: visible !important;
+      height: auto !important;
+      min-height: 100vh !important;
+    }
+  }
 </style>
