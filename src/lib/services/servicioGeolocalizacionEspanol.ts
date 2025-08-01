@@ -81,7 +81,7 @@ class ServicioGeolocalizacionEspanol {
     try {
       await this.respetarLimiteVelocidad();
 
-      console.log('🌐 [SERVICIO-ES] Obteniendo IP pública desde ipapi.co...');
+  
 
       const controlador = new AbortController();
       const timeoutId = setTimeout(() => controlador.abort(), 10000);
@@ -109,15 +109,15 @@ class ServicioGeolocalizacionEspanol {
         throw new Error('IP inválida recibida');
       }
       
-      console.log('✅ [SERVICIO-ES] IP obtenida:', ipLimpia);
+
       return ipLimpia;
 
     } catch (error: any) {
-      console.error('❌ [SERVICIO-ES] Error obteniendo IP:', error.message);
+
       
       // FALLBACK: Usar servicio alternativo
       try {
-        console.log('🔄 [SERVICIO-ES] Intentando con servicio alternativo...');
+  
         const respuestaFallback = await fetch('https://api.ipify.org?format=text', {
           headers: {
             'Accept': 'text/plain'
@@ -126,11 +126,11 @@ class ServicioGeolocalizacionEspanol {
         
         if (respuestaFallback.ok) {
           const ipFallback = await respuestaFallback.text();
-          console.log('✅ [SERVICIO-ES] IP obtenida desde fallback:', ipFallback.trim());
+  
           return ipFallback.trim();
         }
       } catch (fallbackError) {
-        console.error('❌ [SERVICIO-ES] Error en fallback:', fallbackError);
+
       }
       
       return null;
@@ -144,7 +144,7 @@ class ServicioGeolocalizacionEspanol {
     try {
       // Verificar cache primero
       if (ip && this.cache.has(ip)) {
-        console.log('💾 [SERVICIO-ES] Datos desde cache para IP:', ip);
+    
         return this.cache.get(ip)!;
       }
 
@@ -163,7 +163,7 @@ class ServicioGeolocalizacionEspanol {
         ip = ipObtenida;
       }
 
-      console.log('🔍 [SERVICIO-ES] Obteniendo geolocalización REAL desde ipapi.co para IP:', ip);
+  
 
       const controlador = new AbortController();
       const timeoutId = setTimeout(() => controlador.abort(), 15000);
@@ -183,7 +183,7 @@ class ServicioGeolocalizacionEspanol {
       if (!respuesta.ok) {
         // Si hay error 429 (rate limit), intentar con ip-api.com como fallback
         if (respuesta.status === 429) {
-          console.log('⚠️ [SERVICIO-ES] Rate limit de ipapi.co, usando fallback...');
+    
           return await this.obtenerGeolocalizacionFallback(ip);
         }
         throw new Error(`HTTP ${respuesta.status}: ${respuesta.statusText}`);
@@ -193,13 +193,13 @@ class ServicioGeolocalizacionEspanol {
 
       // Verificar si hay error en la respuesta de ipapi.co
       if (datosRaw.error) {
-        console.log('⚠️ [SERVICIO-ES] Error en ipapi.co, usando fallback...');
+  
         return await this.obtenerGeolocalizacionFallback(ip);
       }
 
       // Validar datos mínimos
       if (!datosRaw.country_name || !datosRaw.city) {
-        console.log('⚠️ [SERVICIO-ES] Datos incompletos de ipapi.co, usando fallback...');
+  
         return await this.obtenerGeolocalizacionFallback(ip);
       }
 

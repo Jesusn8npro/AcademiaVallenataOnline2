@@ -199,6 +199,14 @@ function crearPerfilStore() {
       }));
     },
 
+    forzarInicializacion() {
+      update(state => ({
+        ...state,
+        cargando: false,
+        inicializado: true
+      }));
+    },
+
     resetear() {
       set(estadoInicial);
     },

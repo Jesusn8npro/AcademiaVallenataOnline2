@@ -5,6 +5,7 @@
   import { perfilStore } from '$lib/stores/perfilStore';
   import { page } from '$app/stores';
   import { beforeNavigate, afterNavigate } from '$app/navigation';
+  import ProteccionAutenticacion from '$lib/guards/ProteccionAutenticacion.svelte';
 
   // Reactive statements para obtener datos del store
   $: perfilData = $perfilStore.perfil;
@@ -48,7 +49,7 @@
     } catch (error) {
       console.error('❌ [LAYOUT PERFIL] Error/timeout cargando datos:', error);
       // Si hay timeout, forzar que el store se marque como inicializado para que no se quede cargando
-      perfilStore.resetear();
+      perfilStore.forzarInicializacion();
     }
   });
 
@@ -85,66 +86,71 @@
   }
 </script>
 
-<div class="layout-perfil-fijo">
-  <!-- 🔒 ENCABEZADO FIJO - NO CAMBIA ENTRE PÁGINAS -->
-  <div class="encabezado-fijo">
-    {#if datosDisponibles}
-      <EncabezadoPerfil 
-        nombreCompleto={perfilData!.nombre_completo} 
-        urlAvatar={perfilData!.url_foto_perfil} 
-        urlPortada={perfilData!.portada_url} 
-        posicionPortadaY={perfilData!.posicion_img_portada || 50}
-        userId={perfilData!.id}
-        stats={statsData}
-        on:modalStateChange={handleModalStateChange}
-      />
-    {:else if cargandoDatos}
-      <div class="encabezado-cargando">
-        <div class="spinner"></div>
-        <p>Cargando perfil...</p>
-      </div>
-    {:else}
-      <div class="encabezado-error">
-        <p>Error al cargar el perfil</p>
-        <button on:click={() => perfilStore.cargarDatosPerfil(true)} class="btn-reintentar">
-          Reintentar
-        </button>
-      </div>
-    {/if}
-  </div>
+<ProteccionAutenticacion 
+  titulo="🔒 PERFIL RESTRINGIDO"
+  mensajePrincipal="Tu perfil personal requiere que inicies sesión">
   
-  <!-- 🔒 PESTAÑAS FIJAS - NO CAMBIAN ENTRE PÁGINAS -->
-  <div class="pestañas-fijas" class:ocultar-pestanas={modalImagenAbierto}>
-    <PestanasPerfil modalAbierto={modalImagenAbierto} />
-  </div>
-  
-  <!-- 🔄 CONTENIDO DINÁMICO - CAMBIA SEGÚN LA PÁGINA -->
-  <div class="contenido-dinamico">
-    {#if datosDisponibles}
-      <slot />
-    {:else if cargandoDatos && !mostrarFallback}
-      <div class="contenido-cargando">
-        <div class="spinner"></div>
-        <p>Cargando información del perfil...</p>
-      </div>
-    {:else if mostrarFallback || (!cargandoDatos && !datosDisponibles)}
-      <div class="contenido-fallback">
-        <div class="fallback-mensaje">
-          <h2>🎵 Academia Vallenata</h2>
-          <p>Continuando con tu aprendizaje...</p>
+  <div class="layout-perfil-fijo">
+    <!-- 🔒 ENCABEZADO FIJO - NO CAMBIA ENTRE PÁGINAS -->
+    <div class="encabezado-fijo">
+      {#if datosDisponibles}
+        <EncabezadoPerfil 
+          nombreCompleto={perfilData!.nombre_completo} 
+          urlAvatar={perfilData!.url_foto_perfil} 
+          urlPortada={perfilData!.portada_url} 
+          posicionPortadaY={perfilData!.posicion_img_portada || 50}
+          userId={perfilData!.id}
+          stats={statsData}
+          on:modalStateChange={handleModalStateChange}
+        />
+      {:else if cargandoDatos}
+        <div class="encabezado-cargando">
+          <div class="spinner"></div>
+          <p>Cargando perfil...</p>
         </div>
+      {:else}
+        <div class="encabezado-error">
+          <p>Error al cargar el perfil</p>
+          <button on:click={() => perfilStore.cargarDatosPerfil(true)} class="btn-reintentar">
+            Reintentar
+          </button>
+        </div>
+      {/if}
+    </div>
+    
+    <!-- 🔒 PESTAÑAS FIJAS - NO CAMBIAN ENTRE PÁGINAS -->
+    <div class="pestañas-fijas" class:ocultar-pestanas={modalImagenAbierto}>
+      <PestanasPerfil modalAbierto={modalImagenAbierto} />
+    </div>
+    
+    <!-- 🔄 CONTENIDO DINÁMICO - CAMBIA SEGÚN LA PÁGINA -->
+    <div class="contenido-dinamico">
+      {#if datosDisponibles}
         <slot />
-      </div>
-    {:else}
-      <div class="contenido-error">
-        <p>No se pudo cargar el contenido del perfil</p>
-        <button on:click={() => perfilStore.cargarDatosPerfil(true)} class="btn-reintentar">
-          Reintentar
-        </button>
-      </div>
-    {/if}
+      {:else if cargandoDatos && !mostrarFallback}
+        <div class="contenido-cargando">
+          <div class="spinner"></div>
+          <p>Cargando información del perfil...</p>
+        </div>
+      {:else if mostrarFallback || (!cargandoDatos && !datosDisponibles)}
+        <div class="contenido-fallback">
+          <div class="fallback-mensaje">
+            <h2>🎵 Academia Vallenata</h2>
+            <p>Continuando con tu aprendizaje...</p>
+          </div>
+          <slot />
+        </div>
+      {:else}
+        <div class="contenido-error">
+          <p>No se pudo cargar el contenido del perfil</p>
+          <button on:click={() => perfilStore.cargarDatosPerfil(true)} class="btn-reintentar">
+            Reintentar
+          </button>
+        </div>
+      {/if}
+    </div>
   </div>
-</div>
+</ProteccionAutenticacion>
 
 <style>
   .layout-perfil-fijo {
