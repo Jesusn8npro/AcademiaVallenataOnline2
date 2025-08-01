@@ -247,9 +247,9 @@
 <!-- Barra principal de navegación -->
 <div class="barra-principal-navegacion {isSticky ? 'sticky' : ''}">
   <div class="contenedor-barra-principal">
-    <!-- Logo -->
-    <div class="logo-navegacion">
-      <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Logo Academia Vallenata" />
+    		<!-- Logo -->
+		<div class="logo-navegacion">
+			<img src="/logo academia vallenata.png" alt="Logo Academia Vallenata" />
     </div>
     
     <!-- Menú de navegación -->
@@ -364,7 +364,7 @@
       </button>
       
       <div class="encabezado-menu">
-        <img src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" alt="Academia Vallenata" class="logo-menu" />
+        			<img src="/logo academia vallenata.png" alt="Academia Vallenata" class="logo-menu" />
         <p class="descripcion-menu">
           La mejor academia para aprender acordeón vallenato online. Aprende con los mejores maestros desde la comodidad de tu hogar.
         </p>

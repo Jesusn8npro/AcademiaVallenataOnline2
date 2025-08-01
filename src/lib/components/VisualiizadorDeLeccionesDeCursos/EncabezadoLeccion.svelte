@@ -158,11 +158,11 @@
       </button>
     {/if}
     
-    <a href="/" class="logo-link">
-      <img 
-        src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" 
-        alt="Academia Vallenata" 
-        class="logo"
+    		<a href="/" class="logo-link">
+			<img 
+				src="/logo academia vallenata.png" 
+				alt="Academia Vallenata" 
+				class="logo"
       />
     </a>
     

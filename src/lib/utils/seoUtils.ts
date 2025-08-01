@@ -147,9 +147,9 @@ export function generarDatosEstructurados(
     publisher: {
       "@type": "Organization",
       name: "Academia Vallenata Online",
-      logo: {
-        "@type": "ImageObject",
-        url: "https://academiavallenataonline.com/logo-academia-vallenata.png"
+      		logo: {
+			"@type": "ImageObject",
+			url: "https://academiavallenataonline.com/logo academia vallenata.png"
       }
     },
     datePublished: fechaPublicacion,

@@ -61,11 +61,11 @@
       {#if tipoUsuario === 'publico'}
         <!-- Usuario no autenticado -->
         <div class="bienvenida-publica">
-          <div class="logo-academia">
-            <img 
-              src="https://academiavallenataonline.com/wp-content/uploads/2020/04/cropped-cropped-Academia-Vallenata-LOGO-4.png" 
-              alt="Academia Vallenata" 
-              class="logo-img"
+          		<div class="logo-academia">
+			<img 
+				src="/logo academia vallenata.png" 
+				alt="Academia Vallenata"
+				class="logo-img"
             />
           </div>
           <div class="texto-bienvenida">
