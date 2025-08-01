@@ -17,7 +17,7 @@ const URLS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('🎵 Cache abierto para Academia Vallenata');
+      		// Cache abierto para Academia Vallenata
       return cache.addAll(URLS_TO_CACHE);
     })
   );
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Eliminando cache antiguo:', cacheName);
+            			// Eliminando cache antiguo
             return caches.delete(cacheName);
           }
         })
@@ -75,7 +75,7 @@ async function networkFirstStrategy(request) {
     
     return networkResponse;
   } catch (error) {
-    console.log('⚡ Red no disponible, usando cache:', request.url);
+    	// Red no disponible, usando cache
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
@@ -105,7 +105,7 @@ async function cacheFirstStrategy(request) {
     cache.put(request, networkResponse.clone());
     return networkResponse;
   } catch (error) {
-    console.log('❌ Error al cargar recurso:', request.url);
+    	// Error al cargar recurso
     throw error;
   }
 }

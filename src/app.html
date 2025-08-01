@@ -98,10 +98,8 @@
 		<script>
 			// Solo registrar service worker en producción (detectar por hostname)
 			if ('serviceWorker' in navigator && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-				navigator.serviceWorker.register('/sw.js').then((registration) => {
-					console.log('🎵 Service Worker registrado exitosamente:', registration);
-				}).catch((error) => {
-					console.log('❌ Error al registrar Service Worker:', error);
+				navigator.serviceWorker.register('/sw.js').catch(() => {
+					// Error silencioso al registrar Service Worker
 				});
 			}
 		</script>

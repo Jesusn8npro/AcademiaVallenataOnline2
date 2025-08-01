@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
 	import.meta.env.VITE_SUPABASE_URL,
-	import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY,
+	import.meta.env.SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY,
 	{
 		auth: {
 			autoRefreshToken: false,
@@ -17,10 +17,7 @@ const supabaseAdmin = createClient(
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	try {
-		console.log('🚀 === INICIO DE CREACIÓN DE PAGO ===');
-		
 		const data = await request.json();
-		console.log('📝 Datos recibidos en /api/pagos/crear:', JSON.stringify(data, null, 2));
 
 		// Validación básica
 		const { email, nombre } = data;

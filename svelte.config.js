@@ -43,7 +43,7 @@ const config = {
 				'img-src': ['self', 'data:', 'https:', 'blob:', 'https://i.ytimg.com', 'https://img.youtube.com'],
 				'connect-src': [
 					'self', 
-					process.env.VITE_SUPABASE_URL || 'https://tbijzvtyyewhtwgakgka.supabase.co', 
+					'https://*.supabase.co', 
 					'wss://*.supabase.co', 
 					'https://api.epayco.co', 
 					'https://www.google-analytics.com', 

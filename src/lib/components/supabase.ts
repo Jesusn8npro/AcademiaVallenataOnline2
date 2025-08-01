@@ -17,10 +17,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // En su lugar, exportamos la referencia de supabaseClient.ts
 export const supabaseClient = supabase;
 
-// Para propósitos de depuración, muestra en la consola si estamos usando credenciales reales o de respaldo
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn('⚠️ Usando credenciales de Supabase de respaldo. Las funciones de la base de datos serán simuladas.');
-}
+// Verificación de credenciales de Supabase
 
 import type { AuthSession, Provider } from '@supabase/supabase-js';
 

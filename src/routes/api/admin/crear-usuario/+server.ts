@@ -22,7 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
       instrumento
     } = await request.json();
 
-    console.log(`Creando usuario: ${correo_electronico}`);
+    	// Creando usuario
 
     // Validaciones básicas
     if (!nombre || !apellido || !correo_electronico || !password) {

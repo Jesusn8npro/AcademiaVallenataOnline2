@@ -5,14 +5,14 @@ import { generateSlug } from '$lib/utilidades/utilidadesSlug';
 
 // Cliente admin para operaciones que requieren bypass de RLS
 const supabaseAdmin = createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
+	import.meta.env.VITE_SUPABASE_URL,
+	import.meta.env.SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY,
+	{
+		auth: {
+			autoRefreshToken: false,
+			persistSession: false
+		}
+	}
 );
 
 // Tipos
