@@ -150,9 +150,9 @@
    */
   function configurarCoordenadasJugador() {
     // console.log('🔧 Configurando coordenadas del jugador...', {
-      acordeonGuiaRef: !!acordeonGuiaRef,
-      acordeonJugadorRef: !!acordeonJugadorRef
-    });
+    //   acordeonGuiaRef: !!acordeonGuiaRef,
+    //   acordeonJugadorRef: !!acordeonJugadorRef
+    // });
     
     if (acordeonGuiaRef && acordeonJugadorRef) {
       acordeonGuiaRef.establecerCoordenadasAcordeonJugador(obtenerCoordenadasBotonJugador);
@@ -185,12 +185,12 @@
     // 🛡️ Forzar duración corta para evitar acumulación
     duracionMs = Math.min(duracionMs || 400, 800); // Máximo 800ms
     
-    // console.log('🎵 ACTIVANDO NOTA DEL JUGADOR:', 
-      '\n  - Nota original:', notaCompleta, 
-      '\n  - Nota convertida:', notaJugador,
-      '\n  - Dirección:', fuelleDireccion,
-      '\n  - Duración:', duracionMs, 'ms'
-    );
+        // console.log('🎵 ACTIVANDO NOTA DEL JUGADOR:', 
+    //   '\n  - Nota original:', notaCompleta, 
+    //   '\n  - Nota convertida:', notaJugador,
+    //   '\n  - Dirección:', fuelleDireccion,
+    //   '\n  - Duración:', duracionMs, 'ms'
+    // );
     
     if (!acordeonJugadorRef) {
       console.warn('⚠️ acordeonJugadorRef no disponible');
@@ -365,11 +365,8 @@
   /**
    * Función auxiliar para configurar todos los callbacks necesarios
    */
-  function configurarCallbacksJugador() {
-    // console.log('🔧 Configurando callbacks del jugador...', {
-      acordeonGuiaRef: !!acordeonGuiaRef,
-      acordeonJugadorRef: !!acordeonJugadorRef
-    });
+    function configurarCallbacksJugador() {
+    // console.log('🔧 Configurando callbacks del jugador...');
     
     if (acordeonGuiaRef && acordeonJugadorRef) {
       // Configurar coordenadas
@@ -395,14 +392,7 @@
     const { nota, tiempoActual, diferenciaTiempo, direccionFuelle, colorFuelle } = event.detail;
     
     // 📌 Debug detallado
-    // console.log('🎮 Manejando nota activada:', {
-      nota_id: nota.nota_id,
-      direccionFuelle,
-      colorFuelle,
-      diferenciaTiempo,
-      tiempoActual,
-      duracion_ms: nota.duracion_ms
-    });
+        // console.log('🎮 Manejando nota activada:', nota.nota_id, direccionFuelle);
     
     // Actualizar acordeón guía con información completa
     botonesGuiaActivos = {
@@ -438,11 +428,7 @@
     const { nota, tiempoActual, diferenciaTiempo } = event.detail;
     
     // 📌 Debug detallado
-    // console.log('🎮 Manejando nota desactivada:', {
-      nota_id: nota.nota_id,
-      tiempoActual,
-      diferenciaTiempo
-    });
+        // console.log('🎮 Manejando nota desactivada:', nota.nota_id);
     
     // 🎯 Desactivar visualización del acordeón guía PRIMERO
     if (acordeonGuiaRef) {
