@@ -125,7 +125,14 @@
 		console.log('🆔 Chat ID generado:', chatId);
 		
 		// 📡 ESCUCHAR EVENTOS DEL MODAL DE BÚSQUEDA
+		// Función para manejar toggle
+		const manejarToggleChat = () => {
+			chatAbierto = !chatAbierto;
+			console.log('💬 Chat Widget toggled:', chatAbierto);
+		};
+
 		window.addEventListener('abrirChatWidget', manejarEventoAbrirChat);
+		window.addEventListener('toggleChatWidget', manejarToggleChat);
 		
 		// 📱 CERRAR SELECTORES AL HACER CLIC FUERA
 		function cerrarSelectores(event) {
@@ -140,6 +147,7 @@
 		
 		return () => {
 			window.removeEventListener('abrirChatWidget', manejarEventoAbrirChat);
+		window.removeEventListener('toggleChatWidget', manejarToggleChat);
 			document.removeEventListener('click', cerrarSelectores);
 		};
 	});

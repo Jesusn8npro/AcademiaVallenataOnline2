@@ -7,6 +7,8 @@
   import Avatar from '$lib/components/ui/Avatar.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
+  import { supabase } from '$lib/supabase/clienteSupabase';
 
   let colapsado = false;
   let menuPerfilAbierto = false;
@@ -15,6 +17,108 @@
   // Determinar el tipo de usuario
   $: tipoUsuario = $usuario?.rol === 'admin' ? 'admin' : 'estudiante';
   $: nombreUsuario = $usuario?.nombre || 'Usuario';
+  
+  // Reactivo: cargar datos cuando cambie el usuario
+  $: if ($usuario) {
+    if (tipoUsuario === 'admin') {
+      cargarEstadisticasAdmin();
+    } else if (tipoUsuario === 'estudiante') {
+      cargarProgresoEstudiante();
+    }
+  }
+  
+  // Función para verificar si una ruta está activa
+  $: rutaActual = $page.url.pathname;
+  
+  function esRutaActiva(ruta: string): boolean {
+    return rutaActual === ruta || rutaActual.startsWith(ruta + '/');
+  }
+
+  // Estados para datos reales
+  let estadisticasAdmin = {
+    totalEstudiantes: 0,
+    totalCursos: 0,
+    objetivoMensual: 0,
+    porcentajeObjetivo: 0,
+    notificacionesPendientes: 0,
+    usuariosComunidad: 0
+  };
+
+  let progresoEstudiante = {
+    cursosCompletados: 0,
+    cursosEnProgreso: 0,
+    porcentajeProgreso: 0,
+    miembrosComunidad: 0
+  };
+
+  // Cargar datos reales
+  async function cargarEstadisticasAdmin() {
+    if (!$usuario || tipoUsuario !== 'admin') return;
+    
+    try {
+      // Obtener número total de estudiantes
+      const { count: estudiantes } = await supabase
+        .from('perfiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('rol', 'estudiante');
+
+      // Obtener número total de cursos
+      const { count: cursos } = await supabase
+        .from('cursos')
+        .select('*', { count: 'exact', head: true })
+        .eq('publicado', true);
+
+      // Obtener usuarios activos en comunidad (últimos 30 días)
+      const { count: usuariosComunidad } = await supabase
+        .from('perfiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('updated_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      estadisticasAdmin = {
+        totalEstudiantes: estudiantes || 0,
+        totalCursos: cursos || 0,
+        objetivoMensual: 100, // Este puede ser configurable
+        porcentajeObjetivo: Math.round(((estudiantes || 0) / 100) * 100),
+        notificacionesPendientes: 0, // Placeholder - implementar según necesidades
+        usuariosComunidad: usuariosComunidad || 0
+      };
+    } catch (error) {
+      console.warn('Error cargando estadísticas admin:', error);
+    }
+  }
+
+  async function cargarProgresoEstudiante() {
+    if (!$usuario || tipoUsuario !== 'estudiante') return;
+    
+    try {
+      // Obtener inscripciones del estudiante
+      const { data: inscripciones } = await supabase
+        .from('inscripciones')
+        .select('*, cursos(titulo)')
+        .eq('usuario_id', $usuario.id);
+
+      if (inscripciones) {
+        const completados = inscripciones.filter(i => i.completado).length;
+        const enProgreso = inscripciones.filter(i => !i.completado).length;
+        const total = inscripciones.length;
+
+        // Obtener conteo de miembros activos en comunidad
+        const { count: miembrosActivos } = await supabase
+          .from('perfiles')
+          .select('*', { count: 'exact', head: true })
+          .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+        progresoEstudiante = {
+          cursosCompletados: completados,
+          cursosEnProgreso: enProgreso,
+          porcentajeProgreso: total > 0 ? Math.round((completados / total) * 100) : 0,
+          miembrosComunidad: miembrosActivos || 0
+        };
+      }
+    } catch (error) {
+      console.warn('Error cargando progreso estudiante:', error);
+    }
+  }
 
   function alternarBarraLateral() {
     colapsado = !colapsado;
@@ -59,6 +163,14 @@
     };
     
     document.addEventListener('click', manejarClicFuera);
+    
+    // Cargar datos según el tipo de usuario
+    if (tipoUsuario === 'admin') {
+      cargarEstadisticasAdmin();
+    } else if (tipoUsuario === 'estudiante') {
+      cargarProgresoEstudiante();
+    }
+    
     return () => document.removeEventListener('click', manejarClicFuera);
   });
 </script>
@@ -115,7 +227,7 @@
           <div class="section-title">Principal</div>
         {/if}
         
-        <a href="/administrador" class="nav-item destacado">
+        <a href="/panel-administracion" class="nav-item" class:destacado={esRutaActiva('/panel-administracion')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="9"/>
@@ -126,11 +238,11 @@
           </div>
           {#if !colapsado}
             <span class="nav-text">Dashboard</span>
-            <div class="nav-badge activo">3</div>
+            <div class="nav-badge activo">{estadisticasAdmin.notificacionesPendientes}</div>
           {/if}
         </a>
 
-        <a href="/administrador/panel-contenido" class="nav-item">
+        <a href="/administrador/panel-contenido" class="nav-item" class:destacado={esRutaActiva('/administrador/panel-contenido')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -144,7 +256,7 @@
           {/if}
         </a>
 
-        <a href="/administrador/crear-contenido" class="nav-item">
+        <a href="/administrador/crear-contenido" class="nav-item" class:destacado={esRutaActiva('/administrador/crear-contenido')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
@@ -166,7 +278,7 @@
           <div class="section-title">Contenido</div>
         {/if}
         
-        <a href="/cursos" class="nav-item">
+        <a href="/cursos" class="nav-item" class:destacado={esRutaActiva('/cursos')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -174,23 +286,11 @@
             </svg>
           </div>
           {#if !colapsado}
-            <span class="nav-text">Cursos</span>
+            <span class="nav-text">Cursos & Tutoriales</span>
           {/if}
         </a>
 
-        <a href="/tutoriales" class="nav-item">
-          <div class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-          </div>
-          {#if !colapsado}
-            <span class="nav-text">Tutoriales</span>
-          {/if}
-        </a>
-
-        <a href="/administrador/blog" class="nav-item">
+        <a href="/administrador/blog" class="nav-item" class:destacado={esRutaActiva('/administrador/blog')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -202,7 +302,7 @@
           {/if}
         </a>
 
-        <a href="/administrador/eventos" class="nav-item">
+        <a href="/administrador/eventos" class="nav-item" class:destacado={esRutaActiva('/administrador/eventos')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -225,7 +325,7 @@
           <div class="section-title">Herramientas</div>
         {/if}
         
-        <a href="/simulador-gaming" class="nav-item">
+        <a href="/simulador-gaming" class="nav-item" class:destacado={esRutaActiva('/simulador-gaming')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -239,7 +339,7 @@
           {/if}
         </a>
 
-        <a href="/comunidad" class="nav-item">
+        <a href="/comunidad" class="nav-item" class:destacado={esRutaActiva('/comunidad')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -250,7 +350,7 @@
           </div>
           {#if !colapsado}
             <span class="nav-text">Comunidad</span>
-            <div class="nav-badge">12</div>
+            <div class="nav-badge">{estadisticasAdmin.usuariosComunidad}</div>
           {/if}
         </a>
       </div>
@@ -264,7 +364,7 @@
           <div class="section-title">Mi Aprendizaje</div>
         {/if}
         
-        <a href="/estudiante" class="nav-item destacado">
+        <a href="/panel-estudiante" class="nav-item" class:destacado={esRutaActiva('/panel-estudiante')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="9"/>
@@ -278,7 +378,7 @@
           {/if}
         </a>
 
-        <a href="/mis-cursos" class="nav-item">
+        <a href="/mis-cursos" class="nav-item" class:destacado={esRutaActiva('/mis-cursos')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -287,11 +387,11 @@
           </div>
           {#if !colapsado}
             <span class="nav-text">Mis Cursos</span>
-            <div class="nav-badge progreso">75%</div>
+            <div class="nav-badge progreso">{progresoEstudiante.porcentajeProgreso}%</div>
           {/if}
         </a>
 
-        <a href="/tutoriales" class="nav-item">
+        <a href="/cursos" class="nav-item" class:destacado={esRutaActiva('/cursos')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="23 7 16 12 23 17 23 7"/>
@@ -299,7 +399,7 @@
             </svg>
           </div>
           {#if !colapsado}
-            <span class="nav-text">Tutoriales</span>
+            <span class="nav-text">Cursos & Tutoriales</span>
           {/if}
         </a>
       </div>
@@ -313,7 +413,7 @@
         <!-- 🎵 SIMULADOR REMOVIDO PARA ESTUDIANTES -->
         <!-- Los estudiantes verán la landing page "Coming Soon" si intentan acceder -->
 
-        <a href="/comunidad" class="nav-item">
+        <a href="/comunidad" class="nav-item" class:destacado={esRutaActiva('/comunidad')}>
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -324,7 +424,43 @@
           </div>
           {#if !colapsado}
             <span class="nav-text">Comunidad</span>
-            <div class="nav-badge">12</div>
+            <div class="nav-badge">{progresoEstudiante.miembrosComunidad}</div>
+          {/if}
+        </a>
+
+        <a href="/ranking" class="nav-item" class:destacado={esRutaActiva('/ranking')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 16v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10c0-1.1.9-2 2-2h2l3-3 3 3h2a2 2 0 0 1 2 2v4M8 12l2 2 4-4"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Ranking</span>
+          {/if}
+        </a>
+
+        <a href="/eventos" class="nav-item" class:destacado={esRutaActiva('/eventos')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Eventos</span>
+          {/if}
+        </a>
+
+        <a href="/mensajes" class="nav-item" class:destacado={esRutaActiva('/mensajes')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Mensajes</span>
           {/if}
         </a>
       </div>
@@ -345,19 +481,19 @@
       </div>
       <div class="stats-content">
         <div class="stat-item">
-          <div class="stat-value">1,247</div>
+          <div class="stat-value">{estadisticasAdmin.totalEstudiantes.toLocaleString()}</div>
           <div class="stat-label">Estudiantes</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">89</div>
+          <div class="stat-value">{estadisticasAdmin.totalCursos}</div>
           <div class="stat-label">Cursos</div>
         </div>
       </div>
       <div class="stats-progress">
         <div class="progress-bar">
-          <div class="progress-fill" style="width: 78%"></div>
+          <div class="progress-fill" style="width: {estadisticasAdmin.porcentajeObjetivo}%"></div>
         </div>
-        <div class="progress-text">78% del objetivo mensual</div>
+        <div class="progress-text">{estadisticasAdmin.porcentajeObjetivo}% del objetivo mensual</div>
       </div>
     </div>
   {/if}
@@ -378,17 +514,17 @@
         <div class="progress-circle">
           <svg class="progress-svg" viewBox="0 0 36 36">
             <path class="progress-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <path class="progress-meter" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="progress-meter" stroke-dasharray="{progresoEstudiante.porcentajeProgreso}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
           </svg>
-          <div class="progress-percentage">75%</div>
+          <div class="progress-percentage">{progresoEstudiante.porcentajeProgreso}%</div>
         </div>
         <div class="progress-stats">
           <div class="progress-stat">
-            <span class="stat-number">12</span>
+            <span class="stat-number">{progresoEstudiante.cursosCompletados}</span>
             <span class="stat-text">Completados</span>
           </div>
           <div class="progress-stat">
-            <span class="stat-number">4</span>
+            <span class="stat-number">{progresoEstudiante.cursosEnProgreso}</span>
             <span class="stat-text">En progreso</span>
           </div>
         </div>
@@ -686,9 +822,9 @@
 }
 
 .nav-item.destacado {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
 }
 
 .nav-item.destacado:hover {

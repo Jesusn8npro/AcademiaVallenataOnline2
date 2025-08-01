@@ -39,10 +39,8 @@
     // ✅ DETECCIÓN INTELIGENTE: Verificar si es dispositivo móvil/táctil REAL
     const esDispositivoTactilReal = UtilidadesCursor.esDispositivoTactil();
     
-    // 🔧 MODO DESARROLLO: Forzar cursor si estamos en localhost o dev
-    const esModoDesarrollo = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname.includes('dev');
+    // 🔧 MODO DESARROLLO: Forzar cursor en desarrollo
+    const esModoDesarrollo = import.meta.env.DEV;
     
     if (esDispositivoTactilReal && !esModoDesarrollo) {
       console.log('🖱️ Cursor personalizado deshabilitado en dispositivo táctil real');

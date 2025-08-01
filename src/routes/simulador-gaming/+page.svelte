@@ -2,7 +2,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import BotonInicio from '$lib/components/SimuladorDefinitivo/components/ui/BotonInicio.svelte';
-  import FondoEspacial from '$lib/components/SimuladorDefinitivo/components/efectos/FondoEspacial.svelte';
+  // FondoEspacial ya está en +layout.svelte - no duplicar import
   import { audioManager, TipoEfectoUI } from '$lib/components/SimuladorDefinitivo/audio/AudioManager';
   import { onMount } from 'svelte';
   
@@ -65,7 +65,7 @@
 </svelte:head>
 
 <!-- Fondo espacial idéntico al de Rhythm Plus -->
-<FondoEspacial />
+<!-- FondoEspacial renderizado desde +layout.svelte -->
 
 <div class="contenedor-principal">
   {#if mostrarContenido}
@@ -88,22 +88,7 @@
           on:click={() => navegarConSonido('/simulador-gaming/seleccion-canciones')}
         />
       </div>
-      
-      <!-- Botón especial Editor Max -->
-      <div class="editor-max-destacado">
-        <button 
-          class="boton-editor-max"
-          on:mouseenter={hoverBoton}
-          on:click={() => navegarConSonido('/simulador-gaming/editor-max')}
-        >
-          <div class="icono-rayo">⚡</div>
-          <div class="texto-editor-max">
-            <span class="titulo-max">EDITOR MAX</span>
-            <span class="subtitulo-max">Estudio Profesional</span>
-          </div>
-          <div class="brillo-max"></div>
-        </button>
-      </div>
+      <!-- Editor Max removido - funcionalidad no necesaria -->
 
       <!-- Botones secundarios -->
       <div class="botones-secundarios">

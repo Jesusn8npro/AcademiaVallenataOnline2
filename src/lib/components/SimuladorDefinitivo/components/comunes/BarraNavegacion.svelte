@@ -170,12 +170,7 @@
       <div class="navtext">Mi Estudio</div>
     </a>
     
-    <a href="/simulador-gaming/editor-max" class="nav editor-max-nav {$page.url.pathname === '/simulador-gaming/editor-max' ? 'active' : ''}" on:mouseenter={hoverNavegacion}>
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-      </svg>
-      <div class="navtext">Editor Max ⚡</div>
-    </a>
+    <!-- Editor Max removido - funcionalidad no disponible -->
     
     <a href="/simulador-gaming/rankings" class="nav {$page.url.pathname === '/simulador-gaming/rankings' ? 'active' : ''}" on:mouseenter={hoverNavegacion}>
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

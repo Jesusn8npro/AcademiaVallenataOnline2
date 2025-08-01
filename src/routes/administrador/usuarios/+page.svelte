@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import { supabase } from '$lib/supabase/clienteSupabase';
 	import ListaUsuarios from '$lib/components/AdministradorUsuarios/ListaUsuarios.svelte';
 	import DetalleUsuario from '$lib/components/AdministradorUsuarios/DetalleUsuario.svelte';
@@ -50,7 +51,36 @@
 
 	onMount(() => {
 		cargarUsuarios();
+		procesarParametrosURL();
 	});
+
+	// 🔗 PROCESAR PARÁMETROS URL PARA AUTO-SELECCIÓN
+	function procesarParametrosURL() {
+		const urlParams = $page.url.searchParams;
+		const usuarioId = urlParams.get('usuario');
+		const pestana = urlParams.get('pestana');
+		
+		if (usuarioId) {
+			console.log('🎯 [AUTO-SELECCIÓN] Buscando usuario con ID:', usuarioId);
+			
+			// Esperar a que se carguen los usuarios y luego auto-seleccionar
+			setTimeout(() => {
+				const usuarioEncontrado = usuarios.find(u => u.id === usuarioId);
+				if (usuarioEncontrado) {
+					console.log('✅ [AUTO-SELECCIÓN] Usuario encontrado:', usuarioEncontrado.nombre);
+					seleccionarUsuario(usuarioEncontrado);
+					
+					// Si hay pestaña específica, configurarla
+					if (pestana) {
+						pestanaInicialUsuario = pestana;
+						console.log('📋 [AUTO-SELECCIÓN] Pestaña inicial:', pestana);
+					}
+				} else {
+					console.warn('⚠️ [AUTO-SELECCIÓN] Usuario no encontrado con ID:', usuarioId);
+				}
+			}, 1000); // Dar tiempo para que carguen los usuarios
+		}
+	}
 
 	async function cargarUsuarios() {
 		try {

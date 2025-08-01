@@ -64,7 +64,7 @@
   <!-- Lado Izquierdo: Logo + Hamburguesa -->
   <div class="lado-izquierdo">
     <div class="logo">
-      <a href="{$usuario?.rol === 'admin' ? '/administrador' : '/estudiante'}">
+      <a href="{$usuario?.rol === 'admin' ? '/administrador' : '/panel-estudiante'}">
         <img src="/logo academia vallenata.png" alt="Logo Academia" class="logo-img" />
       </a>
     </div>
@@ -122,11 +122,11 @@
       </a>
     {:else}
       <!-- MENÚ PARA ESTUDIANTES -->
-      <a href="/estudiante" class="enlace">
+      <a href="/panel-estudiante" class="enlace">
         <span class="icono-enlace-nav">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 0 5-1 8-1s5 1 8 1v-5"/></svg>
         </span>
-        <span>Mi Aprendizaje</span>
+        <span>Mi Panel</span>
       </a>
       <a href="/cursos" class="enlace">
         <span class="icono-enlace-nav">

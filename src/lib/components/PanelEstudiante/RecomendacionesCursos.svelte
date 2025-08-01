@@ -251,7 +251,7 @@
             {#each cursosRecomendados.slice(0, 3) as curso}
               <div class="item-recomendacion curso" on:click={() => irACurso(curso)}>
                 <div class="item-imagen">
-                  <img src={curso.imagen} alt={curso.titulo} />
+                  <img src={curso.imagen} alt={curso.titulo} loading="lazy" />
                   <div class="nivel-badge">{curso.nivel}</div>
                 </div>
                 <div class="item-info">

@@ -1,7 +1,7 @@
 <script>
 // @ts-nocheck
 import AcordeonSimulador from '$lib/components/SimuladorDefinitivo/components/simulador/AcordeonSimulador.svelte';
-import FondoEspacial from '$lib/components/SimuladorDefinitivo/components/efectos/FondoEspacial.svelte';
+// FondoEspacial ya está en +layout.svelte - no duplicar import
 
 // Variables de estado del simulador
 let direccion = 'halar';
@@ -58,7 +58,7 @@ const iniciarGrabacion = async () => {
   tiempoInicioGrabacion = audioContext.currentTime;
   mensaje = '🎵 Grabando... Toca el acordeón';
   
-  console.log('🎵 Grabación iniciada');
+  // console.log('🎵 Grabación iniciada');
 };
 
 // Función para detener grabación
@@ -70,7 +70,7 @@ const detenerGrabacion = () => {
   
   mensaje = `✅ Grabación completada: ${notasGrabadas.length} notas`;
   
-  console.log('🏁 Grabación terminada con', notasGrabadas.length, 'notas');
+  // console.log('🏁 Grabación terminada con', notasGrabadas.length, 'notas');
 };
 
 // Función para finalizar notas activas
@@ -113,7 +113,7 @@ const manejarNotaPresionada = (event) => {
   
   notasGrabadas.push(nota);
   
-  console.log(`✅ Nota grabada: ${nombre} en ${tiempoRelativo.toFixed(2)}s`);
+  // console.log(`✅ Nota grabada: ${nombre} en ${tiempoRelativo.toFixed(2)}s`);
 };
 
 // Manejar nota liberada
@@ -131,7 +131,7 @@ const manejarNotaLiberada = (event) => {
     ultimaNota.duracion = Math.max(0.1, tiempoRelativo - ultimaNota.tiempo);
     ultimaNota.activa = false;
     
-    console.log(`✅ Nota finalizada: ${ultimaNota.nombre} - Duración: ${ultimaNota.duracion.toFixed(2)}s`);
+    // console.log(`✅ Nota finalizada: ${ultimaNota.nombre} - Duración: ${ultimaNota.duracion.toFixed(2)}s`);
   }
   
   notasGrabadas = [...notasGrabadas];
@@ -151,7 +151,7 @@ const manejarCambioFuelle = (event) => {
   // Cambiar dirección
   direccion = nuevaDireccion;
   
-  console.log(`🌬️ Cambio de fuelle: ${nuevaDireccion}`);
+  // console.log(`🌬️ Cambio de fuelle: ${nuevaDireccion}`);
 };
 
 // Función para reproducir secuencia
@@ -199,7 +199,7 @@ const reproducirSecuencia = () => {
         direccion = nota.direccion;
       }
       
-      console.log(`🎵 Reproduciendo nota ${nota.nombre} a los ${nota.tiempo}s`);
+      // console.log(`🎵 Reproduciendo nota ${nota.nombre} a los ${nota.tiempo}s`);
       
     }, tiempoRelativoInicio * 1000);
     
@@ -212,7 +212,7 @@ const reproducirSecuencia = () => {
         acordeonRef.detenerTono(nota.idBoton);
       }
       
-      console.log(`🎵 Deteniendo nota ${nota.nombre} después de ${nota.duracion}s`);
+      // console.log(`🎵 Deteniendo nota ${nota.nombre} después de ${nota.duracion}s`);
       
     }, tiempoRelativoFin * 1000);
   });
@@ -226,8 +226,8 @@ const reproducirSecuencia = () => {
     finalizarReproduccion();
   }, (duracionTotal * 1000) + 500);
   
-  console.log('🎵 Reproducción iniciada - Tiempo:', tiempoInicioReproduccion);
-  console.log('🎵 Notas a reproducir:', notasCompletas.map(n => `${n.nombre} (${n.tiempo}s-${n.tiempo+n.duracion}s)`));
+  // console.log('🎵 Reproducción iniciada - Tiempo:', tiempoInicioReproduccion);
+  // console.log('🎵 Notas a reproducir:', notasCompletas.map(n => `${n.nombre} (${n.tiempo}s-${n.tiempo+n.duracion}s)`));
 };
 
 // Función para actualizar visualización durante reproducción
@@ -267,7 +267,7 @@ const actualizarVisualizacion = () => {
   
   // Debug: mostrar qué notas están activas
   if (notasActivas.length > 0) {
-    console.log(`🎵 Tiempo ${tiempoTranscurrido.toFixed(2)}s: ${notasActivas.map(n => n.nombre).join(', ')}`);
+    // console.log(`🎵 Tiempo ${tiempoTranscurrido.toFixed(2)}s: ${notasActivas.map(n => n.nombre).join(', ')}`);
   }
   
   // Continuar visualización a 60fps
@@ -305,7 +305,7 @@ const detenerReproduccion = () => {
   
   mensaje = '⏹️ Reproducción detenida';
   
-  console.log('🎵 Reproducción detenida - Estado limpio');
+  // console.log('🎵 Reproducción detenida - Estado limpio');
 };
 
 // Función para finalizar reproducción
@@ -313,7 +313,7 @@ const finalizarReproduccion = () => {
   detenerReproduccion();
   mensaje = '✅ Reproducción completada';
   
-  console.log('🎵 Reproducción completada');
+  // console.log('🎵 Reproducción completada');
 };
 
 // Función para limpiar grabación
@@ -344,7 +344,7 @@ const limpiarGrabacion = () => {
   
   mensaje = '🧹 Grabación limpiada - Estado inicial restaurado';
   
-  console.log('🧹 Grabación limpiada - Estado inicial restaurado');
+  // console.log('🧹 Grabación limpiada - Estado inicial restaurado');
 };
 </script>
 
@@ -387,13 +387,13 @@ const limpiarGrabacion = () => {
         <button 
           class="btn-debug" 
           on:click={() => {
-            console.log('🔍 Estado actual:');
-            console.log('- Grabando:', grabando);
-            console.log('- Reproduciendo:', reproduciendo);
-            console.log('- Notas grabadas:', notasGrabadas.length);
-            console.log('- Notas completas:', notasGrabadas.filter(n => !n.activa).length);
-            console.log('- Dirección:', direccion);
-            console.log('- Botones activos:', Object.keys(botonesActivos).length);
+            // console.log('🔍 Estado actual:');
+            // console.log('- Grabando:', grabando);
+            // console.log('- Reproduciendo:', reproduciendo);
+            // console.log('- Notas grabadas:', notasGrabadas.length);
+            // console.log('- Notas completas:', notasGrabadas.filter(n => !n.activa).length);
+            // console.log('- Dirección:', direccion);
+            // console.log('- Botones activos:', Object.keys(botonesActivos).length);
             mensaje = '🔍 Estado mostrado en consola';
           }}
         >

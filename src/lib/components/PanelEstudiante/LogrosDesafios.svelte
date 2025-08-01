@@ -254,12 +254,36 @@
 <!-- 🏆 PROGRESO SEMANAL - DATOS REALES DEL RANKING -->
 <section class="progreso-semanal">
   {#if cargando}
-    <div class="loading">
-      🔄 Cargando datos del ranking...<br>
-      <small style="opacity: 0.7;">Buscando progreso real</small>
+    <div class="loading-skeleton">
+      <h3>🏆 Estadísticas Gaming</h3>
+      <div class="stats-grid">
+        <div class="stat-card skeleton">
+          <span class="icon">📚</span>
+          <span class="value">-</span>
+          <span class="label">Lecciones</span>
+        </div>
+        <div class="stat-card skeleton">
+          <span class="icon">⏱️</span>
+          <span class="value">-</span>
+          <span class="label">Estudiando</span>
+        </div>
+        <div class="stat-card skeleton">
+          <span class="icon">🔥</span>
+          <span class="value">-</span>
+          <span class="label">Racha</span>
+        </div>
+        <div class="stat-card skeleton">
+          <span class="icon">💎</span>
+          <span class="value">-</span>
+          <span class="label">Puntos</span>
+        </div>
+      </div>
+      <div class="loading-text">
+        🚀 Cargando en paralelo...
+      </div>
     </div>
   {:else}
-    <h3>🏆 Tu Progreso Total (REAL)</h3>
+    <h3>🏆 Estadísticas Gaming</h3>
     
     <div class="stats-grid">
       <div class="stat-card">
@@ -316,11 +340,49 @@
     border: 1px solid #475569;
   }
 
-  .loading {
+  .loading-skeleton {
+    padding: 1.5rem;
+    background: var(--color-card);
+    border-radius: 12px;
+    border: 1px solid var(--color-borde);
+  }
+  
+  .loading-skeleton h3 {
+    margin-bottom: 1rem;
+    color: var(--color-texto-principal);
+  }
+  
+  .skeleton {
+    opacity: 0.6;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  .skeleton .value {
+    background: linear-gradient(90deg, #444 25%, #555 50%, #444 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    display: inline-block;
+    width: 20px;
+    height: 16px;
+  }
+  
+  .loading-text {
     text-align: center;
-    color: #94a3b8;
-    padding: 40px;
-    font-size: 18px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--color-texto-secundario);
+    font-weight: 500;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.8; }
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   h3 {

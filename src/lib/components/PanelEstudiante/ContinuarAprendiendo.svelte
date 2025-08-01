@@ -61,45 +61,32 @@
         tutoriales: inscripcionesTutoriales.length
       });
 
-      // PASO 3: Obtener datos de CURSOS (IGUAL que en Mis Cursos)
-      let cursosData = [];
-      if (inscripcionesCursos.length > 0) {
-        const cursoIds = inscripcionesCursos.map((i: any) => i.curso_id);
-        console.log('📚 [DASHBOARD] Buscando cursos:', cursoIds);
-        
-        const { data: cursos, error: cursosError } = await supabase
-          .from('cursos')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug, instructor_id, categoria')
-          .in('id', cursoIds);
+      // 🚀 PASO 3-4: CONSULTAS EN PARALELO (OPTIMIZADO)
+      const [cursosResult, tutorialesResult] = await Promise.all([
+        // 📚 CURSOS
+        inscripcionesCursos.length > 0 ? 
+          supabase
+            .from('cursos')
+            .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, slug, instructor_id, categoria')
+            .in('id', inscripcionesCursos.map((i: any) => i.curso_id)) :
+          Promise.resolve({ data: [], error: null }),
           
-        if (cursosError) {
-          console.error('❌ Error obteniendo cursos:', cursosError);
-        } else {
-          cursosData = cursos || [];
-          console.log('✅ [DASHBOARD] Cursos cargados:', cursosData.length);
-          console.log('📊 [DASHBOARD] Datos cursos:', cursosData);
-        }
-      }
+        // 🎵 TUTORIALES  
+        inscripcionesTutoriales.length > 0 ?
+          supabase
+            .from('tutoriales')
+            .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad, instructor_id')
+            .in('id', inscripcionesTutoriales.map((i: any) => i.tutorial_id)) :
+          Promise.resolve({ data: [], error: null })
+      ]);
 
-      // PASO 4: Obtener datos de TUTORIALES (IGUAL que en Mis Cursos)
-      let tutorialesData = [];
-      if (inscripcionesTutoriales.length > 0) {
-        const tutorialIds = inscripcionesTutoriales.map((i: any) => i.tutorial_id);
-        console.log('🎵 [DASHBOARD] Buscando tutoriales:', tutorialIds);
-        
-        const { data: tutoriales, error: tutorialesError } = await supabase
-          .from('tutoriales')
-          .select('id, titulo, descripcion, imagen_url, nivel, duracion_estimada, precio_normal, artista, acordeonista, tonalidad, instructor_id')
-          .in('id', tutorialIds);
-          
-        if (tutorialesError) {
-          console.error('❌ Error obteniendo tutoriales:', tutorialesError);
-        } else {
-          tutorialesData = tutoriales || [];
-          console.log('✅ [DASHBOARD] Tutoriales cargados:', tutorialesData.length);
-          console.log('📊 [DASHBOARD] Datos tutoriales:', tutorialesData);
-        }
-      }
+      const cursosData = cursosResult.data || [];
+      const tutorialesData = tutorialesResult.data || [];
+      
+      console.log('🚀 [DASHBOARD] Carga paralela completada:', {
+        cursos: cursosData.length,
+        tutoriales: tutorialesData.length
+      });
 
       // PASO 5: Combinar inscripciones con contenido (IGUAL que en Mis Cursos)
       const inscripcionesCombinadas = [

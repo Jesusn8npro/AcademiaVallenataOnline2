@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { usuario, setUsuario, limpiarUsuario } from '$lib/UsuarioActivo/usuario';
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { obtenerPerfil } from '$lib/supabase/autenticacionSupabase';
@@ -17,6 +17,47 @@
   import { browser } from '$app/environment';
   import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
   import { TiempoService } from '$lib/services/tiempoService';
+  import { trackingRealService } from '$lib/services/trackingActividadReal';
+  import { actividadService } from '$lib/services/actividadTiempoRealService';
+  import { servicioGeoEspanol } from '$lib/services/servicioGeolocalizacionEspanol';
+  
+  // Variables para heartbeat automático del admin
+  let heartbeatInterval: NodeJS.Timeout | null = null;
+  
+  // 🌍 FUNCIÓN INTELIGENTE DE GEOLOCALIZACIÓN
+  // Solo ejecuta geolocalización cuando es realmente necesario
+  async function verificarYEjecutarGeolocalizacion() {
+    if (!$usuario?.id) return;
+    
+    try {
+      // Verificar si ya se rastreó hoy para este usuario
+      const hoy = new Date().toISOString().split('T')[0];
+      const cacheKey = `geo_${$usuario.id}_${hoy}`;
+      
+      // Si ya se rastreó hoy, no hacer nada
+      if (sessionStorage.getItem(cacheKey)) {
+        console.log('🌍 [GEO-SMART] Ya rastreado hoy para usuario:', $usuario.nombre);
+        return;
+      }
+      
+      // Solo rastear en casos específicos:
+      const esInicioSesion = sessionStorage.getItem('nueva_sesion') === 'true';
+      const esPanelAdmin = $page.url.pathname.includes('/panel-administracion');
+      const esPrimeraCargaDia = !sessionStorage.getItem('geo_today');
+      
+      if (esInicioSesion || esPanelAdmin || esPrimeraCargaDia) {
+        console.log('🌍 [GEO-SMART] Ejecutando rastreo inteligente...');
+        await servicioGeoEspanol.rastreoCompleto();
+        
+        // Marcar como rastreado hoy
+        sessionStorage.setItem(cacheKey, 'true');
+        sessionStorage.setItem('geo_today', hoy);
+        sessionStorage.removeItem('nueva_sesion'); // Limpiar flag
+      }
+    } catch (error) {
+      console.warn('⚠️ [GEO-SMART] Error en rastreo inteligente:', error);
+    }
+  }
 
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
@@ -24,6 +65,220 @@
   // 🕒 Tracking de tiempo por página
   $: if (browser && $page.url.pathname) {
     TiempoService.iniciarTiempoPagina($page.url.pathname);
+    
+    // 🎯 TRACKING ESPECÍFICO DE ACTIVIDAD - solo para usuarios autenticados
+    if ($usuario) {
+      trackingRealService.cambiarPagina($page.url.pathname);
+      
+      // 🌍 GEOLOCALIZACIÓN INTELIGENTE - solo cuando sea necesario
+      verificarYEjecutarGeolocalizacion();
+      
+      // También actualizar actividad en inscripciones si está en curso/tutorial
+      actualizarActividadReal($page.url.pathname);
+    
+    // 🔥 TRACKING AUTOMÁTICO MEJORADO - registrar cada navegación
+    if ($usuario && $page.url.pathname.includes('/panel-administracion')) {
+      // Registrar actividad en panel de admin
+      registrarActividadAdmin();
+      
+      // Iniciar heartbeat para admin (cada 30 segundos)
+      iniciarHeartbeatAdmin();
+    } else {
+      // Detener heartbeat si sale del panel
+      detenerHeartbeatAdmin();
+    }
+    }
+  }
+
+  // 🔥 FUNCIÓN PARA REGISTRAR ACTIVIDAD DEL ADMIN
+  async function registrarActividadAdmin() {
+    if (!browser || !$usuario || $usuario.rol !== 'admin') return;
+    
+    try {
+      console.log('🔥 [ADMIN TRACKING] Registrando actividad del administrador');
+      
+      // Actualizar o crear inscripción de actividad admin
+      const { error: upsertError } = await supabase
+        .from('inscripciones')
+        .upsert({
+          usuario_id: $usuario.id,
+          curso_id: '123e4567-e89b-12d3-a456-426614174000', // UUID genérico para tracking admin
+          progreso: 1, // Incrementar progreso
+          porcentaje_completado: 10,
+          ultima_actividad: new Date().toISOString(),
+          completado: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'usuario_id,curso_id',
+          ignoreDuplicates: false
+        });
+      
+      if (!upsertError) {
+        console.log('✅ [ADMIN TRACKING] Actividad del admin registrada');
+      }
+    } catch (error) {
+      console.warn('⚠️ [ADMIN TRACKING] Error:', error);
+    }
+  }
+
+  // 🔥 HEARTBEAT AUTOMÁTICO PARA ADMIN
+  function iniciarHeartbeatAdmin() {
+    // Evitar múltiples intervals
+    if (heartbeatInterval) return;
+    
+    heartbeatInterval = setInterval(() => {
+      if ($usuario && $usuario.rol === 'admin' && $page.url.pathname.includes('/panel-administracion')) {
+        registrarActividadAdmin();
+        console.log('💓 [HEARTBEAT] Actividad admin actualizada automáticamente');
+      }
+    }, 30000); // Cada 30 segundos
+    
+    console.log('💓 [HEARTBEAT] Iniciado para admin - cada 30 segundos');
+  }
+
+  function detenerHeartbeatAdmin() {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+      console.log('💓 [HEARTBEAT] Detenido');
+    }
+  }
+
+  // 🧹 Limpiar interval al destruir componente
+  onDestroy(() => {
+    detenerHeartbeatAdmin();
+  });
+
+  // 🔥 FUNCIÓN PARA ACTUALIZAR ACTIVIDAD REAL EN BD
+  async function actualizarActividadReal(rutaActual: string) {
+    if (!browser || !$usuario) return;
+    
+    try {
+      console.log('📊 [TRACKING GLOBAL] Usuario activo:', $usuario.nombre, 'en', rutaActual);
+      
+      // 1️⃣ SIEMPRE actualizar información de sesión activa
+      const ahora = new Date().toISOString();
+      
+      // Actualizar timestamp en perfiles
+      await supabase
+        .from('perfiles')
+        .update({ updated_at: ahora })
+        .eq('id', $usuario.id);
+      
+      // 2️⃣ OBTENER DATOS ACTUALES PARA ACUMULAR TIEMPO
+      let tiempoTotalAcumulado = 0;
+      let sesionesTotales = 1;
+      let tiempoSesionActual = 1;
+      
+      // Consultar sesión actual para preservar tiempo acumulado
+      const { data: sesionExistente } = await supabase
+        .from('sesiones_usuario')
+        .select('tiempo_total_minutos, sesiones_totales, created_at, tiempo_sesion_actual, esta_activo')
+        .eq('usuario_id', $usuario.id)
+        .eq('fecha', new Date().toISOString().split('T')[0])
+        .single();
+      
+      if (sesionExistente) {
+        // ✅ PRESERVAR TIEMPO ACUMULADO EXISTENTE
+        tiempoTotalAcumulado = sesionExistente.tiempo_total_minutos || 0;
+        sesionesTotales = sesionExistente.sesiones_totales || 1;
+        
+        // Calcular tiempo de sesión actual (desde created_at hasta ahora)
+        const inicioSesion = new Date(sesionExistente.created_at);
+        const ahoraDate = new Date(ahora);
+        const minutosTranscurridos = Math.max(1, Math.floor((ahoraDate.getTime() - inicioSesion.getTime()) / (1000 * 60)));
+        tiempoSesionActual = minutosTranscurridos;
+        
+        // Si el usuario estaba inactivo y ahora está activo, incrementar sesiones
+        if (!sesionExistente.esta_activo) {
+          sesionesTotales += 1;
+          console.log('📊 [SESIÓN] Nueva sesión iniciada. Total:', sesionesTotales);
+        }
+        
+        console.log('📊 [TIEMPO] Preservando tiempo acumulado:', tiempoTotalAcumulado, 'min');
+      } else {
+        console.log('📊 [NUEVA SESIÓN] Primera sesión del día para:', $usuario.nombre);
+      }
+
+      // 3️⃣ CREAR/ACTUALIZAR registro de sesión con tiempo acumulado
+      try {
+        const { error: upsertError } = await supabase
+          .from('sesiones_usuario')
+          .upsert({
+            usuario_id: $usuario.id,
+            fecha: new Date().toISOString().split('T')[0],
+            ultima_actividad: ahora,
+            pagina_actual: rutaActual,
+            esta_activo: true,
+            tiempo_sesion_actual: tiempoSesionActual,
+            tiempo_total_minutos: tiempoTotalAcumulado + Math.floor(tiempoSesionActual / 5), // ✅ Incrementar gradualmente
+            sesiones_totales: sesionesTotales,
+            updated_at: ahora
+          }, {
+            onConflict: 'usuario_id,fecha'
+          });
+          
+        if (upsertError) {
+          console.warn('⚠️ [SESIONES] Error upsert:', upsertError.message);
+        } else {
+          console.log('✅ [SESIONES] Sesión actualizada para:', $usuario.nombre);
+        }
+      } catch (sessionError) {
+        console.warn('⚠️ [SESIONES] Error:', sessionError);
+      }
+      
+      // 3️⃣ Actualizar actividad específica para estudiantes
+      const esEstudiante = $usuario.rol !== 'admin';
+      if (esEstudiante) {
+        // Crear o actualizar inscripción para tracking
+        try {
+          await supabase
+            .from('inscripciones')
+            .upsert({
+              usuario_id: $usuario.id,
+              curso_id: '00000000-0000-0000-0000-000000000001', // ID genérico para sesión
+              progreso: 1,
+              porcentaje_completado: 5,
+              ultima_actividad: ahora,
+              pagina_actual: rutaActual,
+              completado: false,
+              created_at: ahora,
+              updated_at: ahora
+            }, {
+              onConflict: 'usuario_id,curso_id',
+              ignoreDuplicates: false
+            });
+        } catch (inscripcionError) {
+          console.warn('⚠️ [INSCRIPCIONES] Error:', inscripcionError);
+        }
+      }
+      
+      // 4️⃣ Registrar evento de navegación
+      try {
+        await supabase
+          .from('eventos_actividad')
+          .insert({
+            usuario_id: $usuario.id,
+            tipo_evento: 'navegacion',
+            pagina: rutaActual,
+            detalles: {
+              timestamp: ahora,
+              dispositivo: 'web',
+              rol: $usuario.rol
+            },
+            duracion_minutos: 1
+          });
+        console.log('✅ [EVENTOS] Navegación registrada:', rutaActual);
+      } catch (eventError) {
+        console.warn('⚠️ [EVENTOS] Error:', eventError);
+      }
+      
+      console.log('✅ [TRACKING REAL] Actividad registrada para:', $usuario.nombre);
+      
+    } catch (error) {
+      console.warn('⚠️ [TRACKING REAL] Error actualizando actividad:', error);
+    }
   }
   $: rutaEsClaseTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+\/clase\/[^\/]+/) !== null;
   $: rutaEsContenidoTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+\/contenido/) !== null;
@@ -166,7 +421,7 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     // Inicializar tema al cargar
     inicializarTema();
     
@@ -210,10 +465,15 @@
     // 🚀 CRITICAL: Corregir problemas de renderización
     corregirRenderizacion();
 
+    // ✅ GEOLOCALIZACIÓN INTELIGENTE - solo cuando sea necesario
+    verificarYEjecutarGeolocalizacion().catch(console.warn);
+
     return () => {
       window.removeEventListener('scroll', manejarScroll);
     };
   });
+
+
 
   // Función para determinar si debe aplicar transición
   function debeMostrarTransicion(ruta: string): boolean {

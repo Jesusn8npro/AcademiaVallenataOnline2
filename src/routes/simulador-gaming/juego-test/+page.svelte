@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { cancionesJuegoService } from '$lib/services/cancionesJuegoService';
   import AcordeonSimulador from '$lib/components/SimuladorDefinitivo/components/simulador/AcordeonSimulador.svelte';
-  import FondoEspacial from '$lib/components/SimuladorDefinitivo/components/efectos/FondoEspacial.svelte';
+  // FondoEspacial ya está en +layout.svelte - no duplicar import
   import { audioManager } from '$lib/components/SimuladorDefinitivo/audio/AudioManager';
   import SincronizadorAudio from './SincronizadorAudio.svelte';
   import AnimacionesNotas from './AnimacionesNotas.svelte';
@@ -52,7 +52,7 @@
    * @returns {object} - Coordenadas { top, left, width, height }
    */
   function obtenerCoordenadasBotonJugador(notaId) {
-    console.log('🎯 Obteniendo coordenadas para nota:', notaId);
+    		// // console.log('🎯 Obteniendo coordenadas para nota:', notaId);
     
     if (!acordeonJugadorRef) {
       console.warn('⚠️ acordeonJugadorRef no disponible');
@@ -69,7 +69,7 @@
     if (!botonJugador) {
       // 2. Extraer la base de la nota (sin dirección del fuelle)
       const notaBase = notaId.replace(/-empujar|-halar/g, '');
-      console.log('🔄 Intentando buscar con nota base:', notaBase);
+      		// // console.log('🔄 Intentando buscar con nota base:', notaBase);
       
       // 3. Obtener la dirección actual del fuelle del acordeón del jugador
       let direccionActualJugador = 'halar'; // Por defecto
@@ -77,7 +77,7 @@
         direccionActualJugador = acordeonJugadorRef.direccion;
       }
       
-      console.log('🎮 Dirección actual del jugador:', direccionActualJugador);
+      // console.log('🎮 Dirección actual del jugador:', direccionActualJugador);
       
       // 4. Buscar prioritariamente con la dirección actual del jugador
       const idPrioritario = `jugador-${notaBase}-${direccionActualJugador}`;
@@ -91,7 +91,7 @@
       }
       
       if (botonJugador) {
-        console.log('✅ Botón encontrado con dirección alternativa:', botonJugador.id);
+        // console.log('✅ Botón encontrado con dirección alternativa:', botonJugador.id);
       }
     }
     
@@ -102,7 +102,7 @@
       
       if (todosBotonesJugador.length > 0) {
         botonJugador = todosBotonesJugador[0];
-        console.log('✅ Botón encontrado con búsqueda parcial:', botonJugador.id);
+        // console.log('✅ Botón encontrado con búsqueda parcial:', botonJugador.id);
       }
     }
     
@@ -110,13 +110,13 @@
       console.warn('⚠️ Botón del jugador no encontrado para:', notaId);
       // Debug: mostrar todos los botones disponibles
       const todosBotonesJugador = document.querySelectorAll('[id^="jugador-"]');
-      console.log('🔍 Botones del jugador disponibles:', Array.from(todosBotonesJugador).map(btn => btn.id));
+      // console.log('🔍 Botones del jugador disponibles:', Array.from(todosBotonesJugador).map(btn => btn.id));
       
       // 🚨 Fallback: usar el centro del acordeón del jugador como destino
       const acordeonJugadorDOM = document.querySelector('.acordeon-jugador .disposicion-acordeon');
       if (acordeonJugadorDOM) {
         const rect = acordeonJugadorDOM.getBoundingClientRect();
-        console.log('🔧 Usando centro del acordeón como fallback');
+        // console.log('🔧 Usando centro del acordeón como fallback');
         return {
           top: rect.top + rect.height / 2,
           left: rect.left + rect.width / 2,
@@ -141,7 +141,7 @@
       centerY: rect.top + rect.height / 2
     };
     
-    console.log('✅ Coordenadas obtenidas para', botonJugador.id, ':', coordenadas);
+    // console.log('✅ Coordenadas obtenidas para', botonJugador.id, ':', coordenadas);
     return coordenadas;
   }
   
@@ -149,14 +149,14 @@
    * Función auxiliar para pasar coordenadas al acordeón guía
    */
   function configurarCoordenadasJugador() {
-    console.log('🔧 Configurando coordenadas del jugador...', {
+    // console.log('🔧 Configurando coordenadas del jugador...', {
       acordeonGuiaRef: !!acordeonGuiaRef,
       acordeonJugadorRef: !!acordeonJugadorRef
     });
     
     if (acordeonGuiaRef && acordeonJugadorRef) {
       acordeonGuiaRef.establecerCoordenadasAcordeonJugador(obtenerCoordenadasBotonJugador);
-      console.log('✅ Coordenadas configuradas exitosamente');
+      // console.log('✅ Coordenadas configuradas exitosamente');
     } else {
       console.warn('⚠️ No se pudieron configurar las coordenadas:', {
         acordeonGuiaRef: !!acordeonGuiaRef,
@@ -185,7 +185,7 @@
     // 🛡️ Forzar duración corta para evitar acumulación
     duracionMs = Math.min(duracionMs || 400, 800); // Máximo 800ms
     
-    console.log('🎵 ACTIVANDO NOTA DEL JUGADOR:', 
+    // console.log('🎵 ACTIVANDO NOTA DEL JUGADOR:', 
       '\n  - Nota original:', notaCompleta, 
       '\n  - Nota convertida:', notaJugador,
       '\n  - Dirección:', fuelleDireccion,
@@ -219,11 +219,11 @@
         }
       };
       
-      console.log('✅ NOTA ACTIVADA EN JUGADOR:', notaJugador, 'Estado:', botonesJugadorActivos[notaJugador]);
+      // console.log('✅ NOTA ACTIVADA EN JUGADOR:', notaJugador, 'Estado:', botonesJugadorActivos[notaJugador]);
       
       // ⏰ 3. Programar desactivación automática
       const timeoutDesactivacion = setTimeout(() => {
-        console.log('⏰ DESACTIVANDO NOTA DEL JUGADOR:', notaJugador);
+        // console.log('⏰ DESACTIVANDO NOTA DEL JUGADOR:', notaJugador);
         limpiarNotaEspecifica(notaJugador);
       }, duracionMs);
       
@@ -240,13 +240,13 @@
    */
   function limpiarNotaEspecifica(notaJugador) {
     try {
-      console.log('🧹 LIMPIANDO NOTA ESPECÍFICA:', notaJugador);
+      // console.log('🧹 LIMPIANDO NOTA ESPECÍFICA:', notaJugador);
       
       // 1. Limpiar timeout si existe
       if (timeoutsDesactivacion.has(notaJugador)) {
         clearTimeout(timeoutsDesactivacion.get(notaJugador));
         timeoutsDesactivacion.delete(notaJugador);
-        console.log('⏰ Timeout limpiado para:', notaJugador);
+        // console.log('⏰ Timeout limpiado para:', notaJugador);
       }
       
       // 2. Desactivar físicamente la nota si está activa
@@ -254,7 +254,7 @@
         // Extraer la parte de la nota sin el prefijo para la función interna
         const notaSinPrefijo = notaJugador.replace('jugador-', '');
         acordeonJugadorRef.simularDesactivacionNota(notaSinPrefijo);
-        console.log('🔇 Nota desactivada físicamente:', notaSinPrefijo);
+        // console.log('🔇 Nota desactivada físicamente:', notaSinPrefijo);
       }
       
       // 3. Limpiar del estado
@@ -262,7 +262,7 @@
         const nuevosBotones = { ...botonesJugadorActivos };
         delete nuevosBotones[notaJugador];
         botonesJugadorActivos = nuevosBotones;
-        console.log('✅ Nota limpiada del estado:', notaJugador);
+        // console.log('✅ Nota limpiada del estado:', notaJugador);
       }
       
     } catch (error) {
@@ -274,13 +274,13 @@
    * 🔥 LIMPIAR TODAS LAS NOTAS DEL JUGADOR
    */
   function limpiarTodasLasNotasJugador() {
-    console.log('🔥 LIMPIANDO TODAS LAS NOTAS DEL JUGADOR');
+    // console.log('🔥 LIMPIANDO TODAS LAS NOTAS DEL JUGADOR');
     
     try {
       // 1. Limpiar todos los timeouts
       timeoutsDesactivacion.forEach((timeout, notaJugador) => {
         clearTimeout(timeout);
-        console.log('⏰ Timeout limpiado:', notaJugador);
+        // console.log('⏰ Timeout limpiado:', notaJugador);
       });
       timeoutsDesactivacion.clear();
       
@@ -289,14 +289,14 @@
         if (acordeonJugadorRef) {
           const notaSinPrefijo = notaJugador.replace('jugador-', '');
           acordeonJugadorRef.simularDesactivacionNota(notaSinPrefijo);
-          console.log('🔇 Nota desactivada físicamente:', notaSinPrefijo);
+          // console.log('🔇 Nota desactivada físicamente:', notaSinPrefijo);
         }
       });
       
       // 3. Limpiar estado completamente
       botonesJugadorActivos = {};
       
-      console.log('✅ TODAS LAS NOTAS DEL JUGADOR LIMPIADAS');
+      // console.log('✅ TODAS LAS NOTAS DEL JUGADOR LIMPIADAS');
       
     } catch (error) {
       console.error('💥 Error limpiando todas las notas:', error);
@@ -307,21 +307,21 @@
    * 🧹 Función para limpiar todos los timeouts de desactivación
    */
   function limpiarTimeoutsDesactivacion() {
-    console.log('🧹 LIMPIANDO TIMEOUTS...');
+    // console.log('🧹 LIMPIANDO TIMEOUTS...');
     
     timeoutsDesactivacion.forEach((timeout) => {
       clearTimeout(timeout);
     });
     
     timeoutsDesactivacion.clear();
-    console.log('✅ TIMEOUTS LIMPIADOS');
+    // console.log('✅ TIMEOUTS LIMPIADOS');
   }
 
   /**
    * 🧹 Función para limpiar notas pegadas manualmente
    */
   function limpiarNotasPegadas() {
-    console.log('🧹 LIMPIANDO NOTAS PEGADAS...');
+    // console.log('🧹 LIMPIANDO NOTAS PEGADAS...');
     
     const notasAntes = Object.keys(botonesJugadorActivos).length;
     const timeoutsAntes = timeoutsDesactivacion.size;
@@ -329,44 +329,44 @@
     // Usar la función simple para limpiar todo
     limpiarTodasLasNotasJugador();
     
-    console.log(`✅ LIMPIEZA COMPLETA - Notas: ${notasAntes}→0, Timeouts: ${timeoutsAntes}→0`);
+    // console.log(`✅ LIMPIEZA COMPLETA - Notas: ${notasAntes}→0, Timeouts: ${timeoutsAntes}→0`);
   }
 
   /**
    * 📊 Función para diagnosticar el estado de las notas
    */
   function diagnosticarEstadoNotas() {
-    console.log('📊 DIAGNÓSTICO COMPLETO:');
-    console.log('========================');
+    // console.log('📊 DIAGNÓSTICO COMPLETO:');
+    // console.log('========================');
     
     // Estado acordeón jugador (lo importante)
-    console.log('🎮 ACORDEÓN JUGADOR:');
-    console.log(`- Notas activas: ${Object.keys(botonesJugadorActivos).length}`);
-    console.log(`- Timeouts activos: ${timeoutsDesactivacion.size}`);
+    // console.log('🎮 ACORDEÓN JUGADOR:');
+    // console.log(`- Notas activas: ${Object.keys(botonesJugadorActivos).length}`);
+    // console.log(`- Timeouts activos: ${timeoutsDesactivacion.size}`);
     
     if (Object.keys(botonesJugadorActivos).length > 0) {
-      console.log('- Detalle de notas activas:');
+      // console.log('- Detalle de notas activas:');
       Object.keys(botonesJugadorActivos).forEach(notaId => {
         const info = botonesJugadorActivos[notaId];
         const tiempoVida = Date.now() - info.tiempoActivacion;
-        console.log(`  • ${notaId}: ${tiempoVida}ms / ${info.duracionMs}ms`);
+        // console.log(`  • ${notaId}: ${tiempoVida}ms / ${info.duracionMs}ms`);
       });
     }
     
     // Estado acordeón guía (menos importante)
-    console.log(`🎯 ACORDEÓN GUÍA: ${Object.keys(botonesGuiaActivos).length} notas`);
+    // console.log(`🎯 ACORDEÓN GUÍA: ${Object.keys(botonesGuiaActivos).length} notas`);
     
     // Estado de reproducción
-    console.log(`🎵 REPRODUCCIÓN: ${reproduciendo ? 'ACTIVA' : 'PARADA'}`);
+    // console.log(`🎵 REPRODUCCIÓN: ${reproduciendo ? 'ACTIVA' : 'PARADA'}`);
     
-    console.log('========================');
+    // console.log('========================');
   }
 
   /**
    * Función auxiliar para configurar todos los callbacks necesarios
    */
   function configurarCallbacksJugador() {
-    console.log('🔧 Configurando callbacks del jugador...', {
+    // console.log('🔧 Configurando callbacks del jugador...', {
       acordeonGuiaRef: !!acordeonGuiaRef,
       acordeonJugadorRef: !!acordeonJugadorRef
     });
@@ -378,7 +378,7 @@
       // Configurar callback de activación automática
       acordeonGuiaRef.establecerCallbackActivacionJugador(activarNotaAutomaticamenteEnJugador);
       
-      console.log('✅ Todos los callbacks configurados exitosamente');
+      // console.log('✅ Todos los callbacks configurados exitosamente');
     } else {
       console.warn('⚠️ No se pudieron configurar los callbacks:', {
         acordeonGuiaRef: !!acordeonGuiaRef,
@@ -395,7 +395,7 @@
     const { nota, tiempoActual, diferenciaTiempo, direccionFuelle, colorFuelle } = event.detail;
     
     // 📌 Debug detallado
-    console.log('🎮 Manejando nota activada:', {
+    // console.log('🎮 Manejando nota activada:', {
       nota_id: nota.nota_id,
       direccionFuelle,
       colorFuelle,
@@ -424,7 +424,7 @@
         // El sonido real se reproduce cuando la nota voladora llega al acordeón del jugador
         // Pasar la duración real de la nota para el callback
         acordeonGuiaRef.simularActivacionNota(nota.nota_id, nota.fuelle_direccion, nota.duracion_ms);
-        console.log('✅ Visualización activada correctamente en acordeón guía (anticipada)');
+        // console.log('✅ Visualización activada correctamente en acordeón guía (anticipada)');
       } catch (error) {
         console.warn('Error activando visualización en acordeón guía:', error);
       }
@@ -438,7 +438,7 @@
     const { nota, tiempoActual, diferenciaTiempo } = event.detail;
     
     // 📌 Debug detallado
-    console.log('🎮 Manejando nota desactivada:', {
+    // console.log('🎮 Manejando nota desactivada:', {
       nota_id: nota.nota_id,
       tiempoActual,
       diferenciaTiempo
@@ -448,7 +448,7 @@
     if (acordeonGuiaRef) {
       try {
         acordeonGuiaRef.simularDesactivacionNota(nota.nota_id);
-        console.log('✅ Visualización desactivada correctamente en acordeón guía');
+        // console.log('✅ Visualización desactivada correctamente en acordeón guía');
       } catch (error) {
         console.warn('Error desactivando visualización en acordeón guía:', error);
       }
@@ -467,14 +467,14 @@
   
   function manejarNotaProxima(event) {
     const { nota, tiempoRestante } = event.detail;
-    console.log('Nota próxima:', nota.nota_id, 'en', tiempoRestante, 'ms');
+    // console.log('Nota próxima:', nota.nota_id, 'en', tiempoRestante, 'ms');
     
     // Aquí se pueden agregar las animaciones después
     notasProximas = [...notasProximas, { ...nota, tiempoRestante }];
   }
   
   function manejarAudioTerminado() {
-    console.log('Audio terminado');
+    // console.log('Audio terminado');
     
     // Limpiar el estado de ambos acordeones
     limpiarEstadoAcordeon();
@@ -542,7 +542,7 @@
   
   // Función para limpiar completamente el estado del acordeón
   function limpiarEstadoAcordeon() {
-    console.log('🧹 LIMPIANDO ESTADO COMPLETO');
+    // console.log('🧹 LIMPIANDO ESTADO COMPLETO');
     
     // 🎯 LIMPIAR ACORDEÓN GUÍA
     Object.keys(botonesGuiaActivos).forEach(notaId => {
@@ -563,7 +563,7 @@
     notaActual = null;
     notasProximas = [];
     
-    console.log('✅ ESTADO LIMPIADO');
+    // console.log('✅ ESTADO LIMPIADO');
   }
   
   // ===========================================
@@ -577,21 +577,22 @@
   // Función de diagnóstico
   async function diagnosticoBaseDatos() {
     try {
-      console.log('🔍 Iniciando diagnóstico de base de datos...');
+      // console.log('🔍 Iniciando diagnóstico de base de datos...');
       
       // Importar supabase directamente
       const { supabase } = await import('$lib/supabase/clienteSupabase');
       
-      // Verificar configuración
-      console.log('🔗 URL Supabase:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('🔑 Llave configurada:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Sí' : 'No');
+      		// Verificar configuración (solo en desarrollo)
+		if (import.meta.env.DEV) {
+			// console.log('🔗 Configuración verificada');
+		}
       
       // Probar conexión básica
       const { data: todasCanciones, error: errorTodas } = await supabase
         .from('canciones_simulador_acordeon')
         .select('*');
       
-      console.log('📊 Total canciones en BD:', todasCanciones?.length || 0);
+      // console.log('📊 Total canciones en BD:', todasCanciones?.length || 0);
       if (errorTodas) {
         console.error('❌ Error obteniendo todas las canciones:', errorTodas);
       }
@@ -602,7 +603,7 @@
         .select('*')
         .eq('estado', 'activa');
       
-      console.log('🟢 Canciones activas:', cancionesActivas?.length || 0);
+      // console.log('🟢 Canciones activas:', cancionesActivas?.length || 0);
       if (errorActivas) {
         console.error('❌ Error obteniendo canciones activas:', errorActivas);
       }
@@ -612,15 +613,15 @@
         .select('*')
         .eq('es_publica', true);
       
-      console.log('🌐 Canciones públicas:', cancionesPublicas?.length || 0);
+      // console.log('🌐 Canciones públicas:', cancionesPublicas?.length || 0);
       if (errorPublicas) {
         console.error('❌ Error obteniendo canciones públicas:', errorPublicas);
       }
       
       // Mostrar estructura de tabla
       if (todasCanciones && todasCanciones.length > 0) {
-        console.log('📋 Estructura primera canción:', Object.keys(todasCanciones[0]));
-        console.log('📝 Ejemplo canción:', todasCanciones[0]);
+        // console.log('📋 Estructura primera canción:', Object.keys(todasCanciones[0]));
+        // console.log('📝 Ejemplo canción:', todasCanciones[0]);
       }
       
          } catch (error) {
@@ -631,7 +632,7 @@
   // Función para crear canción de ejemplo
   async function crearCancionEjemplo() {
     try {
-      console.log('➕ Creando canción de ejemplo...');
+      // console.log('➕ Creando canción de ejemplo...');
       
       const { supabase } = await import('$lib/supabase/clienteSupabase');
       
@@ -671,7 +672,7 @@
         return;
       }
       
-      console.log('✅ Canción creada:', cancionCreada);
+      // console.log('✅ Canción creada:', cancionCreada);
       
       // Crear secuencia de ejemplo
       const secuenciaEjemplo = {
@@ -781,7 +782,7 @@
         return;
       }
       
-      console.log('✅ Secuencia creada:', secuenciaCreada);
+      // console.log('✅ Secuencia creada:', secuenciaCreada);
       alert('✅ Canción de ejemplo creada exitosamente');
       
       // Recargar canciones
@@ -798,11 +799,11 @@
     errorCargaCanciones = null;
     
     try {
-      console.log('🎵 Iniciando carga de canciones...');
+      // console.log('🎵 Iniciando carga de canciones...');
       cancionesDisponibles = await cancionesJuegoService.obtenerCancionesDisponibles();
       
-      console.log('✅ Canciones cargadas exitosamente:', cancionesDisponibles.length);
-      console.log('📝 Datos de canciones:', cancionesDisponibles);
+      // console.log('✅ Canciones cargadas exitosamente:', cancionesDisponibles.length);
+      // console.log('📝 Datos de canciones:', cancionesDisponibles);
       
       if (cancionesDisponibles.length === 0) {
         console.warn('⚠️ No se encontraron canciones disponibles');
@@ -828,9 +829,9 @@
         notasCancion = cancionesJuegoService.parseNotasSecuencia(secuenciaActual);
         estadisticasCancion = cancionesJuegoService.calcularEstadisticas(notasCancion);
         
-        console.log('Canción seleccionada:', cancion.titulo);
-        console.log('Notas cargadas:', notasCancion.length);
-        console.log('Estadísticas:', estadisticasCancion);
+        // console.log('Canción seleccionada:', cancion.titulo);
+        // console.log('Notas cargadas:', notasCancion.length);
+        // console.log('Estadísticas:', estadisticasCancion);
       }
       
           // Reiniciar estado
@@ -849,7 +850,7 @@
       // Sincronizar direcciones del fuelle de ambos acordeones
       if (acordeonGuiaRef && acordeonJugadorRef) {
         acordeonGuiaRef.direccion = acordeonJugadorRef.direccion;
-        console.log('🔄 Direcciones sincronizadas:', acordeonJugadorRef.direccion);
+        // console.log('🔄 Direcciones sincronizadas:', acordeonJugadorRef.direccion);
       }
     }, 100);
     
@@ -873,7 +874,7 @@
       // Sincronizar direcciones del fuelle de ambos acordeones
       if (acordeonGuiaRef && acordeonJugadorRef) {
         acordeonGuiaRef.direccion = acordeonJugadorRef.direccion;
-        console.log('🔄 Direcciones iniciales sincronizadas:', acordeonJugadorRef.direccion);
+        // console.log('🔄 Direcciones iniciales sincronizadas:', acordeonJugadorRef.direccion);
       }
     }, 100);
   });

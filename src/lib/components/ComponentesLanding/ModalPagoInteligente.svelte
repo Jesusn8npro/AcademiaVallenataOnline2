@@ -54,9 +54,9 @@
 
 	// --- LÓGICA DE EPAYCO ON-PAGE ---
 	let handler: any;
-	// Credenciales de ePayco (modo test)
-	const EPAYCO_PUBLIC_KEY = 'a04d60e2e678d5bd89a58d26f3413fdb';
-	const EPAYCO_CUSTOMER_ID = '37257';
+	// Credenciales de ePayco desde variables de entorno
+	const EPAYCO_PUBLIC_KEY = import.meta.env.VITE_EPAYCO_PUBLIC_KEY;
+	const EPAYCO_CUSTOMER_ID = import.meta.env.VITE_EPAYCO_CUSTOMER_ID;
 
 	function loadEpaycoScript() {
 		return new Promise((resolve, reject) => {

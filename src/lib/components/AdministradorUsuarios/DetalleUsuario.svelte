@@ -3,6 +3,8 @@
 	import { supabase } from '$lib/supabase/clienteSupabase';
 	import { obtenerPaquetesPublicados, inscribirUsuarioEnPaquete, formatearPrecio as formatearPrecioPaquete, obtenerTutorialesPaquete, eliminarInscripcionPaquete } from '$lib/services/paquetesService';
 	import TestPaquete from './TestPaquete.svelte';
+	import PestanaActividad from './pestanas/PestanaActividad.svelte';
+	import PestanaGeolocalizacion from './pestanas/PestanaGeolocalizacion.svelte';
 	// Definir interface Usuario localmente
 	interface Usuario {
 		id: string;
@@ -44,7 +46,7 @@
 	}
 
 	export let usuario: Usuario;
-	export let pestanaInicial: string = 'personal'; // prop opcional para establecer la pestaña inicial
+	export let pestanaInicial: string = 'general'; // prop opcional para establecer la pestaña inicial
 
 	const dispatch = createEventDispatcher();
 
@@ -52,7 +54,7 @@
 	let error = '';
 	let exito = '';
 	let editando = false;
-	let pestanaActiva = pestanaInicial; // personal, cursos, pagos, actividad
+	let pestanaActiva = pestanaInicial; // general, actividad, geolocalizacion, cursos, configuracion
 
 	// Datos editables
 	let datosEditables = { ...usuario };
@@ -64,16 +66,9 @@
 	let paquetesInscritos: any[] = [];
 	let paquetesDisponibles: any[] = [];
 	let historialPagos: any[] = [];
-	let estadisticasActividad = {
-		tiempoTotal: 0,
-		sesionesHoy: 0,
-		ultimaActividad: null as string | null,
-		paginasFavoritas: [] as Array<{ pagina: string; visitas: number }>
-	};
 
 	let cargandoCursos = false;
 	let cargandoPagos = false;
-	let cargandoActividad = false;
 	let cargandoDisponibles = false;
 	let cargandoPaquetes = false;
 
@@ -114,8 +109,8 @@
 			]);
 		} else if (pestanaActiva === 'pagos') {
 			await cargarHistorialPagos();
-		} else if (pestanaActiva === 'actividad') {
-			await cargarEstadisticasActividad();
+		} else if (pestanaActiva === 'configuracion') {
+			await cargarHistorialPagos();
 		}
 	}
 
@@ -269,27 +264,7 @@
 		}
 	}
 
-	async function cargarEstadisticasActividad() {
-		try {
-			cargandoActividad = true;
-			// Aquí puedes implementar consultas para obtener estadísticas de actividad
-			// Por ahora, datos de ejemplo
-			estadisticasActividad = {
-				tiempoTotal: Math.floor(Math.random() * 1000) + 100,
-				sesionesHoy: Math.floor(Math.random() * 5) + 1,
-				ultimaActividad: new Date().toISOString(),
-				paginasFavoritas: [
-					{ pagina: '/cursos', visitas: 45 },
-					{ pagina: '/mi-perfil', visitas: 23 },
-					{ pagina: '/tutoriales', visitas: 18 }
-				]
-			};
-		} catch (err) {
-			console.error('Error al cargar actividad:', err);
-		} finally {
-			cargandoActividad = false;
-		}
-	}
+
 
 	async function cargarPaquetesInscritos() {
 		try {
@@ -823,10 +798,8 @@ function verPaquete(paqueteId: string) {
 			if (historialPagos.length === 0) {
 				await cargarHistorialPagos();
 			}
-		} else if (pestana === 'actividad') {
-			if (estadisticasActividad.tiempoTotal === 0) {
-				await cargarEstadisticasActividad();
-			}
+		} else if (pestana === 'configuracion') {
+			await cargarHistorialPagos();
 		}
 	}
 
@@ -1091,6 +1064,15 @@ function verPaquete(paqueteId: string) {
 			minimumFractionDigits: 0
 		}).format(numero);
 	}
+
+	// Pestañas disponibles (actualizar)
+	const pestañas = [
+		{ id: 'general', label: '👤 General', icono: '👤' },
+		{ id: 'actividad', label: '📊 Actividad', icono: '📊' },
+		{ id: 'geolocalizacion', label: '🌍 Ubicación', icono: '🌍' },
+		{ id: 'cursos', label: '📚 Cursos', icono: '📚' },
+		{ id: 'configuracion', label: '⚙️ Configuración', icono: '⚙️' }
+	];
 </script>
 
 <div class="detalle-usuario">
@@ -1149,50 +1131,20 @@ function verPaquete(paqueteId: string) {
 	{/if}
 
 	<div class="pestanas">
-		<button 
-			class="pestana" 
-			class:activa={pestanaActiva === 'personal'}
-			on:click={() => cambiarPestana('personal')}
-		>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-				<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
-			</svg>
-			Información Personal
-		</button>
-		<button 
-			class="pestana" 
-			class:activa={pestanaActiva === 'cursos'}
-			on:click={() => cambiarPestana('cursos')}
-		>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-				<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" fill="currentColor"/>
-			</svg>
-			Cursos y Progreso
-		</button>
-		<button 
-			class="pestana" 
-			class:activa={pestanaActiva === 'pagos'}
-			on:click={() => cambiarPestana('pagos')}
-		>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-				<path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" fill="currentColor"/>
-			</svg>
-			Pagos y Membresía
-		</button>
-		<button 
-			class="pestana" 
-			class:activa={pestanaActiva === 'actividad'}
-			on:click={() => cambiarPestana('actividad')}
-		>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-				<path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9H19V1h-2v1H7V1H5v1H4.5C3.12 2 2 3.12 2 4.5v15C2 20.88 3.12 22 4.5 22h15c1.38 0 2.5-1.12 2.5-2.5v-15C22 3.12 20.88 2 19.5 2z" fill="currentColor"/>
-			</svg>
-			Actividad
-		</button>
+		{#each pestañas as pestaña}
+			<button 
+				class="pestana" 
+				class:activa={pestanaActiva === pestaña.id}
+				on:click={() => cambiarPestana(pestaña.id)}
+			>
+				<span class="pestana-icono">{pestaña.icono}</span>
+				{pestaña.label}
+			</button>
+		{/each}
 	</div>
 
 	<div class="contenido-pestanas">
-		{#if pestanaActiva === 'personal'}
+		{#if pestanaActiva === 'general'}
 			<div class="pestana-contenido">
 				<div class="seccion">
 					<h3>Información Básica</h3>
@@ -1914,36 +1866,113 @@ function verPaquete(paqueteId: string) {
 		{/if}
 
 		{#if pestanaActiva === 'actividad'}
+			<!-- 🔥 NUEVA PESTAÑA ACTIVIDAD CON DATOS REALES -->
+			<PestanaActividad {usuario} />
+		{/if}
+
+		{#if pestanaActiva === 'geolocalizacion'}
+			<!-- 🌍 NUEVA PESTAÑA GEOLOCALIZACIÓN -->
+			<PestanaGeolocalizacion {usuario} />
+		{/if}
+
+		{#if pestanaActiva === 'configuracion'}
 			<div class="pestana-contenido">
-				<div class="seccion">
-					<h3>Estadísticas de Actividad</h3>
-					
-					{#if cargandoActividad}
-						<div class="cargando">Cargando estadísticas...</div>
-					{:else}
-						<div class="estadisticas-grid">
-							<div class="stat-card">
-								<div class="stat-valor">{estadisticasActividad.tiempoTotal}h</div>
-								<div class="stat-label">Tiempo Total</div>
+				<!-- Gestión de Membresía -->
+				<div class="seccion seccion-membresia">
+					<div class="header-seccion">
+						<h3>Gestión de Membresía</h3>
+						<button 
+							class="btn-cambiar-membresia"
+							on:click={() => mostrarGestionMembresia = !mostrarGestionMembresia}
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+								<path d="M12 1L3 5l9 4 9-4-9-4zM3 5v14l9 4 9-4V5" stroke="currentColor" stroke-width="2"/>
+							</svg>
+							Cambiar Membresía
+						</button>
+					</div>
+
+					<div class="membresia-actual">
+						<div class="membresia-info">
+							<div class="membresia-icon">
+								{#if usuario.suscripcion === 'premium'}
+									👑
+								{:else if usuario.suscripcion === 'pro'}
+									⭐
+								{:else}
+									🎓
+								{/if}
 							</div>
-							<div class="stat-card">
-								<div class="stat-valor">{estadisticasActividad.sesionesHoy}</div>
-								<div class="stat-label">Sesiones Hoy</div>
-							</div>
-							<div class="stat-card">
-								<div class="stat-valor">
-									{estadisticasActividad.ultimaActividad ? formatearFecha(estadisticasActividad.ultimaActividad) : 'N/A'}
-								</div>
-								<div class="stat-label">Última Actividad</div>
+							<div class="membresia-detalles">
+								<h4>Membresía Actual</h4>
+								<p class="tipo-membresia">{usuario.suscripcion}</p>
+								<p class="fecha-desde">Desde: {formatearFecha(usuario.fecha_creacion)}</p>
 							</div>
 						</div>
+					</div>
 
-						<div class="paginas-favoritas">
-							<h4>Páginas Más Visitadas</h4>
-							{#each estadisticasActividad.paginasFavoritas as pagina}
-								<div class="pagina-item">
-									<span class="pagina-nombre">{pagina.pagina}</span>
-									<span class="pagina-visitas">{pagina.visitas} visitas</span>
+					{#if mostrarGestionMembresia}
+						<div class="selector-membresia">
+							<h4>Seleccionar Nueva Membresía</h4>
+							<div class="opciones-membresia">
+								{#each ['gratis', 'basico', 'premium', 'pro', 'vip'] as tipoMembresia}
+									<button
+										class="opcion-membresia"
+										class:activa={usuario.suscripcion === tipoMembresia}
+										on:click={() => cambiarMembresia(tipoMembresia)}
+										disabled={usuario.suscripcion === tipoMembresia || cargando}
+									>
+										<div class="membresia-icon">
+											{#if tipoMembresia === 'premium'}
+												👑
+											{:else if tipoMembresia === 'pro'}
+												⭐
+											{:else if tipoMembresia === 'vip'}
+												💎
+											{:else if tipoMembresia === 'basico'}
+												📚
+											{:else}
+												🎓
+											{/if}
+										</div>
+										<span>{tipoMembresia}</span>
+									</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+				</div>
+
+
+
+				<!-- Historial de Pagos -->
+				<div class="seccion">
+					<h3>Historial de Pagos</h3>
+					
+					{#if cargandoPagos}
+						<div class="cargando">Cargando historial de pagos...</div>
+					{:else if historialPagos.length === 0}
+						<div class="vacio">
+							<svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+								<path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" fill="currentColor"/>
+							</svg>
+							<p>No hay historial de pagos</p>
+						</div>
+					{:else}
+						<div class="lista-pagos">
+							{#each historialPagos as pago}
+								<div class="pago-item">
+									<div class="pago-info">
+										<h4>{pago.descripcion || pago.nombre_producto || 'Pago'}</h4>
+										<p class="fecha">{formatearFecha(pago.fecha_transaccion || pago.created_at)}</p>
+										<p class="referencia">Ref: {pago.ref_payco}</p>
+									</div>
+									<div class="pago-monto">
+										<span class="monto">{formatearPrecio(pago.valor)}</span>
+										<span class="estado estado-{pago.estado}">
+											{pago.estado}
+										</span>
+									</div>
 								</div>
 							{/each}
 						</div>

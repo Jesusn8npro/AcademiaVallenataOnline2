@@ -56,6 +56,8 @@
     gap: 20px;
     padding: 20px;
     overflow: hidden; /* Evitar scroll en el contenedor principal */
+    max-width: 100vw; /* Evitar que se extienda más allá del viewport */
+    box-sizing: border-box; /* Incluir padding en el width total */
   }
 
 
@@ -139,5 +141,17 @@
     .simulador-stats {
       grid-template-columns: 1fr;
     }
+  }
+
+  /* 🚫 PREVENIR SCROLL HORIZONTAL GLOBAL EN ESTA PÁGINA */
+  :global(html, body) {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Asegurar que todos los elementos dentro del panel no causen overflow */
+  .panel-gaming-container * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 </style> 

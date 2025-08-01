@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { audioManager, TipoEfectoUI } from '$lib/components/SimuladorDefinitivo/audio/AudioManager';
 	import { sistemaCanciones } from '$lib/components/SimuladorDefinitivo/SimuladorDeAcordeonJS/SistemaCanciones.js';
-	import FondoEspacial from '$lib/components/SimuladorDefinitivo/components/efectos/FondoEspacial.svelte';
+	// FondoEspacial ya está en +layout.svelte - no duplicar import
 	import BotonInicio from '$lib/components/SimuladorDefinitivo/components/ui/BotonInicio.svelte';
 	import Modal from '$lib/components/SimuladorDefinitivo/components/ui/Modal.svelte';
 	
@@ -18,17 +18,17 @@
 	// Cargar canciones del sistema
 	onMount(async () => {
 		if (browser) {
-			console.log('🎵 Iniciando carga de canciones...');
+			// console.log('🎵 Iniciando carga de canciones...');
 			
 			// Esperar un poquito para que el DOM esté listo
 			await new Promise(resolve => setTimeout(resolve, 100));
 			
 			// Verificar localStorage directamente
 			const cancionesEnStorage = localStorage.getItem('cancionesPersonalizadas');
-			console.log('📱 Contenido directo de localStorage:', cancionesEnStorage);
+			// console.log('📱 Contenido directo de localStorage:', cancionesEnStorage);
 			
 			// Forzar recarga de canciones personalizadas
-			console.log('🔄 Forzando recarga de canciones personalizadas...');
+			// console.log('🔄 Forzando recarga de canciones personalizadas...');
 			sistemaCanciones.cargarCancionesPersonalizadas();
 			
 			// Esperar un momento y recargar
@@ -39,7 +39,7 @@
 			// Auto-actualizar cada 2 segundos las primeras 3 veces por si acaso
 			for (let i = 0; i < 3; i++) {
 				setTimeout(() => {
-					console.log(`🔄 Auto-actualización ${i + 1}/3`);
+					// console.log(`🔄 Auto-actualización ${i + 1}/3`);
 					cargarTodasLasCanciones();
 				}, (i + 1) * 2000);
 			}
@@ -47,15 +47,15 @@
 	});
 	
 	function cargarTodasLasCanciones() {
-		console.log('📂 Cargando todas las canciones...');
+		// console.log('📂 Cargando todas las canciones...');
 		
 		// Obtener todas las canciones
 		const todasLasCanciones = sistemaCanciones.obtenerTodasLasCanciones();
-		console.log(`📊 Total de canciones encontradas: ${todasLasCanciones.length}`);
+		// console.log(`📊 Total de canciones encontradas: ${todasLasCanciones.length}`);
 		
 		// Debug: mostrar todas las canciones con sus metadatos
 		todasLasCanciones.forEach(cancion => {
-			console.log(`🎵 ${cancion.titulo} - Creador: ${cancion.metadatos?.creador}, EsPersonalizada: ${cancion.metadatos?.esPersonalizada}, ID: ${cancion.id}`);
+			// console.log(`🎵 ${cancion.titulo} - Creador: ${cancion.metadatos?.creador}, EsPersonalizada: ${cancion.metadatos?.esPersonalizada}, ID: ${cancion.id}`);
 		});
 		
 		// Separar canciones personalizadas y del sistema con filtro más amplio
@@ -73,12 +73,12 @@
 					 cancion.metadatos?.guardadoAutomatico === true);
 		});
 		
-		console.log(`👤 Canciones personalizadas encontradas: ${cancionesPersonalizadas.length}`);
-		console.log(`🎼 Canciones del sistema encontradas: ${cancionesDelSistema.length}`);
+		// console.log(`👤 Canciones personalizadas encontradas: ${cancionesPersonalizadas.length}`);
+		// console.log(`🎼 Canciones del sistema encontradas: ${cancionesDelSistema.length}`);
 		
 		// Mostrar detalles de las canciones personalizadas
 		cancionesPersonalizadas.forEach(cancion => {
-			console.log(`✨ Personalizada: ${cancion.titulo} (${cancion.notas?.length || 0} notas)`);
+			// console.log(`✨ Personalizada: ${cancion.titulo} (${cancion.notas?.length || 0} notas)`);
 		});
 		
 		// Combinar todas las canciones (personalizadas primero)
@@ -91,7 +91,7 @@
 			descripcion: cancion.descripcion || `Canción ${cancion.genero} de ${cancion.artista}`
 		}));
 		
-		console.log(`✅ Carga completa. Total canciones: ${canciones.length}`);
+		// console.log(`✅ Carga completa. Total canciones: ${canciones.length}`);
 	}
 	
 	// Pestañas disponibles (exactas de Rhythm Plus)
@@ -157,7 +157,8 @@
 	function irAlEditor() {
 		audioManager.reproducirEfectoUI(TipoEfectoUI.CLICK_BOTON);
 		setTimeout(() => {
-			    goto('/simulador-gaming/editor-max');
+			    		// Editor Max removido - redirigir a editor interactivo
+		goto('/simulador-gaming/editor-interactivo');
 		}, 100);
 	}
 	
@@ -165,17 +166,17 @@
 	function actualizarCanciones() {
 		audioManager.reproducirEfectoUI(TipoEfectoUI.CLICK_BOTON);
 		
-		console.log('🔄 Actualizando lista de canciones manualmente...');
+		// console.log('🔄 Actualizando lista de canciones manualmente...');
 		
 		// Verificar localStorage directamente otra vez
 		const cancionesEnStorage = localStorage.getItem('cancionesPersonalizadas');
-		console.log('📱 Verificando localStorage:', cancionesEnStorage ? 'Hay datos' : 'No hay datos');
+		// console.log('📱 Verificando localStorage:', cancionesEnStorage ? 'Hay datos' : 'No hay datos');
 		
 		if (cancionesEnStorage) {
 			const cancionesParseadas = JSON.parse(cancionesEnStorage);
-			console.log(`📱 Canciones en localStorage: ${cancionesParseadas.length}`);
+			// console.log(`📱 Canciones en localStorage: ${cancionesParseadas.length}`);
 			cancionesParseadas.forEach((cancion: any) => {
-				console.log(`📱 En storage: ${cancion.titulo} (ID: ${cancion.id})`);
+				// console.log(`📱 En storage: ${cancion.titulo} (ID: ${cancion.id})`);
 			});
 		}
 		
@@ -185,7 +186,7 @@
 		// Usar la función unificada
 		cargarTodasLasCanciones();
 		
-		console.log('✅ Actualización manual completada');
+		// console.log('✅ Actualización manual completada');
 	}
 	
 	// Función para abrir modal de sugerencias
@@ -202,17 +203,17 @@
 	
 	// Función de debug completo
 	function debugCompleto() {
-		console.log('🔍 INICIANDO DEBUG COMPLETO...');
+		// console.log('🔍 INICIANDO DEBUG COMPLETO...');
 		
 		// 1. Verificar localStorage
 		const storage = localStorage.getItem('cancionesPersonalizadas');
-		console.log('📱 localStorage RAW:', storage);
+		// console.log('📱 localStorage RAW:', storage);
 		
 		if (storage) {
 			try {
 				const parsed = JSON.parse(storage);
-				console.log('📱 localStorage PARSEADO:', parsed);
-				console.log(`📱 Cantidad en localStorage: ${parsed.length}`);
+				// console.log('📱 localStorage PARSEADO:', parsed);
+				// console.log(`📱 Cantidad en localStorage: ${parsed.length}`);
 			} catch (e) {
 				console.error('❌ Error parseando localStorage:', e);
 			}
@@ -220,17 +221,17 @@
 		
 		// 2. Verificar sistema de canciones
 		const todasEnSistema = sistemaCanciones.obtenerTodasLasCanciones();
-		console.log('🎵 Canciones en sistema:', todasEnSistema.length);
+		// console.log('🎵 Canciones en sistema:', todasEnSistema.length);
 		todasEnSistema.forEach((cancion: any, index: number) => {
-			console.log(`${index + 1}. ${cancion.titulo} - ID: ${cancion.id} - Creador: ${cancion.metadatos?.creador}`);
+			// console.log(`${index + 1}. ${cancion.titulo} - ID: ${cancion.id} - Creador: ${cancion.metadatos?.creador}`);
 		});
 		
 		// 3. Forzar recarga total
-		console.log('🔄 Forzando recarga total...');
+		// console.log('🔄 Forzando recarga total...');
 		sistemaCanciones.cargarCancionesPersonalizadas();
 		cargarTodasLasCanciones();
 		
-		console.log('✅ DEBUG COMPLETO TERMINADO');
+		// console.log('✅ DEBUG COMPLETO TERMINADO');
 		alert('🔍 Debug completo ejecutado. Revisa la consola para más detalles.');
 	}
 </script>
@@ -240,7 +241,7 @@
 	<meta name="description" content="Selecciona tu canción favorita para practicar en el simulador de acordeón." />
 </svelte:head>
 
-<FondoEspacial />
+<!-- FondoEspacial renderizado desde +layout.svelte -->
 
 <main class="contenedor-principal">
 	<!-- Título -->
@@ -285,7 +286,7 @@
 									on:mouseenter={hoverCancion}
 								>
 									<div class="imagen-cancion">
-										<img src={cancion.imagen} alt={cancion.titulo} />
+										<img src={cancion.imagen} alt={cancion.titulo} loading="lazy" />
 									</div>
 									<div class="info-cancion">
 										<div class="titulo-cancion">{cancion.titulo}</div>
@@ -334,10 +335,10 @@
 									class="tarjeta-cancion"
 									on:click={() => clickCancion(cancion)}
 									on:mouseenter={hoverCancion}
-								>
-									<div class="imagen-cancion">
-										<img src={cancion.imagen} alt={cancion.titulo} />
-									</div>
+															>
+								<div class="imagen-cancion">
+									<img src={cancion.imagen} alt={cancion.titulo} loading="lazy" />
+								</div>
 									<div class="info-cancion">
 										<div class="titulo-cancion">{cancion.titulo}</div>
 										<div class="artista-cancion">{cancion.artista}</div>

@@ -185,14 +185,14 @@
         <!-- MENÚ PARA ESTUDIANTES -->
 
         <div class="seccion">
-          <button class="enlace-nav activo" on:click={() => navegarA('/estudiante')}>
+          <button class="enlace-nav activo" on:click={() => navegarA('/panel-estudiante')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                 <path d="M6 12v5c3 0 5-1 8-1s5 1 8 1v-5"/>
               </svg>
             </div>
-            <span>Mi Aprendizaje</span>
+            <span>Mi Panel</span>
           </button>
 
           <button class="enlace-nav" on:click={() => navegarA('/cursos')}>

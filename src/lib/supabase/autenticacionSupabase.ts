@@ -43,9 +43,62 @@ export const registrarUsuario = async (
 
 // Cerrar sesión del usuario
 export const cerrarSesion = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) return error.message;
-  return null;
+  try {
+    // 1️⃣ OBTENER USUARIO ACTUAL ANTES DE CERRAR SESIÓN
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      console.log('🚪 [LOGOUT] Marcando usuario como desconectado:', user.id);
+      
+      // 2️⃣ MARCAR COMO INACTIVO EN SESIONES_USUARIO
+      const ahora = new Date().toISOString();
+      await supabase
+        .from('sesiones_usuario')
+        .update({ 
+          esta_activo: false,
+          ultima_actividad: ahora,
+          updated_at: ahora
+        })
+        .eq('usuario_id', user.id);
+      
+      // 3️⃣ REGISTRAR EVENTO DE LOGOUT
+      try {
+        await supabase
+          .from('eventos_actividad')
+          .insert({
+            usuario_id: user.id,
+            tipo_evento: 'logout',
+            pagina: window?.location?.pathname || '/logout',
+            detalles: {
+              timestamp: ahora,
+              dispositivo: 'web',
+              motivo: 'manual'
+            },
+            duracion_minutos: 0
+          });
+      } catch (eventoError) {
+        console.warn('⚠️ [LOGOUT] Error registrando evento:', eventoError);
+      }
+      
+      console.log('✅ [LOGOUT] Usuario marcado como desconectado correctamente');
+    }
+    
+    // 4️⃣ PROCEDER CON EL LOGOUT DE SUPABASE
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('❌ [LOGOUT] Error en signOut:', error);
+      return error.message;
+    }
+    
+    console.log('✅ [LOGOUT] Sesión cerrada exitosamente');
+    return null;
+    
+  } catch (error) {
+    console.error('❌ [LOGOUT] Error general:', error);
+    // Intentar cerrar sesión de todas formas
+    const { error: signOutError } = await supabase.auth.signOut();
+    return signOutError?.message || 'Error cerrando sesión';
+  }
 };
 
 // Obtener el perfil del usuario actual desde la tabla 'perfiles'

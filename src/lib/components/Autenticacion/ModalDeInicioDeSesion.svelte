@@ -3,6 +3,8 @@
   import { setUsuario } from '$lib/UsuarioActivo/usuario';
   import { goto } from '$app/navigation';
   import { supabase } from '$lib/supabase/clienteSupabase';
+  import { actividadService } from '$lib/services/actividadTiempoRealService';
+  import { trackearUbicacionUsuario } from '$lib/services/geoLocationService';
   export let abierto = false;
   export let onCerrar = () => {};
   let usuario = '';
@@ -87,12 +89,112 @@
     }
     if (perfil && !errorPerfil) {
       setUsuario(perfil); // Guardar usuario global
+      
+      // 🚀 REGISTRAR ACTIVIDAD DE LOGIN
+      try {
+        const ahora = new Date().toISOString();
+        
+        // Actualizar timestamp en perfiles
+        await supabase
+          .from('perfiles')
+          .update({ updated_at: ahora })
+          .eq('id', perfil.id);
+        
+        // 🔥 CONSULTAR TIEMPO HISTÓRICO TOTAL DEL USUARIO
+        let tiempoHistoricoTotal = 0;
+        let sesionesTotalesHistoricas = 0;
+        
+        // Sumar TODAS las sesiones anteriores del usuario
+        const { data: sesionesAnteriores } = await supabase
+          .from('sesiones_usuario')
+          .select('tiempo_total_minutos, sesiones_totales')
+          .eq('usuario_id', perfil.id)
+          .neq('fecha', ahora.split('T')[0]); // Todas las fechas ANTERIORES
+        
+        if (sesionesAnteriores && sesionesAnteriores.length > 0) {
+          // Sumar tiempo total histórico
+          tiempoHistoricoTotal = sesionesAnteriores.reduce((total, sesion) => {
+            return total + (sesion.tiempo_total_minutos || 0);
+          }, 0);
+          
+          // Sumar sesiones totales históricas
+          sesionesTotalesHistoricas = sesionesAnteriores.reduce((total, sesion) => {
+            return total + (sesion.sesiones_totales || 0);
+          }, 0);
+          
+          console.log('📊 [LOGIN] Tiempo histórico encontrado:', tiempoHistoricoTotal, 'min de', sesionesAnteriores.length, 'días');
+        }
+        
+        // Verificar si ya existe sesión HOY
+        const { data: sesionHoy } = await supabase
+          .from('sesiones_usuario')
+          .select('tiempo_total_minutos, sesiones_totales, esta_activo')
+          .eq('usuario_id', perfil.id)
+          .eq('fecha', ahora.split('T')[0])
+          .single();
+        
+        let tiempoTotalFinal = tiempoHistoricoTotal + 1; // +1 min por esta sesión
+        let sesionesTotalesFinal = sesionesTotalesHistoricas + 1;
+        
+        if (sesionHoy) {
+          // Si ya hay sesión hoy, preservar el tiempo de hoy y sumar al histórico
+          tiempoTotalFinal = tiempoHistoricoTotal + (sesionHoy.tiempo_total_minutos || 0) + 1;
+          
+          // Solo incrementar sesiones si estaba inactivo
+          if (!sesionHoy.esta_activo) {
+            sesionesTotalesFinal = sesionesTotalesHistoricas + (sesionHoy.sesiones_totales || 0) + 1;
+          } else {
+            sesionesTotalesFinal = sesionesTotalesHistoricas + (sesionHoy.sesiones_totales || 0);
+          }
+          
+          console.log('📊 [LOGIN] Reanudando sesión. Tiempo total:', tiempoTotalFinal, 'min');
+        } else {
+          console.log('📊 [LOGIN] Nueva sesión del día. Tiempo total:', tiempoTotalFinal, 'min');
+        }
+
+        // Crear/actualizar sesión con tiempo acumulado REAL
+        await supabase
+          .from('sesiones_usuario')
+          .upsert({
+            usuario_id: perfil.id,
+            fecha: ahora.split('T')[0],
+            ultima_actividad: ahora,
+            pagina_actual: window.location.pathname,
+            esta_activo: true,
+            tiempo_sesion_actual: 1,
+            tiempo_total_minutos: tiempoTotalFinal, // ✅ TIEMPO HISTÓRICO TOTAL
+            sesiones_totales: sesionesTotalesFinal, // ✅ SESIONES HISTÓRICAS TOTALES
+            updated_at: ahora
+          }, {
+            onConflict: 'usuario_id,fecha'
+          });
+        
+        // Inicializar tracking si está disponible
+        await actividadService.inicializarTracking(perfil.id, window.location.pathname);
+        console.log('✅ [LOGIN] Sesión y actividad registrada para:', perfil.nombre);
+
+        // 🌍 TRACKING DE GEOLOCALIZACIÓN AUTOMÁTICO
+        try {
+          console.log('🌍 [AUTH] Iniciando tracking de geolocalización...');
+          const datosGeo = await trackearUbicacionUsuario(perfil.id);
+          if (datosGeo) {
+            console.log(`✅ [AUTH] Ubicación detectada: ${datosGeo.ciudad}, ${datosGeo.pais} (${datosGeo.ip})`);
+          }
+        } catch (geoError) {
+          console.warn('⚠️ [AUTH] Error en geolocalización (no crítico):', geoError);
+          // No interrumpir el login por errores de geolocalización
+        }
+
+      } catch (error) {
+        console.warn('⚠️ [LOGIN] Error registrando actividad:', error);
+      }
+      
       cerrarModal();
       // Redirección explícita según el rol
       if (perfil.rol && perfil.rol.toLowerCase() === 'admin') {
-        goto('/administrador');
+        goto('/panel-administracion');
       } else {
-        goto('/estudiante');
+        goto('/panel-estudiante');
       }
     }
   }
@@ -113,15 +215,31 @@
     }
     if (usuario) {
       setUsuario(usuario); // Guardar usuario global
+      
+      // 🚀 REGISTRAR ACTIVIDAD DE REGISTRO
+      try {
+        // Actualizar updated_at en perfiles para detectar actividad
+        await supabase
+          .from('perfiles')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', usuario.id);
+        
+        // Inicializar tracking si está disponible
+        await actividadService.inicializarTracking(usuario.id, window.location.pathname);
+        console.log('✅ [REGISTRO] Actividad registrada para usuario:', usuario.nombre);
+      } catch (error) {
+        console.warn('⚠️ [REGISTRO] Error registrando actividad:', error);
+      }
+      
       // Redirección explícita según el rol
       if (usuario.rol && usuario.rol.toLowerCase() === 'admin') {
         cerrarModal();
-        goto('/administrador');
+        goto('/panel-administracion');
         return;
       }
     }
     cerrarModal();
-    goto('/estudiante');
+    goto('/panel-estudiante');
   }
 
   async function enviarRecuperacion(e: Event) {

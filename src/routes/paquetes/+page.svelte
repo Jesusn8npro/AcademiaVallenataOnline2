@@ -225,7 +225,7 @@
                         <!-- Imagen -->
                         <div class="card-image">
                             {#if paquete.imagen_url}
-                                <img src={paquete.imagen_url} alt={paquete.titulo} />
+                                <img src={paquete.imagen_url} alt={paquete.titulo} loading="lazy" />
                             {:else}
                                 <div class="placeholder">🎵</div>
                             {/if}
