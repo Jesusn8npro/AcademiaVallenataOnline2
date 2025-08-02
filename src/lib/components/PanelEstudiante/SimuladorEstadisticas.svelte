@@ -1,566 +1,416 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { supabase } from '$lib/supabase/clienteSupabase';
-  import { usuario } from '$lib/UsuarioActivo/usuario';
 
-  // 🎮 Estados del componente
-  let cargando = true;
-  let estadisticas = {
-    puntajeTotal: 0,
-    cancionesDominadas: 0,
-    totalCanciones: 50,
-    rachaActual: 0,
-    nivelActual: 'Principiante',
-    porcentajeNivel: 0,
-    desafioSemanal: 'Porro Sabanero',
-    ultimaCancion: 'Ninguna',
-    fechaUltimaPractica: null as Date | null,
-    proximoLogro: 'Primera Canción Perfecta'
-  };
-
-  // 🎯 Cargar estadísticas del simulador
-  async function cargarEstadisticasSimulador() {
-    try {
-      cargando = true;
-      
-      if (!$usuario?.id) {
-        console.log('❌ [SIMULADOR] Usuario no autenticado');
-        return;
-      }
-
-      console.log('📊 [SIMULADOR] Cargando estadísticas para:', $usuario.id);
-
-      // 🎮 Buscar progreso del simulador en experiencia_usuario
-      const { data: experienciaData, error: experienciaError } = await supabase
-        .from('experiencia_usuario')
-        .select('*')
-        .eq('usuario_id', $usuario.id)
-        .single();
-
-      if (experienciaError && experienciaError.code !== 'PGRST116') {
-        console.error('❌ [SIMULADOR] Error al cargar experiencia:', experienciaError);
-      }
-
-      // 🎵 Calcular estadísticas (simuladas por ahora)
-      const puntajeBase = experienciaData?.puntos_totales || 0;
-      const nivelUsuario = experienciaData?.nivel_actual || 1;
-      
-      estadisticas = {
-        puntajeTotal: puntajeBase + Math.floor(Math.random() * 1000) + 1500,
-        cancionesDominadas: Math.min(Math.floor(puntajeBase / 200) + 5, 48),
-        totalCanciones: 50,
-        rachaActual: Math.floor(Math.random() * 15) + 1,
-        nivelActual: obtenerNombreNivel(nivelUsuario),
-        porcentajeNivel: Math.min((puntajeBase % 1000) / 10, 95),
-        desafioSemanal: obtenerDesafioSemanal(),
-        ultimaCancion: 'La Gota Fría',
-        fechaUltimaPractica: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-        proximoLogro: obtenerProximoLogro(puntajeBase)
-      };
-
-      console.log('✅ [SIMULADOR] Estadísticas cargadas:', estadisticas);
-
-    } catch (error) {
-      console.error('❌ [SIMULADOR] Error general:', error);
-    } finally {
-      cargando = false;
+  // 🚀 Características del simulador próximo
+  const caracteristicas = [
+    {
+      icono: '🏆',
+      titulo: 'Desafíos Semanales',
+      descripcion: 'Nuevos retos cada semana para mejorar tu técnica',
+      color: 'linear-gradient(45deg, #ffd700, #ffa500)'
+    },
+    {
+      icono: '🎯',
+      titulo: 'Retos Progresivos',
+      descripcion: 'Niveles adaptativos según tu progreso personal',
+      color: 'linear-gradient(45deg, #00ff88, #00cc6a)'
+    },
+    {
+      icono: '📚',
+      titulo: 'Teoría Musical',
+      descripcion: 'Aprende mientras practicas con ejercicios teóricos',
+      color: 'linear-gradient(45deg, #667eea, #764ba2)'
+    },
+    {
+      icono: '🎹',
+      titulo: 'Práctica Libre',
+      descripcion: 'Toca libremente y recibe feedback en tiempo real',
+      color: 'linear-gradient(45deg, #f093fb, #f5576c)'
+    },
+    {
+      icono: '📊',
+      titulo: 'Métricas Avanzadas',
+      descripcion: 'Análisis detallado de tu progreso y técnica',
+      color: 'linear-gradient(45deg, #4facfe, #00f2fe)'
+    },
+    {
+      icono: '🎵',
+      titulo: 'Biblioteca Musical',
+      descripcion: 'Más de 100 canciones para practicar',
+      color: 'linear-gradient(45deg, #fa709a, #fee140)'
     }
-  }
+  ];
 
-  // 🏆 Obtener nombre del nivel
-  function obtenerNombreNivel(nivel: number): string {
-    if (nivel <= 3) return 'Principiante';
-    if (nivel <= 6) return 'Intermedio';
-    if (nivel <= 9) return 'Avanzado';
-    return 'Profesional';
-  }
+  let caracteristicaActiva = 0;
 
-  // 🎯 Obtener desafío semanal
-  function obtenerDesafioSemanal(): string {
-    const desafios = [
-      'Porro Sabanero',
-      'La Gota Fría', 
-      'Alicia Adorada',
-      'El Binomio de Oro',
-      'La Piragua'
-    ];
-    const semana = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-    return desafios[semana % desafios.length];
-  }
+  // 🔄 Rotar características automáticamente
+  setInterval(() => {
+    caracteristicaActiva = (caracteristicaActiva + 1) % caracteristicas.length;
+  }, 3000);
 
-  // 🏅 Obtener próximo logro
-  function obtenerProximoLogro(puntaje: number): string {
-    if (puntaje < 500) return 'Primera Canción Perfecta';
-    if (puntaje < 1000) return 'Racha de 10 días';
-    if (puntaje < 2000) return 'Maestro del Vallenato';
-    return 'Leyenda del Acordeón';
+  // 🎮 Ir al simulador actual
+  function explorarSimulador() {
+    console.log('🎮 [NAVEGACIÓN] Explorando simulador actual...');
+    goto('/simulador-gaming/simulador');
   }
-
-  // 🎮 Ir al simulador
-  function irAlSimulador() {
-    console.log('🎮 [NAVEGACIÓN] Yendo al simulador...');
-    goto('/simulador-de-acordeon');
-  }
-
-  // 🎵 Formatear fecha de última práctica
-  function formatearUltimaPractica(fecha: Date): string {
-    const ahora = new Date();
-    const diferencia = ahora.getTime() - fecha.getTime();
-    const horas = Math.floor(diferencia / (1000 * 60 * 60));
-    const dias = Math.floor(horas / 24);
-    
-    if (horas < 1) return 'Hace menos de una hora';
-    if (horas < 24) return `Hace ${horas} hora${horas > 1 ? 's' : ''}`;
-    return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
-  }
-
-  onMount(() => {
-    cargarEstadisticasSimulador();
-  });
 </script>
 
-<!-- 🎹 SIMULADOR DE ACORDEÓN - ESTADÍSTICAS -->
-<div class="simulador-estadisticas">
+<!-- 🚀 SIMULADOR PREVIEW - PRÓXIMAMENTE -->
+<div class="simulador-preview">
   
-  {#if cargando}
-    <!-- Estado de carga -->
-    <div class="cargando-simulador">
-      <div class="skeleton-simulador"></div>
+  <!-- 🎮 Header del preview -->
+  <div class="preview-header">
+    <div class="header-icon">
+      <div class="acordeon-icon">🎹</div>
+      <div class="coming-soon-badge">PRÓXIMAMENTE</div>
     </div>
-    
-  {:else}
-    <!-- 🎮 Tarjeta principal del simulador -->
-    <div class="tarjeta-simulador">
-      
-      <!-- 🎵 Header con icono y título -->
-      <div class="simulador-header">
-        <div class="icono-simulador">🎹</div>
-        <div class="titulo-simulador">
-          <h3>Simulador de Acordeón</h3>
-          <p class="subtitulo">¡Practica y mejora tu técnica!</p>
-        </div>
-      </div>
-
-      <!-- 📊 Estadísticas principales -->
-      <div class="estadisticas-grid">
-        
-        <!-- Puntaje total -->
-        <div class="stat-item puntaje">
-          <div class="stat-icono">🏆</div>
-          <div class="stat-info">
-            <span class="stat-valor">{estadisticas.puntajeTotal.toLocaleString()}</span>
-            <span class="stat-label">Puntos</span>
-          </div>
-        </div>
-
-        <!-- Canciones dominadas -->
-        <div class="stat-item canciones">
-          <div class="stat-icono">🎵</div>
-          <div class="stat-info">
-            <span class="stat-valor">{estadisticas.cancionesDominadas}/{estadisticas.totalCanciones}</span>
-            <span class="stat-label">Canciones</span>
-          </div>
-        </div>
-
-        <!-- Racha actual -->
-        <div class="stat-item racha">
-          <div class="stat-icono">🔥</div>
-          <div class="stat-info">
-            <span class="stat-valor">{estadisticas.rachaActual} días</span>
-            <span class="stat-label">Racha</span>
-          </div>
-        </div>
-
-        <!-- Nivel actual -->
-        <div class="stat-item nivel">
-          <div class="stat-icono">📈</div>
-          <div class="stat-info">
-            <span class="stat-valor">{estadisticas.nivelActual}</span>
-            <span class="stat-label">{estadisticas.porcentajeNivel}%</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- 🎯 Desafío semanal -->
-      <div class="desafio-semanal">
-        <div class="desafio-header">
-          <span class="desafio-icono">🎯</span>
-          <span class="desafio-titulo">Desafío Semanal</span>
-        </div>
-        <div class="desafio-cancion">"{estadisticas.desafioSemanal}"</div>
-        <div class="desafio-progreso">
-          <div class="progreso-bar">
-            <div class="progreso-fill" style="width: {Math.random() * 70 + 10}%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 🎵 Última actividad -->
-      <div class="ultima-actividad">
-        <div class="actividad-info">
-          <span class="actividad-icono">🎶</span>
-          <div class="actividad-texto">
-            <span class="actividad-cancion">Última: "{estadisticas.ultimaCancion}"</span>
-            <span class="actividad-fecha">
-              {estadisticas.fechaUltimaPractica ? formatearUltimaPractica(estadisticas.fechaUltimaPractica) : 'Nunca'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 🏅 Próximo logro -->
-      <div class="proximo-logro">
-        <span class="logro-icono">🏅</span>
-        <span class="logro-texto">Próximo: {estadisticas.proximoLogro}</span>
-      </div>
-
-      <!-- 🎮 Botón de acción principal -->
-      <button class="boton-practicar" on:click={irAlSimulador}>
-        <span class="boton-icono">🎮</span>
-        <span class="boton-texto">PRACTICAR AHORA</span>
-        <svg class="boton-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-      </button>
-
+    <div class="header-info">
+      <h3>🚀 Simulador Avanzado</h3>
+      <p class="subtitulo">Aquí encontrarás todos tus desafíos del simulador de acordeón</p>
     </div>
-  {/if}
-  
+  </div>
+
+  <!-- ✨ Característica destacada (rotativa) -->
+  <div class="caracteristica-destacada">
+    <div 
+      class="caracteristica-card"
+      style="background: {caracteristicas[caracteristicaActiva].color}"
+    >
+      <div class="caracteristica-icon">
+        {caracteristicas[caracteristicaActiva].icono}
+      </div>
+      <div class="caracteristica-info">
+        <h4>{caracteristicas[caracteristicaActiva].titulo}</h4>
+        <p>{caracteristicas[caracteristicaActiva].descripcion}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎯 Lista de características -->
+  <div class="caracteristicas-lista">
+    <h4 class="lista-titulo">Lo que incluirá:</h4>
+    <div class="caracteristicas-grid">
+      {#each caracteristicas as caracteristica, index}
+        <div 
+          class="caracteristica-mini"
+          class:activa={index === caracteristicaActiva}
+        >
+          <span class="mini-icon">{caracteristica.icono}</span>
+          <span class="mini-titulo">{caracteristica.titulo}</span>
+        </div>
+      {/each}
+    </div>
+  </div>
+
+  <!-- 📋 Resumen de beneficios -->
+  <div class="beneficios-resumen">
+    <div class="beneficio">
+      <span class="beneficio-icon">🎯</span>
+      <span class="beneficio-texto">Retos personalizados</span>
+    </div>
+    <div class="beneficio">
+      <span class="beneficio-icon">📚</span>
+      <span class="beneficio-texto">Clases pendientes</span>
+    </div>
+    <div class="beneficio">
+      <span class="beneficio-icon">🏋️</span>
+      <span class="beneficio-texto">Ejercicios prácticos</span>
+    </div>
+  </div>
+
+  <!-- 🎮 Botón de exploración -->
+  <button class="btn-explorar" on:click={explorarSimulador}>
+    <span class="btn-icon">🔍</span>
+    <span class="btn-texto">Explorar Simulador Actual</span>
+    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </button>
+
 </div>
 
 <style>
-  /* 🎹 CONTENEDOR PRINCIPAL */
-  .simulador-estadisticas {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* 🎮 TARJETA DEL SIMULADOR */
-  .tarjeta-simulador {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+  /* 🚀 CONTENEDOR PRINCIPAL */
+  .simulador-preview {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px;
-    padding: 20px;
+    padding: 16px;
     color: white;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
-  .tarjeta-simulador::before {
+  .simulador-preview::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    background: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
     pointer-events: none;
   }
 
-  /* 🎵 HEADER */
-  .simulador-header {
+  /* 🎮 HEADER DEL PREVIEW */
+  .preview-header {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 8px;
   }
 
-  .icono-simulador {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  .header-icon {
+    position: relative;
   }
 
-  .titulo-simulador h3 {
+  .acordeon-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .coming-soon-badge {
+    position: absolute;
+    top: -8px;
+    right: -16px;
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    color: white;
+    font-size: 0.5rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .header-info h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   .subtitulo {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     opacity: 0.8;
     margin-top: 2px;
+    line-height: 1.3;
   }
 
-  /* 📊 GRID DE ESTADÍSTICAS */
-  .estadisticas-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  /* ✨ CARACTERÍSTICA DESTACADA */
+  .caracteristica-destacada {
     margin-bottom: 8px;
   }
 
-  .stat-item {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+  .caracteristica-card {
     border-radius: 12px;
     padding: 12px;
     display: flex;
     align-items: center;
     gap: 10px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    transition: all 0.5s ease;
+    animation: fadeIn 0.5s ease;
   }
 
-  .stat-item:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .stat-icono {
+  .caracteristica-icon {
     font-size: 1.5rem;
-    opacity: 0.9;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   }
 
-  .stat-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .stat-valor {
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    opacity: 0.8;
-    line-height: 1;
-  }
-
-  /* 🎯 DESAFÍO SEMANAL */
-  .desafio-semanal {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  .desafio-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .desafio-icono {
-    font-size: 1.1rem;
-  }
-
-  .desafio-titulo {
+  .caracteristica-info h4 {
+    margin: 0 0 4px 0;
     font-size: 0.9rem;
-    font-weight: 600;
-    opacity: 0.9;
-  }
-
-  .desafio-cancion {
-    font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 8px;
-    color: #fbbf24;
-  }
-
-  .progreso-bar {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    height: 6px;
-    overflow: hidden;
-  }
-
-  .progreso-fill {
-    background: linear-gradient(90deg, #10b981, #34d399);
-    height: 100%;
-    border-radius: 6px;
-    transition: width 0.5s ease;
-  }
-
-  /* 🎵 ÚLTIMA ACTIVIDAD */
-  .ultima-actividad {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 12px;
-  }
-
-  .actividad-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .actividad-icono {
-    font-size: 1.2rem;
-    opacity: 0.8;
-  }
-
-  .actividad-texto {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .actividad-cancion {
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  .actividad-fecha {
-    font-size: 0.75rem;
-    opacity: 0.7;
-  }
-
-  /* 🏅 PRÓXIMO LOGRO */
-  .proximo-logro {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(251, 191, 36, 0.15);
-    border-radius: 8px;
-    padding: 10px;
-    border: 1px solid rgba(251, 191, 36, 0.3);
-  }
-
-  .logro-icono {
-    font-size: 1.1rem;
-  }
-
-  .logro-texto {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #fbbf24;
-  }
-
-  /* 🎮 BOTÓN PRINCIPAL */
-  .boton-practicar {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    border: none;
-    border-radius: 12px;
-    padding: 14px 20px;
     color: white;
+  }
+
+  .caracteristica-info p {
+    margin: 0;
+    font-size: 0.7rem;
+    opacity: 0.9;
+    line-height: 1.3;
+  }
+
+  /* 🎯 LISTA DE CARACTERÍSTICAS */
+  .caracteristicas-lista {
+    margin-bottom: 8px;
+  }
+
+  .lista-titulo {
+    margin: 0 0 8px 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+
+  .caracteristicas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .caracteristica-mini {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+
+  .caracteristica-mini.activa {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: scale(1.02);
+  }
+
+  .mini-icon {
+    font-size: 0.8rem;
+  }
+
+  .mini-titulo {
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 📋 BENEFICIOS RESUMEN */
+  .beneficios-resumen {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+
+  .beneficio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .beneficio-icon {
+    font-size: 1rem;
+  }
+
+  .beneficio-texto {
+    font-size: 0.6rem;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  /* 🎮 BOTÓN DE EXPLORACIÓN */
+  .btn-explorar {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.8rem;
     font-weight: 700;
-    font-size: 0.95rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
     margin-top: auto;
   }
 
-  .boton-practicar:hover {
+  .btn-explorar:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.4);
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
   }
 
-  .boton-icono {
-    font-size: 1.1rem;
+  .btn-icon {
+    font-size: 0.9rem;
   }
 
-  .boton-flecha {
-    width: 20px;
-    height: 20px;
+  .btn-arrow {
+    width: 14px;
+    height: 14px;
     transition: transform 0.3s ease;
   }
 
-  .boton-practicar:hover .boton-flecha {
-    transform: translateX(4px);
-  }
-
-  /* 🔄 LOADING */
-  .cargando-simulador {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-  }
-
-  .skeleton-simulador {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
-    border-radius: 20px;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .skeleton-simulador::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      rgba(255, 255, 255, 0.1) 50%, 
-      transparent 100%
-    );
-    animation: shimmer 2s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+  .btn-explorar:hover .btn-arrow {
+    transform: translateX(3px);
   }
 
   /* 📱 RESPONSIVE */
   @media (max-width: 900px) {
-    .tarjeta-simulador {
-      padding: 16px;
-      gap: 12px;
-    }
-
-    .simulador-header {
+    .simulador-preview {
+      padding: 12px;
       gap: 10px;
     }
-
-    .icono-simulador {
-      font-size: 2rem;
+    
+    .preview-header {
+      gap: 8px;
     }
-
-    .titulo-simulador h3 {
-      font-size: 1.1rem;
+    
+    .acordeon-icon {
+      font-size: 1.6rem;
     }
-
-    .estadisticas-grid {
-      gap: 10px;
+    
+    .header-info h3 {
+      font-size: 1rem;
     }
-
-    .stat-item {
+    
+    .subtitulo {
+      font-size: 0.7rem;
+    }
+    
+    .caracteristica-card {
       padding: 10px;
       gap: 8px;
     }
-
-    .stat-icono {
+    
+    .caracteristica-icon {
       font-size: 1.3rem;
     }
-
-    .stat-valor {
-      font-size: 0.9rem;
+    
+    .caracteristicas-grid {
+      grid-template-columns: 1fr;
+      gap: 4px;
     }
-
-    .stat-label {
-      font-size: 0.7rem;
-    }
-
-    .boton-practicar {
-      padding: 12px 16px;
-      font-size: 0.9rem;
+    
+    .btn-explorar {
+      padding: 8px 12px;
+      font-size: 0.75rem;
     }
   }
 </style>

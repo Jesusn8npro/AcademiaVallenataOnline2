@@ -26,14 +26,14 @@
     <!-- 🏆 LOGROS Y DESAFÍOS -->
     <LogrosDesafios />
 
-    <!-- 🎮 SIMULADOR + RECOMENDACIONES -->
+    <!-- 🎮 RECOMENDACIONES + SIMULADOR PREVIEW -->
     <section class="simulador-stats">
       <div class="simulador-card">
-        <SimuladorEstadisticas />
+        <RecomendacionesCursos />
       </div>
       
       <div class="estadisticas-card">
-        <RecomendacionesCursos />
+        <SimuladorEstadisticas />
       </div>
     </section>
 

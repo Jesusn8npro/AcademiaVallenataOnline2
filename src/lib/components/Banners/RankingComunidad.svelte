@@ -70,10 +70,12 @@ Mejor estética, funcionalidad de clic y texto explicativo
         return;
       }
       
-      // Mapear datos
-      rankingCompleto = data.map((item: any, index: number) => ({
-        posicion: item.posicion || (index + 1),
-        puntuacion: item.puntuacion || 0,
+      // Mapear datos y reorganizar posiciones
+              rankingCompleto = data
+        .filter((item: any) => item.usuario_id && (item.puntuacion > 0 || item.posicion > 0))
+        .map((item: any, index: number) => ({
+        posicion: index + 1, // Siempre usar secuencia continua
+        puntuacion: Math.max(0, item.puntuacion || 0),
         usuario_id: item.usuario_id,
         usuario: {
           nombre: item.nombre || 'Usuario',
@@ -82,16 +84,16 @@ Mejor estética, funcionalidad de clic y texto explicativo
           nombre_completo: item.nombre_completo || null,
           url_foto_perfil: item.url_foto_perfil
         },
-        nivel: item.nivel || 1,
-        xp_total: item.xp_total || 0,
-        cursos_completados: item.cursos_completados || 0,
-        tutoriales_completados: item.tutoriales_completados || 0,
-        publicaciones_creadas: item.publicaciones_creadas || 0,
-        likes_recibidos: item.likes_recibidos || 0,
-        comentarios_hechos: item.comentarios_hechos || 0,
-        racha_actual_dias: item.racha_actual_dias || 0,
-        logros_totales: item.logros_totales || 0,
-        es_gaming: item.es_gaming || false
+        nivel: Math.max(1, item.nivel || 1),
+        xp_total: Math.max(0, item.xp_total || 0),
+        cursos_completados: Math.max(0, item.cursos_completados || 0),
+        tutoriales_completados: Math.max(0, item.tutoriales_completados || 0),
+        publicaciones_creadas: Math.max(0, item.publicaciones_creadas || 0),
+        likes_recibidos: Math.max(0, item.likes_recibidos || 0),
+        comentarios_hechos: Math.max(0, item.comentarios_hechos || 0),
+        racha_actual_dias: Math.max(0, item.racha_actual_dias || 0),
+        logros_totales: Math.max(0, item.logros_totales || 0),
+                es_gaming: item.es_gaming || false
       }));
       
       // Encontrar posición del usuario actual
@@ -150,9 +152,11 @@ Mejor estética, funcionalidad de clic y texto explicativo
   async function cargarRankingTradicional() {
     try {
       const resultado = await GamificacionService.obtenerRanking(filtroTipo, 1000);
-      rankingCompleto = resultado.map((item: any) => ({
-        posicion: item.posicion || 0,
-        puntuacion: item.puntuacion || 0,
+      rankingCompleto = resultado
+        .filter((item: any) => item.usuario_id && (item.puntuacion > 0 || item.posicion > 0))
+        .map((item: any, index: number) => ({
+        posicion: index + 1, // Secuencia continua sin saltos
+        puntuacion: Math.max(0, item.puntuacion || 0),
         usuario_id: item.usuario_id,
         usuario: {
           nombre: item.perfiles?.nombre || 'Usuario',
@@ -161,15 +165,15 @@ Mejor estética, funcionalidad de clic y texto explicativo
           nombre_completo: item.perfiles?.nombre_completo || null,
           url_foto_perfil: item.perfiles?.url_foto_perfil
         },
-        nivel: item.metricas?.nivel || 1,
-        xp_total: item.metricas?.xp_total || 0,
-        cursos_completados: item.metricas?.cursos_completados || 0,
-        tutoriales_completados: item.metricas?.tutoriales_completados || 0,
-        publicaciones_creadas: item.metricas?.publicaciones_creadas || 0,
-        likes_recibidos: item.metricas?.likes_recibidos || 0,
-        comentarios_hechos: item.metricas?.comentarios_hechos || 0,
-        racha_actual_dias: item.metricas?.racha_actual_dias || 0,
-        logros_totales: item.metricas?.logros_conseguidos || 0,
+        nivel: Math.max(1, item.metricas?.nivel || 1),
+        xp_total: Math.max(0, item.metricas?.xp_total || 0),
+        cursos_completados: Math.max(0, item.metricas?.cursos_completados || 0),
+        tutoriales_completados: Math.max(0, item.metricas?.tutoriales_completados || 0),
+        publicaciones_creadas: Math.max(0, item.metricas?.publicaciones_creadas || 0),
+        likes_recibidos: Math.max(0, item.metricas?.likes_recibidos || 0),
+        comentarios_hechos: Math.max(0, item.metricas?.comentarios_hechos || 0),
+        racha_actual_dias: Math.max(0, item.metricas?.racha_actual_dias || 0),
+        logros_totales: Math.max(0, item.metricas?.logros_conseguidos || 0),
         es_gaming: item.metricas?.es_gaming || false
       }));
       
@@ -387,8 +391,8 @@ Mejor estética, funcionalidad de clic y texto explicativo
           >
             <!-- Posición -->
             <div class="posicion">
-              <span class="posicion-numero">#{item.posicion}</span>
               <span class="posicion-emoji">{obtenerEmojiPosicion(item.posicion)}</span>
+              <span class="posicion-numero">#{item.posicion}</span>
             </div>
 
             <!-- Avatar -->
@@ -627,11 +631,11 @@ Mejor estética, funcionalidad de clic y texto explicativo
   .ranking-item {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
@@ -659,41 +663,63 @@ Mejor estética, funcionalidad de clic y texto explicativo
   }
 
   .ranking-item.oro {
-    background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.15));
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
   }
 
   .ranking-item.plata {
-    background: linear-gradient(45deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.1));
+    background: linear-gradient(45deg, rgba(192, 192, 192, 0.25), rgba(192, 192, 192, 0.15));
+    border-color: rgba(192, 192, 192, 0.4);
+    box-shadow: 0 4px 12px rgba(192, 192, 192, 0.2);
   }
 
   .ranking-item.bronce {
-    background: linear-gradient(45deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.1));
+    background: linear-gradient(45deg, rgba(205, 127, 50, 0.25), rgba(205, 127, 50, 0.15));
+    border-color: rgba(205, 127, 50, 0.4);
+    box-shadow: 0 4px 12px rgba(205, 127, 50, 0.2);
+  }
+
+  .ranking-item.top-10 {
+    background: linear-gradient(45deg, rgba(106, 90, 205, 0.2), rgba(106, 90, 205, 0.1));
+    border-color: rgba(106, 90, 205, 0.3);
+    box-shadow: 0 4px 12px rgba(106, 90, 205, 0.2);
+  }
+
+  .ranking-item.otros {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
   }
 
   .posicion {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 50px;
+    min-width: 45px;
+    justify-content: center;
   }
 
   .posicion-numero {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     opacity: 0.8;
+    margin-top: 2px;
   }
 
   .posicion-emoji {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    margin-bottom: 2px;
   }
 
   .avatar {
     position: relative;
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     overflow: hidden;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
   }
 
   .avatar img {
@@ -761,20 +787,23 @@ Mejor estética, funcionalidad de clic y texto explicativo
   .puntuacion {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    min-width: 70px;
+    align-items: flex-end;
+    text-align: right;
+    min-width: 65px;
+    flex-shrink: 0;
   }
 
   .puntos {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #ffd700;
+    line-height: 1.2;
   }
 
   .puntos-label {
-    font-size: 0.7rem;
-    opacity: 0.8;
+    font-size: 0.65rem;
+    opacity: 0.7;
+    margin-top: 2px;
   }
 
   .gaming-indicator {
@@ -894,13 +923,17 @@ Mejor estética, funcionalidad de clic y texto explicativo
     }
     
     .ranking-item {
-      padding: 12px;
-      gap: 12px;
+      padding: 10px;
+      gap: 10px;
     }
     
     .avatar {
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
+    }
+    
+    .posicion {
+      min-width: 35px;
     }
   }
   
@@ -910,17 +943,29 @@ Mejor estética, funcionalidad de clic y texto explicativo
     }
     
     .ranking-item {
-      padding: 10px;
+      padding: 8px;
       gap: 8px;
     }
     
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
     }
     
     .nombre {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+    }
+    
+    .posicion {
+      min-width: 30px;
+    }
+    
+    .posicion-emoji {
+      font-size: 1.2rem;
+    }
+    
+    .puntos {
+      font-size: 1rem;
     }
   }
 </style>

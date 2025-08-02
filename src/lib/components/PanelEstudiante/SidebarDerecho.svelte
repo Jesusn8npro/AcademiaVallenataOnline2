@@ -242,7 +242,7 @@
       
             {#if publicacionesRecientes.length > 0}
         <div class="comunidad-lista">
-          {#each publicacionesRecientes as publicacion}
+          {#each publicacionesRecientes.slice(0, 3) as publicacion}
             <div class="comunidad-item" on:click={() => irAPerfilUsuario(publicacion.usuario_slug)} role="button" tabindex="0">
               <div class="publicacion-avatar">
                 <Avatar 
@@ -254,7 +254,7 @@
               </div>
               <div class="publicacion-info">
                 <h6>{publicacion.usuario_nombre}</h6>
-                <p>{truncarTexto(publicacion.contenido, 70)}</p>
+                <p>{truncarTexto(publicacion.contenido, 50)}</p>
                 <div class="publicacion-stats">
                   <span>❤️ {publicacion.total_comentarios || 0}</span>
                   <span>{formatearFecha(publicacion.fecha_creacion)}</span>
@@ -279,10 +279,31 @@
   .sidebar-derecho {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     height: 100%; /* Altura fija */
-    overflow: hidden; /* Sin scroll interno */
+    overflow-y: auto; /* Scroll vertical cuando sea necesario */
+    overflow-x: hidden;
     grid-area: widgets;
+    padding-right: 8px; /* Espacio para scrollbar */
+  }
+
+  /* 🎨 Estilizar scrollbar del sidebar */
+  .sidebar-derecho::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar-derecho::-webkit-scrollbar-track {
+    background: rgba(100, 116, 139, 0.1);
+    border-radius: 3px;
+  }
+
+  .sidebar-derecho::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.3);
+    border-radius: 3px;
+  }
+
+  .sidebar-derecho::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.5);
   }
 
   /* 🔄 Loading */
@@ -315,9 +336,10 @@
     background: rgba(30, 41, 59, 0.8);
     backdrop-filter: blur(20px);
     border-radius: 16px;
-    padding: 20px;
+    padding: 16px;
     border: 1px solid rgba(100, 116, 139, 0.2);
     transition: all 0.3s ease;
+    flex-shrink: 0; /* Evitar que se compriman demasiado */
   }
 
   .widget-card:hover {
