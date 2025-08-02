@@ -64,7 +64,7 @@
   <!-- Lado Izquierdo: Logo + Hamburguesa -->
   <div class="lado-izquierdo">
     <div class="logo">
-      <a href="{$usuario?.rol === 'admin' ? '/administrador' : '/panel-estudiante'}">
+      <a href="{$usuario?.rol === 'admin' ? '/panel-administracion' : '/panel-estudiante'}">
         <img src="/logo academia vallenata.png" alt="Logo Academia" class="logo-img" />
       </a>
     </div>
@@ -84,7 +84,7 @@
   <div class="menu-central">
     {#if $usuario?.rol === 'admin'}
       <!-- MENÚ PARA ADMINISTRADORES -->
-      <a href="/administrador" class="enlace">
+      			<a href="/panel-administracion" class="enlace">
         <span class="icono-enlace-nav">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
         </span>
@@ -180,7 +180,7 @@
       
       <!-- Toggle Modo Oscuro -->
       <div class="toggle-tema-container">
-        <ToggleModoOscuro />
+        			<!-- ToggleModoOscuro - Temporalmente oculto -->
       </div>
       
       <CampanaNotificaciones esMobile={false} />

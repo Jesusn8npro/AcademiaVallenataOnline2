@@ -9,7 +9,7 @@
 
   // Función para verificar si una ruta está activa
   function esRutaActiva(ruta: string): boolean {
-    if (ruta === '/administrador' || ruta === '/estudiante') {
+    if (ruta === '/panel-administracion' || ruta === '/estudiante') {
       return rutaActual === ruta;
     }
     return rutaActual.startsWith(ruta);
@@ -21,7 +21,7 @@
       id: 'dashboard',
       icono: 'dashboard',
       texto: 'Panel',
-      ruta: '/administrador',
+      		ruta: '/panel-administracion',
       badge: '3'
     },
     {
@@ -60,8 +60,15 @@
       id: 'panel',
       icono: 'dashboard',
       texto: 'Inicio',
-      ruta: '/estudiante',
+      ruta: '/panel-estudiante',
       badge: null
+    },
+    {
+      id: 'comunidad',
+      icono: 'comunidad',
+      texto: 'Comunidad',
+      ruta: '/comunidad',
+      badge: '5'
     },
     {
       id: 'cursos',
@@ -71,18 +78,11 @@
       badge: '75%'
     },
     {
-      id: 'mensajes',
-      icono: 'mensajes',
-      texto: 'Mensajes',
-      ruta: '/mensajes',
-      badge: '2'
-    },
-    {
-      id: 'comunidad',
-      icono: 'comunidad',
-      texto: 'Comunidad',
-      ruta: '/comunidad',
-      badge: '5'
+      id: 'blog',
+      icono: 'blog',
+      texto: 'Blog',
+      ruta: '/blog',
+      badge: null
     },
     {
       id: 'perfil',
@@ -139,6 +139,13 @@
       </svg>`,
       mensajes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>`,
+      blog: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <path d="M10 9h4"/>
       </svg>`
     };
     return iconos[tipo] || iconos.dashboard;

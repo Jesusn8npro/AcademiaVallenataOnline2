@@ -3,6 +3,11 @@
   import { goto } from '$app/navigation';
   import { cargarTodasLasEstadisticas, type EstadisticasCompletas } from '$lib/services/adminService';
   
+  // Redirección automática a panel-administracion
+  onMount(() => {
+    goto('/panel-administracion', { replaceState: true });
+  });
+  
   // Componentes de administrador
   import SeccionUsuarios from '$lib/components/Administrador/SeccionUsuarios.svelte';
   import SeccionVentas from '$lib/components/Administrador/SeccionVentas.svelte';

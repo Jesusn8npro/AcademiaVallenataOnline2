@@ -32,6 +32,21 @@
     manejarCerrar();
   }
 
+  // Función para manejar click en el logo
+  function navegarDesdelogo() {
+    let destino = '/';
+    
+    if (usuario) {
+      if (usuario.rol === 'admin') {
+        destino = '/panel-administracion';
+      } else {
+        destino = '/panel-estudiante';
+      }
+    }
+    
+    navegarA(destino);
+  }
+
   function manejarRegistro() {
     navegarA('/registro');
   }
@@ -61,7 +76,7 @@
       {#if tipoUsuario === 'publico'}
         <!-- Usuario no autenticado -->
         <div class="bienvenida-publica">
-          		<div class="logo-academia">
+          		<div class="logo-academia" on:click={navegarDesdelogo} role="button" tabindex="0">
 			<img 
 				src="/logo academia vallenata.png" 
 				alt="Academia Vallenata"
@@ -325,7 +340,7 @@
         <!-- MENÚ PARA ADMINISTRADORES -->
 
         <div class="seccion">
-          <button class="enlace-nav" on:click={() => navegarA('/administrador')}>
+          			<button class="enlace-nav" on:click={() => navegarA('/panel-administracion')}>
             <div class="icono-nav">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#222" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
             </div>
@@ -541,6 +556,13 @@
   align-items: center;
   justify-content: center;
   padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logo-academia:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .logo-img {

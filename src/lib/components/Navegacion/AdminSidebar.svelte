@@ -598,7 +598,7 @@
             </div>
             <span class="opcion-text">Tema Oscuro</span>
             <div class="toggle-sidebar-container">
-              <ToggleModoOscuro />
+              			<!-- ToggleModoOscuro - Temporalmente oculto -->
             </div>
           </div>
           

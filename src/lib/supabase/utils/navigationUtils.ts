@@ -75,7 +75,7 @@ export const RUTAS = {
   PAQUETES: '/paquetes',
   COMUNIDAD: '/comunidad',
   PERFIL: '/mi-perfil',
-  ADMIN: '/administrador',
+  	ADMIN: '/panel-administracion',
   LOGIN: '/?login=true',
   LOGOUT: '/sesion_cerrada'
 } as const; 
