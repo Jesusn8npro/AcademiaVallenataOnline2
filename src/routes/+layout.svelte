@@ -16,6 +16,7 @@
   import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
   import { browser } from '$app/environment';
   import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
+  import FooterPoliticas from '$lib/components/Footer/FooterPoliticas.svelte';
   import { TiempoService } from '$lib/services/tiempoService';
   import { trackingRealService } from '$lib/services/trackingActividadReal';
   import { actividadService } from '$lib/services/actividadTiempoRealService';
@@ -555,6 +556,8 @@
         <slot />
       </div>
     {/key}
+    <!-- 🏛️ FOOTER CON POLÍTICAS -->
+    <FooterPoliticas />
   {/if}
   
 {/if}
