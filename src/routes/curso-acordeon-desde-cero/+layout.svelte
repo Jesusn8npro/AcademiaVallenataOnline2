@@ -1,46 +1,83 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import '../../app.css';
+  
+  let observer: MutationObserver;
 
   onMount(() => {
-    // Ocultar completamente el banner de notificaciones
-    const bannerNotificaciones = document.querySelector('.banner-notificaciones') as HTMLElement;
-    if (bannerNotificaciones) {
-      bannerNotificaciones.style.display = 'none';
+    console.log('🎯 [CURSO LAYOUT] Configurando página de landing');
+    
+    // 🔧 FUNCIÓN PARA OCULTAR ELEMENTOS DE NAVEGACIÓN
+    function ocultarElementosNavegacion() {
+      // Lista de selectores a ocultar
+      const selectoresAOcultar = [
+        '.banner-notificaciones',
+        '.menu-superior',
+        '.barra-superior-negra', 
+        '.barra-principal-navegacion',
+        '.banner-permisos-notificacion',
+        '.sidebar-moderno',
+        '.menu-publico',
+        '.navbar'
+      ];
+
+      selectoresAOcultar.forEach(selector => {
+        const elementos = document.querySelectorAll(selector);
+        elementos.forEach(elemento => {
+          if (elemento instanceof HTMLElement) {
+            elemento.style.display = 'none';
+          }
+        });
+      });
+
+      // Configurar body
+      document.body.style.paddingTop = '0';
+      document.body.style.margin = '0';
+      
+      console.log('✅ [CURSO LAYOUT] Elementos de navegación ocultados');
     }
 
-    // Ocultar cualquier menú superior
-    const menuSuperior = document.querySelector('.menu-superior') as HTMLElement;
-    if (menuSuperior) {
-      menuSuperior.style.display = 'none';
-    }
+    // Ejecutar inmediatamente
+    ocultarElementosNavegacion();
+    
+    // 🔧 TAMBIÉN EJECUTAR DESPUÉS DE 100ms POR SI HAY RENDERIZADO TARDÍO
+    setTimeout(ocultarElementosNavegacion, 100);
+    
+    // 🔧 DETECTAR BFCACHE Y RESTAURACIÓN
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        console.log('🔄 [CURSO BFCACHE] Página restaurada desde cache');
+        // Re-aplicar ocultación después de restauración
+        setTimeout(ocultarElementosNavegacion, 0);
+        setTimeout(ocultarElementosNavegacion, 100);
+        setTimeout(ocultarElementosNavegacion, 500);
+      }
+    });
 
-    // Ocultar todos los menús públicos
-    const barraSuperiorNegra = document.querySelector('.barra-superior-negra') as HTMLElement;
-    if (barraSuperiorNegra) {
-      barraSuperiorNegra.style.display = 'none';
-    }
+    // 🔧 DETECTAR CUANDO LA PÁGINA SE VUELVE VISIBLE
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        console.log('👁️ [CURSO VISIBILITY] Página visible - re-aplicando estilos');
+        setTimeout(ocultarElementosNavegacion, 50);
+      }
+    });
+    
+    // 🔧 OBSERVER PARA DETECTAR NUEVOS ELEMENTOS QUE SE AGREGUEN
+    observer = new MutationObserver(() => {
+      ocultarElementosNavegacion();
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  });
 
-    const barraPrincipal = document.querySelector('.barra-principal-navegacion') as HTMLElement;
-    if (barraPrincipal) {
-      barraPrincipal.style.display = 'none';
+  onDestroy(() => {
+    if (observer) {
+      observer.disconnect();
+      console.log('🧹 [CURSO LAYOUT] Observer desconectado');
     }
-
-    // Ocultar banner de permisos de notificaciones
-    const bannerPermisos = document.querySelector('.banner-permisos-notificacion') as HTMLElement;
-    if (bannerPermisos) {
-      bannerPermisos.style.display = 'none';
-    }
-
-    // Ocultar sidebar
-    const sidebar = document.querySelector('.sidebar-moderno') as HTMLElement;
-    if (sidebar) {
-      sidebar.style.display = 'none';
-    }
-
-    // Asegurar que el body no tenga padding-top
-    document.body.style.paddingTop = '0';
-    document.body.style.margin = '0';
   });
 </script>
 

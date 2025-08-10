@@ -130,12 +130,12 @@
 							{item.tipo === 'curso' ? '🎓 CURSO' : '🎵 TUTORIAL'}
 						</div>
 						
-						{#if item.precio_descuento && item.precio_normal}
-							{@const descuento = calcularDescuento(item.precio_normal, item.precio_descuento)}
-							{#if descuento > 0}
-								<div class="descuento-badge">-{descuento}%</div>
-							{/if}
+											{#if item.precio_rebajado && item.precio_normal}
+						{@const descuento = calcularDescuento(item.precio_normal, item.precio_rebajado)}
+						{#if descuento > 0}
+							<div class="descuento-badge">-{descuento}%</div>
 						{/if}
+					{/if}
 						
 						<div class="imagen-overlay">
 							<button class="btn-ver-curso">
@@ -178,9 +178,9 @@
 							<div class="precio-container">
 								{#if item.precio_normal === 0 || item.precio_normal === null}
 									<span class="precio-gratis">¡GRATIS!</span>
-								{:else if item.precio_descuento && item.precio_descuento < item.precio_normal}
+								{:else if item.precio_rebajado && item.precio_rebajado < item.precio_normal}
 									<span class="precio-original">{formatearPrecio(item.precio_normal)}</span>
-									<span class="precio-actual">{formatearPrecio(item.precio_descuento)}</span>
+									<span class="precio-actual">{formatearPrecio(item.precio_rebajado)}</span>
 								{:else}
 									<span class="precio-actual">{formatearPrecio(item.precio_normal)}</span>
 								{/if}
@@ -520,45 +520,93 @@
 
 	.curso-footer {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
+		flex-direction: column;
+		gap: 1rem;
 		padding-top: 1rem;
 		border-top: 1px solid #f3f4f6;
 	}
 
 	.precio-container {
 		display: flex;
+		flex-direction: row;
 		align-items: center;
-		gap: 0.5rem;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
 	}
 
 	.precio-gratis {
-		font-size: 1.1rem;
+		font-size: 1.2rem;
 		font-weight: 800;
 		color: #10b981;
+		background: rgba(16, 185, 129, 0.1);
+		padding: 0.25rem 0.75rem;
+		border-radius: 20px;
+		width: 100%;
+		text-align: center;
 	}
 
 	.precio-original {
 		text-decoration: line-through;
 		color: #9ca3af;
-		font-size: 0.9rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		white-space: nowrap;
+		opacity: 0.7;
+	}
+
+	.precio-original::before {
+		content: "Antes: ";
+		font-weight: 400;
+		color: #6b7280;
 	}
 
 	.precio-actual {
-		font-size: 1.1rem;
-		font-weight: 800;
+		font-size: 1.4rem;
+		font-weight: 900;
 		color: #ef4444;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+		justify-content: flex-end;
+	}
+
+	.precio-actual::after {
+		content: "¡AHORA!";
+		font-size: 0.65rem;
+		background: linear-gradient(45deg, #ef4444, #dc2626);
+		color: white;
+		padding: 0.2rem 0.6rem;
+		border-radius: 15px;
+		font-weight: 700;
+		animation: pulse 2s infinite;
+		box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+	}
+
+	@keyframes pulse {
+		0%, 100% { 
+			transform: scale(1);
+			box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+		}
+		50% { 
+			transform: scale(1.08);
+			box-shadow: 0 4px 15px rgba(239, 68, 68, 0.6);
+		}
 	}
 
 	.btn-acceder {
-		padding: 0.5rem 1rem;
+		padding: 0.75rem 1.5rem;
 		border: none;
-		border-radius: 8px;
-		font-weight: 600;
-		font-size: 0.9rem;
+		border-radius: 12px;
+		font-weight: 700;
+		font-size: 1rem;
 		cursor: pointer;
 		transition: all 0.3s ease;
 		color: white;
+		width: 100%;
+		text-align: center;
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 	}
 
 	.btn-acceder.curso {
@@ -570,8 +618,9 @@
 	}
 
 	.btn-acceder:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+		transform: translateY(-3px);
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+		filter: brightness(1.1);
 	}
 
 	.paginacion-container {

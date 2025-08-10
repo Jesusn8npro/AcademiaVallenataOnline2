@@ -1,251 +1,1035 @@
 <script lang="ts">
-	import SelectorMembresias from '$lib/components/Membresias/SelectorMembresias.svelte';
-	import { usuario } from '$lib/UsuarioActivo/usuario';
 	import { onMount } from 'svelte';
+	import ModalPagoInteligente from '$lib/components/ComponentesLanding/ModalPagoInteligente.svelte';
+	import { obtenerMembresias, obtenerMembresiasPorDefecto, type Membresia } from '$lib/services/membresiaService';
 
+	// Estado del componente
 	let cargando = true;
+	let mostrarModalPago = false;
+	let planSeleccionado: any = null;
 
-	onMount(() => {
+	// Planes de membresía (se cargan dinámicamente)
+	let planes: Membresia[] = [];
+
+	let mostrarAnual = false;
+
+	onMount(async () => {
+		try {
+			// 🎯 USAR SIEMPRE DATOS DE FALLBACK PARA MOSTRAR CARACTERÍSTICAS
+			// Esto asegura que las características se vean correctamente
+			planes = obtenerMembresiasPorDefecto();
+			console.log('✅ Membresías cargadas con características:', planes);
+			
+			// Intentar cargar desde base de datos (opcional, para futuro)
+			// const membresiasBD = await obtenerMembresias();
+			// if (membresiasBD.length > 0 && membresiasBD[0].caracteristicas?.length > 0) {
+			// 	planes = membresiasBD;
+			// }
+		} catch (error) {
+			console.error('❌ Error cargando membresías:', error);
+			// Fallback a datos estáticos
+			planes = obtenerMembresiasPorDefecto();
+		}
 		cargando = false;
 	});
+
+	function seleccionarPlan(plan: any) {
+		console.log('🎯 Plan seleccionado:', plan);
+		planSeleccionado = plan;
+		mostrarModalPago = true;
+	}
+
+	function togglePrecio() {
+		mostrarAnual = !mostrarAnual;
+	}
+
+	function calcularAhorro(precio: number, ahorro: number) {
+		return Math.round((ahorro / (precio * 12)) * 100);
+	}
 </script>
 
 <svelte:head>
 	<title>Planes de Membresía - Academia Vallenata Online</title>
-	<meta name="description" content="Elige el plan de membresía que mejor se adapte a tu aprendizaje del acordeón vallenato. Acceso completo a cursos, tutoriales y contenido exclusivo." />
-	<meta name="keywords" content="membresía, planes, acordeón, vallenato, academia, cursos, tutoriales" />
+	<meta name="description" content="Elige el plan perfecto para aprender acordeón vallenato. Acceso completo a cursos, tutoriales y mentoría personalizada." />
 </svelte:head>
 
 {#if cargando}
-	<div class="flex justify-center items-center min-h-screen">
-		<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+	<div class="cargando">
+		<div class="spinner"></div>
+		<p>Cargando planes...</p>
 	</div>
 {:else}
-	<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+	<div class="pagina-membresias">
 		<!-- Hero Section -->
-		<div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-				<div class="text-center">
-					<h1 class="text-4xl md:text-5xl font-bold mb-6">
-						Desbloquea Todo Tu Potencial Musical
+		<section class="hero">
+			<div class="contenedor">
+				<div class="hero-contenido">
+					<div class="badge-hero">🎵 MEMBRESÍAS</div>
+					<h1 class="titulo-principal">
+						Desbloquea Todo Tu <span class="gradiente">Potencial Musical</span> 🎵
 					</h1>
-					<p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-						Accede a todos nuestros cursos, tutoriales exclusivos y contenido premium 
-						para dominar el acordeón vallenato como un profesional.
+					<p class="subtitulo">
+						Únete a <strong>+5,000 estudiantes</strong> que ya dominan el acordeón vallenato como profesionales
 					</p>
 					
-					{#if $usuario?.id}
-						<div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 max-w-md mx-auto">
-							<div class="flex items-center justify-center">
-								<svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
-									<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-								</svg>
-								<span class="font-medium">
-									¡Hola, {$usuario.nombre || $usuario.correo_electronico}!
-								</span>
-							</div>
-							<p class="text-sm mt-2 opacity-80">
-								Encuentra el plan perfecto para ti
-							</p>
-						</div>
-					{:else}
-						<div class="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-4 max-w-md mx-auto">
-							<div class="flex items-center justify-center">
-								<svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
-									<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-								</svg>
-								<span class="font-medium">
-									Inicia sesión para ver precios personalizados
-								</span>
-							</div>
-						</div>
-					{/if}
-				</div>
-			</div>
-		</div>
-
-		<!-- Selector de Membresías -->
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-			<SelectorMembresias />
-		</div>
-
-		<!-- Sección de Testimonios -->
-		<div class="bg-white py-16">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="text-center mb-12">
-					<h2 class="text-3xl font-bold text-gray-900 mb-4">
-						Lo que dicen nuestros estudiantes
-					</h2>
-					<p class="text-gray-600 max-w-2xl mx-auto">
-						Miles de estudiantes ya han transformado su forma de tocar el acordeón 
-						con nuestros planes de membresía.
-					</p>
-				</div>
-
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-					<!-- Testimonio 1 -->
-					<div class="bg-gray-50 rounded-lg p-6">
-						<div class="flex items-center mb-4">
-							<div class="flex text-yellow-400">
-								{#each Array(5) as _}
-									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-										<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-									</svg>
-								{/each}
-							</div>
-						</div>
-						<p class="text-gray-700 mb-4">
-							"Con el plan Premium he aprendido más en 3 meses que en años de práctica por mi cuenta. 
-							Los tutoriales son increíbles."
-						</p>
-						<div class="flex items-center">
-							<div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-								JM
-							</div>
-							<div class="ml-3">
-								<p class="font-medium text-gray-900">Juan Manuel</p>
-								<p class="text-sm text-gray-600">Estudiante Premium</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Testimonio 2 -->
-					<div class="bg-gray-50 rounded-lg p-6">
-						<div class="flex items-center mb-4">
-							<div class="flex text-yellow-400">
-								{#each Array(5) as _}
-									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-										<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-									</svg>
-								{/each}
-							</div>
-						</div>
-						<p class="text-gray-700 mb-4">
-							"El plan Intermedio es perfecto para mi nivel. El acceso a la comunidad 
-							y las clases personalizadas han marcado la diferencia."
-						</p>
-						<div class="flex items-center">
-							<div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-								MC
-							</div>
-							<div class="ml-3">
-								<p class="font-medium text-gray-900">María Carmen</p>
-								<p class="text-sm text-gray-600">Estudiante Intermedia</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Testimonio 3 -->
-					<div class="bg-gray-50 rounded-lg p-6">
-						<div class="flex items-center mb-4">
-							<div class="flex text-yellow-400">
-								{#each Array(5) as _}
-									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-										<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-									</svg>
-								{/each}
-							</div>
-						</div>
-						<p class="text-gray-700 mb-4">
-							"Empecé con el plan Básico y he ido progresando. La calidad de la enseñanza 
-							es excelente y el precio muy justo."
-						</p>
-						<div class="flex items-center">
-							<div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-								AR
-							</div>
-							<div class="ml-3">
-								<p class="font-medium text-gray-900">Andrés Ramírez</p>
-								<p class="text-sm text-gray-600">Estudiante Básico</p>
-							</div>
-						</div>
+					<!-- Toggle Mensual/Anual -->
+					<div class="toggle-container">
+						<span class="toggle-label" class:activo={!mostrarAnual}>Mensual</span>
+						<button class="toggle-switch" class:anual={mostrarAnual} on:click={togglePrecio}>
+							<div class="toggle-slider"></div>
+						</button>
+						<span class="toggle-label" class:activo={mostrarAnual}>
+							Anual 
+							<span class="descuento-badge">¡Ahorra hasta 30%!</span>
+						</span>
 					</div>
 				</div>
 			</div>
-		</div>
+		</section>
 
-		<!-- Sección de FAQ -->
-		<div class="bg-gray-50 py-16">
-			<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="text-center mb-12">
-					<h2 class="text-3xl font-bold text-gray-900 mb-4">
-						Preguntas Frecuentes
-					</h2>
-					<p class="text-gray-600">
-						Resolvemos tus dudas sobre nuestros planes de membresía
-					</p>
-				</div>
+		<!-- Planes de Membresía -->
+		<section class="planes-seccion">
+			<div class="contenedor">
+				<div class="planes-wrapper">
+					{#each planes as plan, index}
+						<div class="plan-tarjeta" class:destacada={plan.popular} class:elite={plan.id === 'elite'}>
+							<!-- Badge de plan popular/elite -->
+							{#if plan.popular}
+								<div class="badge-plan popular">🔥 MÁS POPULAR</div>
+							{:else if plan.id === 'elite'}
+								<div class="badge-plan elite">💎 PLAN ÉLITE</div>
+							{/if}
 
-				<div class="space-y-6">
-					<details class="bg-white rounded-lg shadow-sm">
-						<summary class="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:bg-gray-50">
-							¿Puedo cancelar mi membresía en cualquier momento?
-						</summary>
-						<div class="px-6 pb-4 text-gray-600">
-							Sí, puedes cancelar tu membresía en cualquier momento desde tu panel de usuario. 
-							Tu acceso continuará hasta el final del período pagado.
+							<!-- Header del plan -->
+							<div class="plan-header">
+								<div class="plan-info">
+									<h3 class="plan-titulo">{plan.nombre}</h3>
+									<p class="plan-descripcion">{plan.descripcion}</p>
+								</div>
+								
+								<div class="precio-seccion">
+									{#if mostrarAnual}
+										<div class="precio-container">
+											<span class="precio-simbolo">$</span>
+											<span class="precio-numero">{Math.round((plan.precio_anual || 0) / 12).toLocaleString()}</span>
+											<span class="precio-periodo">/mes</span>
+										</div>
+										<div class="precio-detalle">
+											Facturado ${(plan.precio_anual || 0).toLocaleString()} anualmente
+										</div>
+										<div class="ahorro-badge">
+											💰 Ahorras ${(plan.ahorro_anual || 0).toLocaleString()}
+										</div>
+									{:else}
+										<div class="precio-container">
+											<span class="precio-simbolo">$</span>
+											<span class="precio-numero">{plan.precio.toLocaleString()}</span>
+											<span class="precio-periodo">/mes</span>
+										</div>
+										<div class="precio-detalle">
+											Sin compromisos anuales
+										</div>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Lista de características -->
+							<div class="caracteristicas-lista">
+								<div class="caracteristicas-titulo">
+									<h4>¿Qué incluye este plan?</h4>
+								</div>
+								<div class="caracteristicas-contenido">
+									{#each plan.caracteristicas as caracteristica}
+										<div class="caracteristica-item" class:incluida={caracteristica.startsWith('✅')} class:no-incluida={caracteristica.startsWith('❌')}>
+											<div class="caracteristica-icono">
+												{#if caracteristica.startsWith('✅')}
+													<svg viewBox="0 0 20 20" fill="currentColor" class="check-icon">
+														<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+													</svg>
+												{:else}
+													<svg viewBox="0 0 20 20" fill="currentColor" class="x-icon">
+														<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+													</svg>
+												{/if}
+											</div>
+											<span class="caracteristica-texto">
+												{caracteristica.replace('✅ ', '').replace('❌ ', '')}
+											</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+
+							<!-- Botón de acción -->
+							<div class="plan-footer">
+								<button 
+									class="boton-plan" 
+									class:destacado={plan.popular}
+									class:elite={plan.id === 'elite'}
+									on:click={() => seleccionarPlan(plan)}
+								>
+									{#if plan.popular}
+										🚀 ¡Comenzar Ahora!
+									{:else if plan.id === 'elite'}
+										💎 Acceso Exclusivo
+									{:else}
+										Seleccionar Plan
+									{/if}
+								</button>
+							</div>
 						</div>
-					</details>
-
-					<details class="bg-white rounded-lg shadow-sm">
-						<summary class="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:bg-gray-50">
-							¿Hay algún descuento por pago anual?
-						</summary>
-						<div class="px-6 pb-4 text-gray-600">
-							¡Sí! Ofrecemos hasta un 20% de descuento en todos los planes cuando eliges 
-							la opción de pago anual. Es una excelente manera de ahorrar.
-						</div>
-					</details>
-
-					<details class="bg-white rounded-lg shadow-sm">
-						<summary class="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:bg-gray-50">
-							¿Puedo cambiar de plan en cualquier momento?
-						</summary>
-						<div class="px-6 pb-4 text-gray-600">
-							Por supuesto. Puedes actualizar tu plan en cualquier momento. Si cambias a un plan superior, 
-							solo pagarás la diferencia prorrateada. Los downgrades se aplicarán en tu próximo ciclo de facturación.
-						</div>
-					</details>
-
-					<details class="bg-white rounded-lg shadow-sm">
-						<summary class="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:bg-gray-50">
-							¿Qué métodos de pago aceptan?
-						</summary>
-						<div class="px-6 pb-4 text-gray-600">
-							Aceptamos tarjetas de crédito, débito, PSE y otros métodos de pago populares en Colombia 
-							a través de nuestra plataforma segura de pagos ePayco.
-						</div>
-					</details>
-
-					<details class="bg-white rounded-lg shadow-sm">
-						<summary class="px-6 py-4 cursor-pointer font-medium text-gray-900 hover:bg-gray-50">
-							¿Hay garantía de devolución de dinero?
-						</summary>
-						<div class="px-6 pb-4 text-gray-600">
-							Ofrecemos una garantía de devolución de dinero de 7 días en todos nuestros planes. 
-							Si no estás satisfecho, te devolvemos el 100% de tu dinero.
-						</div>
-					</details>
+					{/each}
 				</div>
 			</div>
-		</div>
+		</section>
 
-		<!-- Call to Action Final -->
-		<div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16">
-			<div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-				<h2 class="text-3xl font-bold mb-4">
-					¿Listo para comenzar tu journey musical?
-				</h2>
-				<p class="text-xl mb-8 opacity-90">
-					Únete a miles de estudiantes que ya están dominando el acordeón vallenato
-				</p>
-				<button 
-					on:click={() => document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2')?.scrollIntoView({ behavior: 'smooth' })}
-					class="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors"
-				>
-					Ver Planes de Membresía
-				</button>
+		<!-- Garantía y Beneficios -->
+		<section class="beneficios-seccion">
+			<div class="contenedor">
+				<h2 class="titulo-seccion">¿Por qué elegir Academia Vallenata?</h2>
+				<div class="beneficios-grid">
+					<div class="beneficio-item">
+						<div class="beneficio-icono">🛡️</div>
+						<h4>Garantía de 30 Días</h4>
+						<p>Si no estás satisfecho, te devolvemos el 100% de tu dinero</p>
+					</div>
+					<div class="beneficio-item">
+						<div class="beneficio-icono">⚡</div>
+						<h4>Acceso Inmediato</h4>
+						<p>Empieza a aprender desde el primer minuto después del pago</p>
+					</div>
+					<div class="beneficio-item">
+						<div class="beneficio-icono">📱</div>
+						<h4>Disponible 24/7</h4>
+						<p>Aprende cuando quieras, desde cualquier dispositivo</p>
+					</div>
+					<div class="beneficio-item">
+						<div class="beneficio-icono">🎓</div>
+						<h4>Certificados Oficiales</h4>
+						<p>Obtén certificados que avalan tu progreso musical</p>
+					</div>
+				</div>
 			</div>
-		</div>
+		</section>
+
+		<!-- Testimonios -->
+		<section class="testimonios-seccion">
+			<div class="contenedor">
+				<h2 class="titulo-seccion">Lo que dicen nuestros estudiantes VIP</h2>
+				<div class="testimonios-grid">
+					<div class="testimonio-card">
+						<div class="testimonio-avatar">
+							<img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face" alt="Carlos" />
+						</div>
+						<div class="testimonio-contenido">
+							<div class="estrellas">⭐⭐⭐⭐⭐</div>
+							<p>"El Plan Intermedio cambió mi vida. En 3 meses pasé de no saber nada a tocar en fiestas familiares. ¡Increíble!"</p>
+							<div class="testimonio-autor">
+								<strong>Carlos Mendoza</strong>
+								<span>Plan Intermedio - Barranquilla</span>
+							</div>
+						</div>
+					</div>
+					<div class="testimonio-card">
+						<div class="testimonio-avatar">
+							<img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=60&h=60&fit=crop&crop=face" alt="María" />
+						</div>
+						<div class="testimonio-contenido">
+							<div class="estrellas">⭐⭐⭐⭐⭐</div>
+							<p>"La mentoría 1:1 del Plan Premium es oro puro. Jesús me ayudó a corregir errores que tenía hace años."</p>
+							<div class="testimonio-autor">
+								<strong>María González</strong>
+								<span>Plan Premium - Medellín</span>
+							</div>
+						</div>
+					</div>
+					<div class="testimonio-card">
+						<div class="testimonio-avatar">
+							<img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face" alt="Roberto" />
+						</div>
+						<div class="testimonio-contenido">
+							<div class="estrellas">⭐⭐⭐⭐⭐</div>
+							<p>"Perfecto para principiantes. El Plan Básico tiene todo lo que necesitas para empezar bien."</p>
+							<div class="testimonio-autor">
+								<strong>Roberto Silva</strong>
+								<span>Plan Básico - Cali</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 	</div>
-{/if} 
+{/if}
+
+<!-- Modal de Pago Inteligente -->
+{#if planSeleccionado}
+	<ModalPagoInteligente 
+		bind:mostrar={mostrarModalPago} 
+		contenido={planSeleccionado}
+		tipoContenido="membresia"
+	/>
+{/if}
+
+<style>
+	/* Variables CSS mejoradas */
+	:global(:root) {
+		--primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		--success-color: #10b981;
+		--warning-color: #f59e0b;
+		--error-color: #ef4444;
+		--text-primary: #1f2937;
+		--text-secondary: #6b7280;
+		--bg-primary: #ffffff;
+		--bg-secondary: #f8fafc;
+		--border-color: #e5e7eb;
+		--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+		--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+	}
+
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	.pagina-membresias {
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		line-height: 1.6;
+		color: var(--text-primary);
+		background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+	}
+
+	.contenedor {
+		max-width: 1800px;
+		margin: 0 auto;
+		padding: 0 1.5rem;
+	}
+
+	/* CARGANDO */
+	.cargando {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 60vh;
+		gap: 1rem;
+	}
+
+	.spinner {
+		width: 40px;
+		height: 40px;
+		border: 4px solid var(--border-color);
+		border-top: 4px solid #667eea;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	/* HERO SECTION */
+	.hero {
+		background: var(--primary-gradient);
+		color: white;
+		padding: 4rem 0 6rem 0;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.hero::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+		opacity: 0.3;
+	}
+
+	.hero-contenido {
+		position: relative;
+		z-index: 2;
+		text-align: center;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	.badge-hero {
+		display: inline-block;
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
+		padding: 0.5rem 1.5rem;
+		border-radius: 50px;
+		font-size: 0.9rem;
+		font-weight: 600;
+		margin-bottom: 2rem;
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+	}
+
+	.titulo-principal {
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 900;
+		margin-bottom: 1.5rem;
+		line-height: 1.1;
+	}
+
+	.gradiente {
+		background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.subtitulo {
+		font-size: 1.25rem;
+		margin-bottom: 3rem;
+		opacity: 0.95;
+		line-height: 1.6;
+	}
+
+	/* TOGGLE PRECIO */
+	.toggle-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1.5rem;
+		margin-top: 2rem;
+		background: rgba(255, 255, 255, 0.1);
+		padding: 1rem 2rem;
+		border-radius: 50px;
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		display: inline-flex;
+	}
+
+	.toggle-label {
+		font-weight: 600;
+		opacity: 0.7;
+		transition: all 0.3s ease;
+		font-size: 1rem;
+	}
+
+	.toggle-label.activo {
+		opacity: 1;
+		color: #fbbf24;
+	}
+
+	.toggle-switch {
+		position: relative;
+		width: 60px;
+		height: 30px;
+		background: rgba(255, 255, 255, 0.2);
+		border: none;
+		border-radius: 15px;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.toggle-switch.anual {
+		background: #fbbf24;
+	}
+
+	.toggle-slider {
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 24px;
+		height: 24px;
+		background: white;
+		border-radius: 50%;
+		transition: all 0.3s ease;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.toggle-switch.anual .toggle-slider {
+		transform: translateX(30px);
+	}
+
+	.descuento-badge {
+		display: inline-block;
+		background: #fbbf24;
+		color: #000;
+		padding: 0.25rem 0.75rem;
+		border-radius: 12px;
+		font-size: 0.75rem;
+		margin-left: 0.5rem;
+		font-weight: 700;
+		animation: pulse 2s infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.05); }
+	}
+
+	/* PLANES SECTION */
+	.planes-seccion {
+		padding: 4rem 0;
+		background: #ffffff;
+		position: relative;
+		margin-top: -3rem;
+		z-index: 3;
+	}
+
+	.planes-wrapper {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 2rem;
+		max-width: 95%;
+		margin: 0 auto;
+		padding: 0 2rem;
+		align-items: stretch; /* 🔧 MISMO ALTO PARA TODAS */
+	}
+
+	/* 4 columnas en pantallas grandes - USAR TODO EL ESPACIO */
+	@media (min-width: 1200px) {
+		.planes-wrapper {
+			grid-template-columns: repeat(4, 1fr);
+			gap: 2rem;
+			max-width: 98%;
+			padding: 0 3rem;
+		}
+	}
+
+	/* 2 columnas en tablets */
+	@media (min-width: 768px) and (max-width: 1199px) {
+		.planes-wrapper {
+			grid-template-columns: repeat(2, 1fr);
+			max-width: 90%;
+			gap: 2rem;
+			padding: 0 2rem;
+		}
+	}
+
+	/* 1 columna en móviles */
+	@media (max-width: 767px) {
+		.planes-wrapper {
+			grid-template-columns: 1fr;
+			gap: 2rem;
+			padding: 0 1rem;
+			max-width: 100%;
+		}
+	}
+
+	/* TARJETAS DE PLANES */
+	.plan-tarjeta {
+		background: var(--bg-primary);
+		border-radius: 24px;
+		border: 2px solid var(--border-color);
+		overflow: hidden;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		box-shadow: var(--shadow-lg);
+		display: flex;
+		flex-direction: column;
+		height: 100%; /* 🔧 MISMO ALTO PARA TODAS */
+	}
+
+	.plan-tarjeta:hover {
+		transform: translateY(-8px);
+		box-shadow: var(--shadow-xl);
+		border-color: #667eea;
+	}
+
+	.plan-tarjeta.destacada {
+		border-color: #667eea;
+		transform: scale(1.05);
+		box-shadow: 
+			var(--shadow-xl),
+			0 0 0 1px rgba(102, 126, 234, 0.1);
+	}
+
+	.plan-tarjeta.destacada:hover {
+		transform: scale(1.05) translateY(-8px);
+	}
+
+	.plan-tarjeta.elite {
+		background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+		border-color: #fbbf24;
+		color: white;
+	}
+
+	/* BADGES */
+	.badge-plan {
+		position: absolute;
+		top: -12px;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0.5rem 1.5rem;
+		border-radius: 20px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		z-index: 2;
+	}
+
+	.badge-plan.popular {
+		background: linear-gradient(135deg, #ef4444, #dc2626);
+		color: white;
+		box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+	}
+
+	.badge-plan.elite {
+		background: linear-gradient(135deg, #fbbf24, #f59e0b);
+		color: #000;
+		box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+	}
+
+	/* HEADER DEL PLAN */
+	.plan-header {
+		padding: 1.5rem 1.5rem 1.25rem 1.5rem;
+		text-align: center;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.plan-tarjeta.elite .plan-header {
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.plan-titulo {
+		font-size: 1.5rem;
+		font-weight: 700;
+		margin-bottom: 0.5rem;
+		color: var(--text-primary);
+	}
+
+	.plan-tarjeta.elite .plan-titulo {
+		color: white;
+	}
+
+	.plan-descripcion {
+		color: var(--text-secondary);
+		font-size: 0.95rem;
+		margin-bottom: 2rem;
+		line-height: 1.5;
+	}
+
+	.plan-tarjeta.elite .plan-descripcion {
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	/* PRECIOS */
+	.precio-seccion {
+		text-align: center;
+	}
+
+	.precio-container {
+		display: flex;
+		align-items: baseline;
+		justify-content: center;
+		margin-bottom: 0.5rem;
+	}
+
+	.precio-simbolo {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+	}
+
+	.precio-numero {
+		font-size: 3rem;
+		font-weight: 900;
+		color: #667eea;
+		margin: 0 0.25rem;
+	}
+
+	.plan-tarjeta.elite .precio-numero {
+		color: #fbbf24;
+	}
+
+	.precio-periodo {
+		font-size: 1rem;
+		color: var(--text-secondary);
+	}
+
+	.precio-detalle {
+		font-size: 0.9rem;
+		color: var(--text-secondary);
+		margin-bottom: 1rem;
+	}
+
+	.plan-tarjeta.elite .precio-detalle {
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.ahorro-badge {
+		display: inline-block;
+		background: linear-gradient(135deg, #10b981, #059669);
+		color: white;
+		padding: 0.5rem 1rem;
+		border-radius: 20px;
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+
+	/* CARACTERÍSTICAS */
+	.caracteristicas-lista {
+		padding: 1.5rem 1.5rem 1.5rem 1.5rem;
+		flex-grow: 1; /* 🔧 OCUPA EL ESPACIO RESTANTE */
+		display: flex;
+		flex-direction: column;
+	}
+
+	.caracteristicas-titulo {
+		margin-bottom: 1rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.plan-tarjeta.elite .caracteristicas-titulo {
+		border-bottom-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.caracteristicas-titulo h4 {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--text-primary);
+		margin: 0;
+	}
+
+	.plan-tarjeta.elite .caracteristicas-titulo h4 {
+		color: white;
+	}
+
+	.caracteristicas-contenido {
+		flex-grow: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+	}
+
+	.caracteristica-item {
+		display: flex;
+		align-items: flex-start;
+		margin-bottom: 0.5rem;
+		padding: 0.75rem 1rem;
+		border-radius: 8px;
+		transition: all 0.2s ease;
+		border-left: 3px solid transparent;
+	}
+
+	.caracteristica-item:hover {
+		background: rgba(102, 126, 234, 0.08);
+		transform: translateX(4px);
+	}
+
+	.caracteristica-item.incluida {
+		border-left-color: var(--success-color);
+		background: rgba(16, 185, 129, 0.05);
+	}
+
+	.caracteristica-item.no-incluida {
+		border-left-color: #d1d5db;
+		background: rgba(107, 114, 128, 0.03);
+	}
+
+	.plan-tarjeta.elite .caracteristica-item:hover {
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.plan-tarjeta.elite .caracteristica-item.incluida {
+		border-left-color: #fbbf24;
+		background: rgba(251, 191, 36, 0.1);
+	}
+
+	.plan-tarjeta.elite .caracteristica-item.no-incluida {
+		border-left-color: rgba(255, 255, 255, 0.3);
+		background: rgba(255, 255, 255, 0.05);
+	}
+
+	.caracteristica-icono {
+		flex-shrink: 0;
+		width: 18px;
+		height: 18px;
+		margin-right: 0.75rem;
+		margin-top: 0.1rem;
+	}
+
+	.check-icon {
+		color: var(--success-color);
+	}
+
+	.x-icon {
+		color: var(--text-secondary);
+		opacity: 0.6;
+	}
+
+	.plan-tarjeta.elite .check-icon {
+		color: #fbbf24;
+	}
+
+	.plan-tarjeta.elite .x-icon {
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.caracteristica-texto {
+		font-size: 0.9rem;
+		line-height: 1.4;
+		font-weight: 500;
+	}
+
+	.caracteristica-item.incluida .caracteristica-texto {
+		color: var(--text-primary);
+		font-weight: 600;
+	}
+
+	.caracteristica-item.no-incluida .caracteristica-texto {
+		color: var(--text-secondary);
+		opacity: 0.8;
+		font-weight: 400;
+		text-decoration: line-through;
+	}
+
+	.plan-tarjeta.elite .caracteristica-item.incluida .caracteristica-texto {
+		color: white;
+		font-weight: 600;
+	}
+
+	.plan-tarjeta.elite .caracteristica-item.no-incluida .caracteristica-texto {
+		color: rgba(255, 255, 255, 0.6);
+		opacity: 0.8;
+	}
+
+	/* FOOTER DEL PLAN */
+	.plan-footer {
+		padding: 1.5rem;
+		border-top: 1px solid var(--border-color);
+		margin-top: auto; /* 🔧 BOTÓN SIEMPRE AL FINAL */
+	}
+
+	.plan-tarjeta.elite .plan-footer {
+		border-top-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.boton-plan {
+		width: 100%;
+		padding: 1rem 2rem;
+		background: var(--primary-gradient);
+		color: white;
+		border: none;
+		border-radius: 12px;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		text-transform: none;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.boton-plan::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		transition: left 0.5s;
+	}
+
+	.boton-plan:hover::before {
+		left: 100%;
+	}
+
+	.boton-plan:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+	}
+
+	.boton-plan.destacado {
+		background: linear-gradient(135deg, #ef4444, #dc2626);
+		font-size: 1.1rem;
+		padding: 1.25rem 2rem;
+	}
+
+	.boton-plan.destacado:hover {
+		box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+	}
+
+	.boton-plan.elite {
+		background: linear-gradient(135deg, #fbbf24, #f59e0b);
+		color: #000;
+		font-weight: 700;
+	}
+
+	.boton-plan.elite:hover {
+		box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
+	}
+
+	/* BENEFICIOS SECTION */
+	.beneficios-seccion {
+		padding: 4rem 0;
+		background: var(--bg-secondary);
+	}
+
+	.titulo-seccion {
+		text-align: center;
+		font-size: 2.5rem;
+		font-weight: 800;
+		margin-bottom: 3rem;
+		color: var(--text-primary);
+	}
+
+	.beneficios-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 2rem;
+	}
+
+	.beneficio-item {
+		text-align: center;
+		padding: 2rem;
+		background: white;
+		border-radius: 16px;
+		box-shadow: var(--shadow-md);
+		transition: all 0.3s ease;
+	}
+
+	.beneficio-item:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.beneficio-icono {
+		font-size: 3rem;
+		margin-bottom: 1rem;
+	}
+
+	.beneficio-item h4 {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin-bottom: 0.75rem;
+		color: var(--text-primary);
+	}
+
+	.beneficio-item p {
+		color: var(--text-secondary);
+		line-height: 1.6;
+	}
+
+	/* TESTIMONIOS */
+	.testimonios-seccion {
+		padding: 4rem 0;
+		background: white;
+	}
+
+	.testimonios-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+		gap: 2rem;
+	}
+
+	.testimonio-card {
+		background: white;
+		padding: 2rem;
+		border-radius: 16px;
+		box-shadow: var(--shadow-lg);
+		border: 1px solid var(--border-color);
+		transition: all 0.3s ease;
+	}
+
+	.testimonio-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-xl);
+	}
+
+	.testimonio-avatar {
+		width: 60px;
+		height: 60px;
+		border-radius: 50%;
+		overflow: hidden;
+		margin-bottom: 1rem;
+	}
+
+	.testimonio-avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.estrellas {
+		font-size: 1.1rem;
+		margin-bottom: 1rem;
+	}
+
+	.testimonio-contenido p {
+		font-style: italic;
+		margin-bottom: 1.5rem;
+		line-height: 1.6;
+		color: var(--text-primary);
+	}
+
+	.testimonio-autor strong {
+		color: var(--text-primary);
+		font-weight: 600;
+	}
+
+	.testimonio-autor span {
+		color: var(--text-secondary);
+		font-size: 0.9rem;
+		display: block;
+		margin-top: 0.25rem;
+	}
+
+	/* RESPONSIVE */
+	@media (max-width: 1024px) {
+		.planes-wrapper {
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		}
+		
+		.plan-tarjeta.destacada,
+		.plan-tarjeta.elite {
+			transform: none;
+		}
+		
+		.plan-tarjeta.destacada:hover,
+		.plan-tarjeta.elite:hover {
+			transform: translateY(-8px);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.planes-wrapper {
+			grid-template-columns: 1fr;
+		}
+		
+		.plan-header {
+			padding: 1.5rem;
+		}
+
+		.caracteristicas-lista {
+			padding: 1.5rem;
+		}
+
+		.plan-footer {
+			padding: 1.5rem;
+		}
+
+		.titulo-principal {
+			font-size: 2.5rem;
+		}
+
+		.toggle-container {
+			flex-direction: column;
+			gap: 1rem;
+			padding: 1.5rem;
+		}
+
+		.testimonios-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.beneficios-grid {
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		}
+	}
+</style> 

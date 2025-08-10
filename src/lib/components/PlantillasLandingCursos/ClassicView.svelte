@@ -4,7 +4,7 @@
 	import SeccionBeneficios from '../ComponentesLanding/SeccionBeneficios.svelte';
 	import SeccionProblema from '../ComponentesLanding/SeccionProblema.svelte';
 	import SeccionSolucion from '../ComponentesLanding/SeccionSolucion.svelte';
-	import SeccionPago from '../ComponentesLanding/SeccionPago.svelte';
+	import ModalPagoInteligente from '../ComponentesLanding/ModalPagoInteligente.svelte';
 	import { generateSlug } from '$lib/utilidades/utilidadesSlug';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -94,17 +94,12 @@
     console.error('[ClassicView][ERROR][GENERAL] contenido:', contenido);
   }
   
-  // Función para hacer scroll a la sección de pago
-  function scrollToSeccionPago() {
-    if (browser) {
-      const seccionPago = document.querySelector('#seccion-pago');
-      if (seccionPago) {
-        seccionPago.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    }
+  // Estado del modal de pago
+  let mostrarModalPago = false;
+  
+  // Función para abrir modal de pago
+  function abrirModalPago() {
+    mostrarModalPago = true;
   }
   
   // Función unificada para manejar la acción principal del HERO
@@ -116,13 +111,13 @@
       console.log('[ClassicView] Usuario inscrito, navegando al contenido...');
       navegarAContenido();
     } else {
-      // Si no está inscrito, hacer scroll a la sección de pago
-      console.log('[ClassicView] Usuario no inscrito, navegando a sección de pago...');
-      scrollToSeccionPago();
+      // Si no está inscrito, abrir modal de pago
+      console.log('[ClassicView] Usuario no inscrito, abriendo modal de pago...');
+      abrirModalPago();
     }
   }
   
-  // Función para manejar la inscripción desde la sección de pago
+  // Función para manejar la inscripción desde el modal de pago
   async function handleInscripcionConActualizacion() {
     console.log('[ClassicView] handleInscripcionConActualizacion - antes de inscripción, estaInscrito:', estaInscrito);
     console.log('[ClassicView] Tipo de acceso:', contenido?.tipo_acceso);
@@ -139,32 +134,31 @@
     console.log('- precioFinal calculado:', precioFinal);
     console.log('- esGratis (CORREGIDO):', esGratis);
     
-    if (!esGratis) {
-      // CONTENIDO DE PAGO - Abrir modal de checkout
-      console.log('[ClassicView] Contenido de pago, abriendo modal de checkout...');
-      alert('🚧 Modal de checkout en desarrollo.\n\nPróximamente podrás comprar este contenido.\n\nPor ahora, cambia el precio a 0 para probarlo gratis.');
-      return;
+    if (esGratis) {
+      // CONTENIDO GRATUITO - Proceder con inscripción
+      try {
+        console.log('[ClassicView] Contenido gratuito, procediendo con inscripción...');
+        
+        // Ejecutar la función de inscripción
+        await handleInscripcion();
+        
+        // Actualizar el estado local inmediatamente - CRÍTICO para reactividad
+        console.log('[ClassicView] Inscripción completada, actualizando estado...');
+        
+        // Actualizar directamente el objeto data para trigger reactividad
+        data = { ...data, estaInscrito: true };
+        
+        console.log('[ClassicView] Estado después de inscripción, estaInscrito:', estaInscrito);
+        console.log('[ClassicView] data después de actualización:', data);
+        
+        // Cerrar modal
+        mostrarModalPago = false;
+        
+      } catch (error) {
+        console.error('[ClassicView] Error en inscripción:', error);
+      }
     }
-    
-    // CONTENIDO GRATUITO - Proceder con inscripción
-    try {
-      console.log('[ClassicView] Contenido gratuito, procediendo con inscripción...');
-      
-      // Ejecutar la función de inscripción
-      await handleInscripcion();
-      
-      // Actualizar el estado local inmediatamente - CRÍTICO para reactividad
-      console.log('[ClassicView] Inscripción completada, actualizando estado...');
-      
-      // Actualizar directamente el objeto data para trigger reactividad
-      data = { ...data, estaInscrito: true };
-      
-      console.log('[ClassicView] Estado después de inscripción, estaInscrito:', estaInscrito);
-      console.log('[ClassicView] data después de actualización:', data);
-      
-    } catch (error) {
-      console.error('[ClassicView] Error en inscripción:', error);
-    }
+    // Si no es gratis, el modal de pago manejará el flujo de compra
   }
 </script>
 
@@ -199,15 +193,12 @@
   {tipo} 
 />
 
-<!-- 💰 SECCIÓN PAGO - CIERRE DE VENTA -->
-<div id="seccion-pago">
-  <SeccionPago 
-    {contenido}
-    {tipo}
-    {estaInscrito}
-    handleCompra={handleInscripcionConActualizacion}
-  />
-</div>
+<!-- 💰 MODAL DE PAGO INTELIGENTE -->
+<ModalPagoInteligente 
+  bind:mostrar={mostrarModalPago}
+  {contenido}
+  tipoContenido={tipo}
+/>
 
 <!-- ✨ SECCIÓN BENEFICIOS - TEMPORALMENTE OCULTA -->
 <!-- <SeccionBeneficios 

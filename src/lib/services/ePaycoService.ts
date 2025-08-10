@@ -30,10 +30,10 @@ export function calcularIVA(valor: number): { base: number; iva: number; total: 
 /**
  * Generar referencia única para el pago
  */
-export function generarReferencia(tipo: 'curso' | 'tutorial', id: string, usuarioId: string): string {
+export function generarReferencia(tipo: 'curso' | 'tutorial' | 'paquete', id: string, usuarioId: string): string {
 	const timestamp = Date.now().toString().slice(-6);
 	const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-	const tipoCode = tipo === 'curso' ? 'CUR' : 'TUT';
+	const tipoCode = tipo === 'curso' ? 'CUR' : tipo === 'tutorial' ? 'TUT' : 'PAQ';
 	return `${tipoCode}-${id.padStart(6, '0')}-${timestamp}-${random}-${usuarioId.slice(-8)}`;
 }
 

@@ -3,6 +3,7 @@
     import { page } from '$app/stores';
     import { obtenerPaquetePorSlug, obtenerTutorialesPaquete, formatearPrecio } from '$lib/services/paquetesService';
     import { goto } from '$app/navigation';
+    import ModalPagoInteligente from '$lib/components/ComponentesLanding/ModalPagoInteligente.svelte';
 
     $: slug = $page.params.slug;
 
@@ -10,6 +11,9 @@
     let tutoriales: any[] = [];
     let cargando = true;
     let error = '';
+    
+    // Modal de pago
+    let mostrarModalPago = false;
 
     onMount(async () => {
         await cargarPaquete();
@@ -17,6 +21,10 @@
 
     async function cargarPaquete() {
         try {
+            if (!slug) {
+                error = 'Slug del paquete no encontrado';
+                return;
+            }
             console.log('🔍 Buscando paquete con slug:', slug);
             let resultado = await obtenerPaquetePorSlug(slug);
             console.log('📦 Resultado obtenerPaquetePorSlug:', resultado);
@@ -57,7 +65,8 @@
     }
 
     function comprarPaquete() {
-        goto(`/pago-confirmacion?tipo=paquete&id=${paquete.id}`);
+        console.log('🛒 Comprando paquete:', paquete.titulo);
+        mostrarModalPago = true;
     }
 
 
@@ -605,4 +614,11 @@
             font-size: 1.75rem;
         }
     }
-</style> 
+</style>
+
+<!-- Modal de Pago Inteligente -->
+<ModalPagoInteligente 
+    bind:mostrar={mostrarModalPago} 
+    contenido={paquete}
+    tipoContenido="paquete"
+/> 

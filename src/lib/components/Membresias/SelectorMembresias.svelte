@@ -8,6 +8,7 @@
 	import { usuario } from '$lib/UsuarioActivo/usuario';
 	import { supabase } from '$lib/supabase/clienteSupabase';
 	import { goto } from '$app/navigation';
+	import ModalPagoInteligente from '$lib/components/ComponentesLanding/ModalPagoInteligente.svelte';
 
 	// Props
 	export let mostrarModal = false;
@@ -24,6 +25,9 @@
 	let procesando = false;
 	let mostrandoConfirmacion = false;
 	let planASeleccionar: any = null;
+	
+	// Modal de pago
+	let mostrarModalPago = false;
 
 	// Cargar datos al montar el componente
 	onMount(async () => {
@@ -135,84 +139,30 @@
 	}
 
 	async function seleccionarPlan(plan: any) {
-		if (!$usuario?.id) {
-			// Redirigir a login/registro
-			goto('/sesion_cerrada?redirect=' + encodeURIComponent(window.location.pathname));
-			return;
-		}
-
+		// 🔧 PERMITIR COMPRA SIN LOGIN - EL MODAL MANEJA EL REGISTRO
 		if (esPlaneActual(plan.id)) {
 			error = 'Ya tienes este plan activo';
 			return;
 		}
 
 		planASeleccionar = plan;
-		mostrandoConfirmacion = true;
+		
+		// Si no hay usuario, abrir directamente el modal (permitirá registro)
+		if (!$usuario?.id) {
+			console.log('🚀 Usuario no logueado - abriendo modal de pago para crear cuenta');
+			mostrarModalPago = true;
+		} else {
+			// Si hay usuario, mostrar confirmación primero
+			mostrandoConfirmacion = true;
+		}
 	}
 
 	async function confirmarSeleccion() {
 		if (!planASeleccionar || !$usuario?.id) return;
 
-		try {
-			procesando = true;
-			error = '';
-
-			console.log('🚀 Procesando selección de plan:', planASeleccionar);
-			
-			// Preparar datos para el pago
-			const datosPago = {
-				action: 'crear',
-				usuarioId: $usuario.id,
-				membresiaId: planASeleccionar.id,
-				planId: planASeleccionar.id,
-				esAnual: mostrarAnual,
-				email: $usuario.correo_electronico,
-				nombre: $usuario.nombre,
-				telefono: $usuario.whatsapp || ''
-			};
-
-			console.log('📝 Datos para enviar a API:', datosPago);
-
-			// Llamar a la API de pagos de membresías
-			const response = await fetch('/api/pagos/membresia', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(datosPago)
-			});
-
-			const resultado = await response.json();
-			console.log('📊 Resultado de API:', resultado);
-
-			if (!resultado.success) {
-				console.error('❌ Error en API de pagos:', resultado);
-				error = resultado.message || 'Error procesando el pago. Por favor, intenta de nuevo.';
-				return;
-			}
-
-			// Verificar que tengamos los datos de ePayco
-			if (!resultado.epaycoData) {
-				console.error('❌ No se recibieron datos de ePayco');
-				error = 'Error preparando el pago. Por favor, intenta de nuevo.';
-				return;
-			}
-
-			console.log('✅ Datos de ePayco recibidos, abriendo formulario de pago...');
-
-			// Cerrar modal de confirmación
-			mostrandoConfirmacion = false;
-			planASeleccionar = null;
-
-			// Crear y enviar formulario de ePayco
-			abrirFormularioEpayco(resultado.epaycoData);
-			
-		} catch (err) {
-			console.error('💥 Error fatal procesando selección:', err);
-			error = 'Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.';
-		} finally {
-			procesando = false;
-		}
+		console.log('🚀 Abriendo modal de pago para membresía:', planASeleccionar);
+		mostrandoConfirmacion = false;
+		mostrarModalPago = true;
 	}
 
 	/**
@@ -714,4 +664,13 @@
 			{/if}
 		{/if}
 	</div>
+{/if}
+
+<!-- Modal de Pago Inteligente -->
+{#if planASeleccionar}
+	<ModalPagoInteligente 
+		bind:mostrar={mostrarModalPago} 
+		contenido={planASeleccionar}
+		tipoContenido="membresia"
+	/>
 {/if} 

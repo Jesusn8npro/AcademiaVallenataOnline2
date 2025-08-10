@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { usuario } from '$lib/UsuarioActivo/usuario';
+	import { modalPagoAbierto } from '$lib/stores/modalPagoStore';
 
 	// Props
 	export let mostrar = false;
 	export let contenido: any = null; // Curso o tutorial
-	export let tipoContenido: 'curso' | 'tutorial' = 'curso';
+	export let tipoContenido: 'curso' | 'tutorial' | 'paquete' | 'membresia' = 'curso';
+
+	// 🎯 Actualizar store cuando el modal se abra/cierre
+	$: modalPagoAbierto.set(mostrar);
 
 	// Estado del modal
 	let pasoActual = 1;
@@ -28,10 +32,7 @@
 		pais: 'Colombia',
 		codigo_postal: '',
 		
-		// Datos adicionales
-		fecha_nacimiento: '',
-		profesion: '',
-		como_nos_conocio: 'Redes sociales',
+
 		
 		// Contraseña para usuarios nuevos
 		password: '',
@@ -60,20 +61,48 @@
 
 	function loadEpaycoScript() {
 		return new Promise((resolve, reject) => {
-			if (document.querySelector('script[src="https://checkout.epayco.co/checkout.js"]')) {
+			// Verificar si ya existe el script y si ePayco está disponible
+			if ((window as any).ePayco && document.querySelector('script[src="https://checkout.epayco.co/checkout.js"]')) {
+				console.log('✅ Script de ePayco ya está cargado');
 				resolve(true);
 				return;
 			}
+			
+			console.log('🔄 Cargando script de ePayco...');
 			const script = document.createElement('script');
 			script.src = 'https://checkout.epayco.co/checkout.js';
-			script.onload = () => resolve(true);
-			script.onerror = () => reject(new Error('No se pudo cargar el script de ePayco.'));
+			script.async = true;
+			
+			script.onload = () => {
+				console.log('✅ Script de ePayco cargado exitosamente');
+				// Verificar que el objeto ePayco esté disponible
+				if ((window as any).ePayco) {
+					resolve(true);
+				} else {
+					// Esperar un poco más para que se inicialice
+					setTimeout(() => {
+						if ((window as any).ePayco) {
+							resolve(true);
+						} else {
+							reject(new Error('ePayco no se inicializó correctamente después de cargar el script'));
+						}
+					}, 1000);
+				}
+			};
+			
+			script.onerror = () => {
+				console.error('❌ Error cargando script de ePayco');
+				reject(new Error('No se pudo cargar el script de ePayco desde checkout.epayco.co'));
+			};
+			
 			document.head.appendChild(script);
 		});
 	}
 
 	function cerrarModal() {
 		mostrar = false;
+		// 🔧 RESETEAR STORE GLOBAL CRÍTICO
+		modalPagoAbierto.set(false);
 		// Reset estado
 		pasoActual = 1;
 		error = '';
@@ -282,31 +311,73 @@
 			
 			// --- 4. PREPARAR Y ENVIAR DATOS AL BACKEND ---
 			const datosSanitizados = sanitizarDatos({ ...datosPago });
-			const dataParaApi = {
-				usuarioId: $usuario?.id || null,
-				esUsuarioNuevo: !usuarioEstaRegistrado,
-				cursoId: tipoContenido === 'curso' ? contenido.id : undefined,
-				tutorialId: tipoContenido === 'tutorial' ? contenido.id : undefined,
-				email: datosSanitizados.email,
-				nombre: datosSanitizados.nombre,
-				telefono: datosSanitizados.telefono,
-				datosAdicionales: {
-					apellido: datosSanitizados.apellido,
-					whatsapp: datosSanitizados.whatsapp,
-					documento_tipo: datosSanitizados.tipo_documento,
-					documento_numero: datosSanitizados.numero_documento,
-					direccion_completa: datosSanitizados.direccion,
-					ciudad: datosSanitizados.ciudad,
-					pais: datosSanitizados.pais,
-					codigo_postal: datosSanitizados.codigo_postal,
-					fecha_nacimiento: datosSanitizados.fecha_nacimiento,
-					profesion: datosSanitizados.profesion,
-					como_nos_conocio: datosSanitizados.como_nos_conocio
-				},
-				password: usuarioEstaRegistrado ? undefined : datosSanitizados.password
-			};
 			
-			const response = await fetch('/api/pagos/crear', {
+			// 🎯 Preparar datos según el tipo de contenido
+			let dataParaApi;
+			
+			if (tipoContenido === 'membresia') {
+				// Datos específicos para membresías
+				dataParaApi = {
+					action: 'crear',
+					usuarioId: $usuario?.id || null,
+					membresiaId: contenido.id,
+					planId: contenido.id, // Para membresías planId = membresiaId
+					esAnual: false, // Por defecto mensual
+					email: datosSanitizados.email,
+					nombre: datosSanitizados.nombre,
+					telefono: datosSanitizados.telefono || '',
+					datosAdicionales: {
+						apellido: datosSanitizados.apellido,
+						whatsapp: datosSanitizados.whatsapp,
+						documento_tipo: datosSanitizados.tipo_documento,
+						documento_numero: datosSanitizados.numero_documento,
+						direccion_completa: datosSanitizados.direccion,
+						ciudad: datosSanitizados.ciudad,
+						pais: datosSanitizados.pais,
+						codigo_postal: datosSanitizados.codigo_postal
+					},
+					password: usuarioEstaRegistrado ? undefined : datosSanitizados.password
+				};
+			} else {
+				// Datos para cursos, tutoriales y paquetes
+				dataParaApi = {
+					usuarioId: $usuario?.id || null,
+					esUsuarioNuevo: !usuarioEstaRegistrado,
+					cursoId: tipoContenido === 'curso' ? contenido.id : undefined,
+					tutorialId: tipoContenido === 'tutorial' ? contenido.id : undefined,
+					paqueteId: tipoContenido === 'paquete' ? contenido.id : undefined,
+					email: datosSanitizados.email,
+					nombre: datosSanitizados.nombre,
+					telefono: datosSanitizados.telefono,
+					datosAdicionales: {
+						apellido: datosSanitizados.apellido,
+						whatsapp: datosSanitizados.whatsapp,
+						documento_tipo: datosSanitizados.tipo_documento,
+						documento_numero: datosSanitizados.numero_documento,
+						direccion_completa: datosSanitizados.direccion,
+						ciudad: datosSanitizados.ciudad,
+						pais: datosSanitizados.pais,
+						codigo_postal: datosSanitizados.codigo_postal,
+						fecha_nacimiento: datosSanitizados.fecha_nacimiento,
+						profesion: datosSanitizados.profesion,
+						como_nos_conocio: datosSanitizados.como_nos_conocio
+					},
+					password: usuarioEstaRegistrado ? undefined : datosSanitizados.password
+				};
+			}
+			
+			console.log('🔍 MODO DEBUG - Validando datos antes del envío:');
+			console.log('- Email:', dataParaApi.email);
+			console.log('- Nombre:', dataParaApi.nombre);
+			console.log('- Teléfono:', dataParaApi.telefono);
+			console.log('- Documento:', dataParaApi.datosAdicionales?.documento_numero);
+			console.log('📤 Datos completos:', dataParaApi);
+
+			// 🛤️ Elegir la ruta API correcta según el tipo de contenido
+			const apiUrl = tipoContenido === 'membresia' ? '/api/pagos/membresia' : '/api/pagos/crear';
+			console.log('🌐 Usando API:', apiUrl, 'para tipo:', tipoContenido);
+
+			const response = await fetch(apiUrl, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(dataParaApi)
@@ -319,16 +390,70 @@
 			
 			const { epaycoData } = await response.json();
 			
-			// --- 5. CONFIGURAR Y ABRIR EL CHECKOUT DE EPAYCO (EL MODO CORRECTO) ---
+			// --- 5. CONFIGURAR EPAYCO MODO POPUP/LIGHTBOX ---
 			if ((window as any).ePayco) {
-				// Paso 1: Configurar el handler con la llave y el modo test
+				console.log('🔧 Configurando ePayco para modo popup...');
+
+				// Configurar el handler
 				const handler = (window as any).ePayco.checkout.configure({
 					key: epaycoData.key,
 					test: epaycoData.test
 				});
 
-				// Paso 2: Abrir el checkout con los datos de la transacción
-				handler.open(epaycoData);
+				// 🎨 CREAR OVERLAY DIFUMINADO PARA EL POPUP
+				const overlay = document.createElement('div');
+				overlay.id = 'epayco-popup-overlay';
+				overlay.style.cssText = `
+					position: fixed;
+					top: 0;
+					left: 0;
+					width: 100vw;
+					height: 100vh;
+					background: rgba(0, 0, 0, 0.6);
+					backdrop-filter: blur(8px);
+					z-index: 9998;
+					pointer-events: none;
+				`;
+				document.body.appendChild(overlay);
+
+				// Preparar datos para modo popup
+				const popupData = {
+					...epaycoData,
+					// Forzar modo popup/lightbox
+					external: 'false',
+					popup: 'true',
+					
+					// Callbacks para el popup
+					response: function(data: any) {
+						console.log('✅ Respuesta de ePayco popup:', data);
+						// 🧹 LIMPIAR OVERLAY
+						const existingOverlay = document.getElementById('epayco-popup-overlay');
+						if (existingOverlay) existingOverlay.remove();
+						
+						if (data.x_response === 'Aceptada' || data.x_cod_response === '1') {
+							pagoExitoso = true;
+							error = '';
+						} else {
+							error = `Pago rechazado: ${data.x_response_reason_text || data.x_response}`;
+						}
+						cargando = false;
+						procesandoPago = false;
+					},
+					
+					oncancel: function() {
+						console.log('❌ Pago cancelado en popup');
+						// 🧹 LIMPIAR OVERLAY
+						const existingOverlay = document.getElementById('epayco-popup-overlay');
+						if (existingOverlay) existingOverlay.remove();
+						
+						error = 'Pago cancelado por el usuario';
+						cargando = false;
+						procesandoPago = false;
+					}
+				};
+
+				console.log('🚀 Abriendo ePayco en modo popup...');
+				handler.open(popupData);
 
 			} else {
 				throw new Error('El objeto ePayco no se encontró en window.');
@@ -352,14 +477,29 @@
 	// Obtener precio seguro del contenido
 	function obtenerPrecio(contenido: any): number {
 		if (!contenido) return 0;
-		// La lógica de precios es la misma para cursos y tutoriales.
-		return contenido.precio_rebajado || contenido.precio_normal || 0;
+		
+		// 🎯 Diferentes estructuras según el tipo de contenido
+		if (tipoContenido === 'membresia') {
+			// Para membresías: usar .precio (mensual por defecto)
+			return contenido.precio || contenido.precio_mensual || 0;
+		} else {
+			// Para cursos, tutoriales y paquetes: lógica original
+			return contenido.precio_rebajado || contenido.precio_normal || 0;
+		}
 	}
 
 	// Obtener título seguro del contenido
 	function obtenerTitulo(contenido: any): string {
 		if (!contenido) return 'Contenido no disponible';
-		return contenido.titulo || 'Sin título';
+		
+		// 🎯 Diferentes campos según el tipo de contenido
+		if (tipoContenido === 'membresia') {
+			// Para membresías: usar .nombre
+			return contenido.nombre || 'Plan sin nombre';
+		} else {
+			// Para cursos, tutoriales y paquetes: usar .titulo
+			return contenido.titulo || 'Sin título';
+		}
 	}
 
 	// Función para sanitizar datos con mayor seguridad
@@ -534,7 +674,7 @@
 		aria-labelledby="modal-title"
 	>
 		<div
-			class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-auto text-white border border-gray-700 relative transition-all duration-300 modal-content max-h-[90vh] overflow-y-auto"
+			class="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-auto text-white border border-gray-700 relative transition-all duration-300 modal-content max-h-[90vh] overflow-y-auto"
 			on:click|stopPropagation
 		>
 			<!-- Botón de cerrar -->
@@ -765,48 +905,7 @@
 							</div>
 						</div>
 
-						<!-- Datos Adicionales (Opcionales) -->
-						<div class="bg-gray-700/30 p-3 rounded-lg">
-							<h4 class="font-semibold text-purple-300 mb-2 text-sm">➕ Información Adicional (Opcional)</h4>
-							
-							<div class="grid grid-cols-2 gap-2">
-								<div>
-									<input 
-										type="date" 
-										id="fecha_nacimiento" 
-										bind:value={datosPago.fecha_nacimiento} 
-										class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500 transition"
-										title="Fecha de nacimiento"
-									/>
-								</div>
-								<div>
-									<input 
-										type="text" 
-										id="profesion" 
-										bind:value={datosPago.profesion} 
-										class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500 transition" 
-										placeholder="Profesión"
-									/>
-								</div>
-							</div>
-							
-							<div class="mt-2">
-								<select 
-									id="como_nos_conocio" 
-									bind:value={datosPago.como_nos_conocio} 
-									class="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500 transition"
-								>
-									<option value="Facebook">Facebook</option>
-									<option value="Instagram">Instagram</option>
-									<option value="YouTube">YouTube</option>
-									<option value="TikTok">TikTok</option>
-									<option value="Google">Google</option>
-									<option value="Recomendación">Recomendación</option>
-									<option value="WhatsApp">WhatsApp</option>
-									<option value="Otro">Otro</option>
-								</select>
-							</div>
-						</div>
+
 
 						<!-- Contraseña para usuarios nuevos -->
 						{#if !usuarioEstaRegistrado}
@@ -946,7 +1045,7 @@
 	@media (max-width: 768px) {
 		.modal-content {
 			margin: 0.5rem;
-			max-width: calc(100% - 1rem);
+			max-width: calc(100% - 1rem) !important;
 			max-height: calc(100vh - 1rem);
 		}
 		
@@ -956,6 +1055,13 @@
 		
 		:global(.grid-cols-3) {
 			grid-template-columns: 1fr 2fr;
+		}
+	}
+
+	/* Desktop - Modal más ancho */
+	@media (min-width: 1024px) {
+		.modal-content {
+			max-width: 56rem; /* Equivalente a max-w-4xl */
 		}
 	}
 

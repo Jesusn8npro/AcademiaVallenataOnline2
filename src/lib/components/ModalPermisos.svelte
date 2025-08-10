@@ -26,7 +26,10 @@
     if (!preferenciasGuardadas) {
       // Mostrar modal después de 2 segundos si no hay preferencias
       setTimeout(() => {
-        abrirModal();
+        // 🔧 VERIFICAR QUE NO HAYA OTROS MODALES ABIERTOS
+        if (!hayModalAbierto()) {
+          abrirModal();
+        }
       }, 2000);
     } else {
       // Cargar preferencias guardadas
@@ -42,6 +45,39 @@
         console.error('Error cargando preferencias:', error);
       }
     }
+  });
+
+  // 🔧 FUNCIÓN PARA DETECTAR SI HAY OTROS MODALES ABIERTOS
+  function hayModalAbierto() {
+    if (!browser) return false;
+    
+    // Buscar específicamente modales de login y pago que tienen z-index alto
+    const modalLogin = document.querySelector('.modal-overlay-inicio-sesion, .overlay-inicio-sesion');
+    const modalPago = document.querySelector('[class*="modal-pago"], [class*="ModalPago"]');
+    
+    // Si hay modales importantes abiertos, no mostrar cookies
+    return !!(modalLogin || modalPago);
+  }
+
+  // 🔧 FUNCIÓN PARA OCULTAR MODAL SI APARECE OTRO MÁS IMPORTANTE
+  function verificarJerarquiaModales() {
+    if (!browser || !mostrarModal) return;
+    
+    if (hayModalAbierto()) {
+      console.log('🍪 [COOKIES] Ocultando por modal de mayor prioridad');
+      mostrarModal = false;
+    }
+  }
+
+  // 🔧 VERIFICAR CADA 500ms SI HAY CONFLICTOS DE MODALES
+  onMount(() => {
+    if (!browser) return;
+    
+    const intervalo = setInterval(verificarJerarquiaModales, 500);
+    
+    return () => {
+      clearInterval(intervalo);
+    };
   });
 
   async function aceptarTodo() {
@@ -323,7 +359,7 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
-    z-index: 999998; /* Muy alto para estar siempre al frente */
+    z-index: 1000; /* 🔧 MENOR que el modal de login */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -340,7 +376,7 @@
     max-height: 90vh;
     overflow: hidden;
     position: relative;
-    z-index: 999999; /* Máximo z-index */
+    z-index: 1001; /* 🔧 MENOR que el modal de login */
     transform: translateZ(0); /* Forzar nueva capa de stacking */
   }
 

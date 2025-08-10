@@ -3,18 +3,21 @@
   import { generateUniqueSlug, generateSlug } from '$lib/utilidades/utilidadesSlug';
   import { goto } from '$app/navigation';
 
-  // Props tipadas
+  // Props tipadas - CAMPOS REALES DE LA BD
   export let cursos: Array<{
     id: string;
     titulo: string;
     descripcion?: string;
     descripcion_corta?: string;
     imagen_url?: string;
-    estudiantes_count?: number;
-    modulos_count?: number;
-    lecciones_count?: number;
+    estudiantes_inscritos?: number;
+    conteo_lecciones?: number;
+    duracion_estimada?: number;
     estado?: string;
     nivel?: string;
+    categoria?: string;
+    precio_normal?: number;
+    precio_rebajado?: number;
     created_at: string;
     [key: string]: any;
   }> = [];
@@ -25,10 +28,16 @@
     descripcion?: string;
     descripcion_corta?: string;
     imagen_url?: string;
-    estudiantes_count?: number;
-    partes_count?: number;
+    duracion?: number;
+    duracion_estimada?: number;
     estado?: string;
     nivel?: string;
+    categoria?: string;
+    artista?: string;
+    acordeonista?: string;
+    tonalidad?: string;
+    precio_normal?: number;
+    precio_rebajado?: number;
     created_at: string;
     [key: string]: any;
   }> = [];
@@ -291,40 +300,82 @@
               </p>
             </div>
 
-            <!-- Estadísticas -->
+            <!-- Estadísticas REALES -->
             <div class="estadisticas-contenido">
               <div class="stat-item">
                 <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m7-7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-                <span class="stat-numero">{item.estudiantes_count || 0}</span>
+                <span class="stat-numero">
+                  {#if item.tipo === 'curso'}
+                    {(item as any).estudiantes_inscritos_real || (item as any).estudiantes_inscritos || 0}
+                  {:else}
+                    {(item as any).estudiantes_inscritos_real || 0}
+                  {/if}
+                </span>
                 <span class="stat-label">Estudiantes</span>
               </div>
 
-              {#if item.tipo === 'curso'}
+                            {#if item.tipo === 'curso'}
                 <div class="stat-item">
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                   </svg>
-                  <span class="stat-numero">{item.modulos_count || 0}</span>
+                  <span class="stat-numero">{(item as any).modulos_count_real || 0}</span>
                   <span class="stat-label">Módulos</span>
                 </div>
-                
+
                 <div class="stat-item">
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
-                  <span class="stat-numero">{item.lecciones_count || 0}</span>
+                  <span class="stat-numero">{(item as any).lecciones_count_real || (item as any).conteo_lecciones || 0}</span>
                   <span class="stat-label">Lecciones</span>
                 </div>
-              {:else}
+                
+                <div class="stat-item">
+                  <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span class="stat-numero">{(item as any).duracion_estimada || 0}</span>
+                  <span class="stat-label">Min</span>
+                </div>
+                            {:else}
                 <div class="stat-item">
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                   </svg>
-                  <span class="stat-numero">{item.partes_count || 0}</span>
+                  <span class="stat-numero">{(item as any).partes_count_real || 0}</span>
                   <span class="stat-label">Partes</span>
                 </div>
+
+                <div class="stat-item">
+                  <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span class="stat-numero">{(item as any).duracion || (item as any).duracion_estimada || 0}</span>
+                  <span class="stat-label">Minutos</span>
+                </div>
+
+                                 {#if (item as any).artista}
+                  <div class="stat-item">
+                    <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                                         <span class="stat-numero">{(item as any).artista}</span>
+                    <span class="stat-label">Artista</span>
+                  </div>
+                {/if}
+
+                                 {#if (item as any).tonalidad}
+                  <div class="stat-item">
+                    <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                    </svg>
+                                         <span class="stat-numero">{(item as any).tonalidad}</span>
+                    <span class="stat-label">Tono</span>
+                  </div>
+                {/if}
               {/if}
             </div>
 

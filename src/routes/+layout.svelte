@@ -16,14 +16,42 @@
   import ChatWidget from '$lib/components/ChatEnVivo/ChatWidget.svelte';
   import { browser } from '$app/environment';
   import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
+  import { modalPagoAbierto } from '$lib/stores/modalPagoStore';
   import FooterPoliticas from '$lib/components/Footer/FooterPoliticas.svelte';
   import { TiempoService } from '$lib/services/tiempoService';
   import { trackingRealService } from '$lib/services/trackingActividadReal';
   import { actividadService } from '$lib/services/actividadTiempoRealService';
   import { servicioGeoEspanol } from '$lib/services/servicioGeolocalizacionEspanol';
+  import { invalidateAll } from '$app/navigation';
   
   // Variables para heartbeat automático del admin
   let heartbeatInterval: NodeJS.Timeout | null = null;
+  
+  // 🔧 RESETEAR STORE DE MODAL AL NAVEGAR
+  $: if (browser && $page.url.pathname) {
+    modalPagoAbierto.set(false);
+  }
+
+  // 🔧 MANEJO DE BFCACHE PARA NAVEGACIÓN HACIA ATRÁS
+  function manejarRestauracionPagina() {
+    console.log('🔄 [BFCACHE] Página restaurada desde cache - refrescando datos');
+    
+    // Forzar invalidación de todos los datos
+    invalidateAll();
+    
+    // Resetear stores críticos
+    modalPagoAbierto.set(false);
+    
+    // Forzar re-renderizado después de un frame
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        // Trigger un pequeño re-paint para asegurar renderizado
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // trigger reflow
+        document.body.style.display = '';
+      }
+    }, 0);
+  }
   
   // 🌍 FUNCIÓN INTELIGENTE DE GEOLOCALIZACIÓN
   // Solo ejecuta geolocalización cuando es realmente necesario
@@ -423,6 +451,32 @@
   }
 
   onMount(async () => {
+    // 🔧 CONFIGURAR LISTENERS PARA BFCACHE
+    if (browser) {
+      // Detectar cuando la página se restaura desde bfcache
+      window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+          console.log('🔄 [BFCACHE] Página restaurada desde bfcache');
+          manejarRestauracionPagina();
+        }
+      });
+
+      // Detectar cuando la página se vuelve visible (tab switching)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('👁️ [VISIBILITY] Página visible de nuevo');
+          // Pequeño delay para asegurar estabilidad
+          setTimeout(manejarRestauracionPagina, 100);
+        }
+      });
+
+      // Detectar navegación con focus
+      window.addEventListener('focus', () => {
+        console.log('🎯 [FOCUS] Ventana enfocada');
+        setTimeout(manejarRestauracionPagina, 50);
+      });
+    }
+    
     // Inicializar tema al cargar
     inicializarTema();
     
@@ -527,7 +581,9 @@
     
   {:else if $usuario}
     <!-- USUARIO AUTENTICADO - CON MENÚ Y SIDEBAR -->
-    <MenuSuperiorAutenticado />
+    {#if !$modalPagoAbierto}
+      <MenuSuperiorAutenticado />
+    {/if}
     
     <div class="layout-autenticado">
       <AdminSidebar />
@@ -550,7 +606,9 @@
     
   {:else}
     <!-- USUARIO NO AUTENTICADO - SOLO MENÚ PÚBLICO -->
-    <MenuPublico />
+    {#if !$modalPagoAbierto}
+      <MenuPublico />
+    {/if}
     {#key $page.url.pathname}
       <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
         <slot />
@@ -563,7 +621,7 @@
 {/if}
 
 <!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería, pantalla completa y clases) -->
-{#if !$page.url.pathname.includes('/mensajes') && !esPaginaPantallaCompleta && !esPaginaSoloMenuInferior}
+{#if !$page.url.pathname.includes('/mensajes') && !esPaginaPantallaCompleta && !esPaginaSoloMenuInferior && !$modalPagoAbierto}
   <ChatWidget />
 {/if}
 

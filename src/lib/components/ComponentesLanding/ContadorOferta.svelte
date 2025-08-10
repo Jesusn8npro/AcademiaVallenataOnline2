@@ -1,6 +1,7 @@
 <!-- ContadorOferta.svelte - Contador de oferta responsivo -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
   
   let dias = 10;
   let horas = 23;
@@ -8,6 +9,12 @@
   let segundos = 10;
   
   let interval: ReturnType<typeof setInterval>;
+  
+  // 🔧 FUNCIÓN PARA VOLVER AL HOME
+  function volverAlHome() {
+    console.log('🏠 Navegando al home desde curso');
+    goto('/');
+  }
   
   onMount(() => {
     interval = setInterval(() => {
@@ -39,7 +46,7 @@
     
     <!-- Sección izquierda -->
     <div class="left-section">
-      <button class="btn-volver">← Volver</button>
+      <button class="btn-volver" on:click={volverAlHome}>← Volver</button>
       
       <div class="oferta-info">
         <div class="oferta-icon">⚡</div>

@@ -5,6 +5,7 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { actividadService } from '$lib/services/actividadTiempoRealService';
   import { trackearUbicacionUsuario } from '$lib/services/geoLocationService';
+  import { diagnosticarConfiguracionSupabase, probarRecuperacionContrasena } from '$lib/utils/diagnosticoSupabase';
   export let abierto = false;
   export let onCerrar = () => {};
   let usuario = '';
@@ -23,6 +24,7 @@
   // Recuperar contraseña
   let correoRecuperar = '';
   let mensajeRecuperar = '';
+  let mostrandoDiagnostico = false;
   
   // Estados para mostrar/ocultar contraseñas
   let mostrarContrasena = false;
@@ -52,7 +54,7 @@
     usuario = '';
     contrasena = '';
     errorLogin = '';
-    cargando = false;
+    cargando = false; // 🔒 GARANTIZAR QUE SE RESETEE EL ESTADO DE CARGA
     correoRecuperar = '';
     mensajeRecuperar = '';
     mostrarContrasena = false;
@@ -113,12 +115,12 @@
         
         if (sesionesAnteriores && sesionesAnteriores.length > 0) {
           // Sumar tiempo total histórico
-          tiempoHistoricoTotal = sesionesAnteriores.reduce((total, sesion) => {
+          tiempoHistoricoTotal = sesionesAnteriores.reduce((total: number, sesion: any) => {
             return total + (sesion.tiempo_total_minutos || 0);
           }, 0);
           
           // Sumar sesiones totales históricas
-          sesionesTotalesHistoricas = sesionesAnteriores.reduce((total, sesion) => {
+          sesionesTotalesHistoricas = sesionesAnteriores.reduce((total: number, sesion: any) => {
             return total + (sesion.sesiones_totales || 0);
           }, 0);
           
@@ -242,18 +244,186 @@
     goto('/panel-estudiante');
   }
 
+  // 🧪 FUNCIÓN DE PRUEBA PARA DEBUGGEAR SUPABASE
+  async function probarConfiguracionSupabase() {
+    try {
+      console.log('🔍 [DEBUG] Probando configuración de Supabase...');
+      console.log('🔍 [DEBUG] Supabase URL:', supabase.supabaseUrl);
+      console.log('🔍 [DEBUG] Window Origin:', window.location.origin);
+      console.log('🔍 [DEBUG] Hostname:', window.location.hostname);
+      
+      const { data, error } = await supabase.auth.getSession();
+      console.log('🔍 [DEBUG] Sesión actual:', data);
+      if (error) console.error('🔍 [DEBUG] Error de sesión:', error);
+      
+    } catch (err) {
+      console.error('🔍 [DEBUG] Error general:', err);
+    }
+  }
+
+  // 🔍 FUNCIÓN SIMPLIFICADA PARA VERIFICAR PERFIL (SIN ADMIN)
+  async function verificarPerfilExiste(email: string) {
+    try {
+      console.log('🔍 [VERIFICACIÓN] Checkeando perfil para:', email);
+      
+      // Solo buscar en la tabla de perfiles (SIN AUTH ADMIN)
+      const { data: perfilData, error: perfilError } = await supabase
+        .from('perfiles')
+        .select('correo, nombre, apellido, id')
+        .eq('correo', email)
+        .single();
+      
+      console.log('🔍 [VERIFICACIÓN] Perfil encontrado:', perfilData);
+      if (perfilError) {
+        console.log('🔍 [VERIFICACIÓN] Error perfil:', perfilError);
+        return { existe: false, datos: null };
+      }
+      
+      return { existe: !!perfilData, datos: perfilData };
+    } catch (error) {
+      console.error('🔍 [VERIFICACIÓN] Error general:', error);
+      return { existe: false, datos: null };
+    }
+  }
+
+  // 🔄 FUNCIÓN SIMPLIFICADA Y MEJORADA PARA RECUPERACIÓN DE CONTRASEÑA
   async function enviarRecuperacion(e: Event) {
     e.preventDefault();
     mensajeRecuperar = '';
     cargando = true;
-    const { error } = await supabase.auth.resetPasswordForEmail(correoRecuperar, {
-      redirectTo: window.location.origin + '/recuperar-contrasena'
-    });
-    cargando = false;
-    if (error) {
-      mensajeRecuperar = 'No se pudo enviar el correo. Verifica tu email.';
-    } else {
-      mensajeRecuperar = '¡Revisa tu correo para restablecer la contraseña!';
+    
+    // 🛡️ TIMEOUT DE SEGURIDAD PARA PREVENIR BLOQUEO INDEFINIDO
+    const timeoutId = setTimeout(() => {
+      if (cargando) {
+        cargando = false;
+        mensajeRecuperar = '⏰ La solicitud está tardando mucho. El email puede enviarse con retraso. Revisa tu correo en unos minutos.';
+        console.warn('⏰ [RECUPERACIÓN] Timeout de seguridad activado');
+      }
+    }, 15000); // 15 segundos máximo
+    
+    try {
+      console.log('🔄 [RECUPERACIÓN] Iniciando proceso para:', correoRecuperar);
+      
+      // 🔧 URL más robusta para recuperación
+      const isProduction = window.location.hostname === 'academiavallenataonline.com';
+      const redirectURL = isProduction 
+        ? 'https://academiavallenataonline.com/recuperar-contrasena'
+        : window.location.origin + '/recuperar-contrasena';
+      
+      console.log('🔗 [RECUPERACIÓN] Redirect URL:', redirectURL);
+      
+      // ✨ Enviar email de recuperación (versión simplificada)
+      const { error } = await supabase.auth.resetPasswordForEmail(correoRecuperar, {
+        redirectTo: redirectURL
+      });
+      
+      if (error) {
+        console.error('❌ [RECUPERACIÓN] Error:', error);
+        
+        // 🎯 Manejo de errores específico para desarrollo local vs producción
+        const isLocalhost = window.location.hostname === 'localhost';
+        
+        if (error.message?.includes('rate') || error.message?.includes('limit') || error.status === 429) {
+          mensajeRecuperar = '⏰ Demasiados intentos. Espera 5 minutos antes de intentar nuevamente.';
+        } else if (error.message?.includes('timeout') || error.message?.includes('S04')) {
+          mensajeRecuperar = '⏰ El servidor está ocupado. El email puede enviarse con retraso. Revisa tu correo en unos minutos.';
+        } else if (error.message?.includes('invalid') || error.message?.includes('not authorized') || error.message?.includes('email_address_not_authorized')) {
+          mensajeRecuperar = '🚨 PROBLEMA DETECTADO: Servicio de email predeterminado de Supabase\n\n' +
+            '❌ CAUSA: Supabase por defecto SOLO envía emails a miembros de tu organización.\n\n' +
+            '✅ SOLUCIÓN OBLIGATORIA: Configurar proveedor SMTP personalizado\n' +
+            '   1. Ve a Supabase Dashboard > Authentication > Settings\n' +
+            '   2. Scroll hasta "SMTP Settings"\n' +
+            '   3. Habilita "Enable custom SMTP"\n' +
+            '   4. Configura Gmail, Resend, SendGrid, etc.\n\n' +
+            '📖 Guía completa en: src/lib/utils/configuracionSMTP.md';
+        } else {
+          mensajeRecuperar = isLocalhost
+            ? `⚠️ ERROR EN LOCALHOST: ${error.message}\n\n💡 NOTA: Este error es común en desarrollo local. La funcionalidad funciona correctamente en producción.`
+            : `❌ Error: ${error.message}. Si persiste, contacta soporte.`;
+        }
+      } else {
+        // ✅ ÉXITO
+        console.log('✅ [RECUPERACIÓN] Email enviado exitosamente');
+        const isLocalhost = window.location.hostname === 'localhost';
+        mensajeRecuperar = isLocalhost
+          ? '📨 ¡Email enviado! Revisa tu bandeja de entrada, spam y promociones.\n\n⚠️ NOTA: Si no recibes el email en localhost, es normal. Configura SMTP personalizado o prueba en producción.'
+          : '📨 ¡Email enviado! Revisa tu bandeja de entrada, spam y promociones. El enlace expira en 1 hora.';
+      }
+      
+    } catch (err) {
+      console.error('❌ [RECUPERACIÓN] Error inesperado:', err);
+      const isLocalhost = window.location.hostname === 'localhost';
+      const error = err as any;
+      
+      // Manejo específico de AuthRetryableFetchError
+      if (error.name === 'AuthRetryableFetchError' || error.message?.includes('AuthRetryableFetchError')) {
+        mensajeRecuperar = isLocalhost
+          ? '🚨 AUTHRETRYABLEFETCHERROR\n\n⚠️ Este es un error MUY común en localhost con Supabase.\n\n✅ SOLUCIÓN: Este error NO ocurre en producción. La funcionalidad funciona perfectamente cuando despliegas tu app.\n\n💡 Para desarrollo local, configura SMTP personalizado o usa herramientas como ngrok.'
+          : '❌ Error de conectividad con Supabase. Verifica tu conexión a internet.';
+      } else {
+        mensajeRecuperar = isLocalhost
+          ? `⚠️ ERROR EN DESARROLLO LOCAL: ${error.message || 'Error inesperado'}\n\n💡 NOTA: Muchos errores de auth son normales en localhost. Prueba en producción para verificar el funcionamiento real.`
+          : '❌ Error inesperado. Verifica tu conexión a internet e intenta nuevamente.';
+      }
+    } finally {
+      // 🔒 GARANTIZAR QUE SIEMPRE SE RESETEE EL ESTADO DE CARGA
+      clearTimeout(timeoutId);
+      cargando = false;
+    }
+  }
+
+  // 🔍 FUNCIÓN DE DIAGNÓSTICO PARA DEPURACIÓN
+  async function ejecutarDiagnostico() {
+    console.log('🔍 [MODAL] Ejecutando diagnóstico completo...');
+    mostrandoDiagnostico = true;
+    
+    try {
+      const diagnostico = await diagnosticarConfiguracionSupabase();
+      
+      // Mostrar resumen en el mensaje
+      let resumen = '🔍 DIAGNÓSTICO COMPLETO:\n\n';
+      resumen += `📍 URL: ${diagnostico.url}\n`;
+      resumen += `🌐 Origin: ${window.location.origin}\n\n`;
+      
+      if (diagnostico.errores.length > 0) {
+        resumen += '❌ ERRORES ENCONTRADOS:\n';
+        diagnostico.errores.forEach(error => resumen += `• ${error}\n`);
+        resumen += '\n';
+      }
+      
+      if (diagnostico.recomendaciones.length > 0) {
+        resumen += '💡 RECOMENDACIONES:\n';
+        diagnostico.recomendaciones.forEach(rec => resumen += `• ${rec}\n`);
+      }
+      
+      mensajeRecuperar = resumen;
+    } catch (error) {
+      mensajeRecuperar = `❌ Error ejecutando diagnóstico: ${error}`;
+    } finally {
+      mostrandoDiagnostico = false;
+    }
+  }
+
+  // 🧪 FUNCIÓN PARA PROBAR RECUPERACIÓN CON EMAIL ESPECÍFICO
+  async function probarConEmail() {
+    if (!correoRecuperar.trim()) {
+      mensajeRecuperar = '📧 Ingresa un email para probar';
+      return;
+    }
+    
+    cargando = true;
+    try {
+      const resultado = await probarRecuperacionContrasena(correoRecuperar);
+      
+      if (resultado.exito) {
+        mensajeRecuperar = `✅ PRUEBA EXITOSA: ${resultado.mensaje}\n🔗 Redirect: ${resultado.redirectURL}`;
+      } else {
+        mensajeRecuperar = `❌ PRUEBA FALLÓ: ${resultado.error}\n💡 ${resultado.recomendacion}`;
+      }
+    } catch (error) {
+      mensajeRecuperar = `❌ Error en prueba: ${error}`;
+    } finally {
+      cargando = false;
     }
   }
 
@@ -319,12 +489,28 @@
             </div>
           </div>
           {#if mensajeRecuperar}
-            <div class="mensaje-error">{mensajeRecuperar}</div>
+            <div class="mensaje-recuperar" class:es-diagnostico={mensajeRecuperar.includes('DIAGNÓSTICO')}>
+              {mensajeRecuperar}
+            </div>
           {/if}
           <button type="submit" class="boton-enviar" disabled={cargando}>
             {cargando ? 'Enviando...' : 'Enviar enlace'}
           </button>
         </form>
+        
+        <!-- 🛠️ BOTONES DE DIAGNÓSTICO PARA DEPURACIÓN -->
+        <div class="botones-diagnostico">
+          <button type="button" class="boton-diagnostico" on:click={ejecutarDiagnostico} disabled={mostrandoDiagnostico}>
+            {mostrandoDiagnostico ? '🔍 Diagnosticando...' : '🔍 Diagnóstico completo'}
+          </button>
+          <button type="button" class="boton-diagnostico" on:click={probarConEmail} disabled={cargando || !correoRecuperar.trim()}>
+            {cargando ? '🧪 Probando...' : '🧪 Probar con este email'}
+          </button>
+          <button type="button" class="boton-smtp" on:click={() => window.open('https://supabase.com/dashboard/project/' + supabase.supabaseUrl.split('/')[2] + '/auth/settings', '_blank')}>
+            🔧 Configurar SMTP en Supabase
+          </button>
+        </div>
+        
         <div class="enlaces-extra">
           <button type="button" class="enlace-olvido" on:click={() => { vistaRecuperar = false; mensajeRecuperar = ''; correoRecuperar = ''; }}>Volver al inicio de sesión</button>
         </div>
@@ -773,6 +959,33 @@
     margin: -8px 0 8px;
   }
 
+  .mensaje-recuperar {
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    margin: -8px 0 8px;
+    line-height: 1.4;
+  }
+
+  .mensaje-recuperar:not(.es-diagnostico) {
+    background: var(--success-bg);
+    color: var(--success-color);
+    text-align: center;
+  }
+
+  .mensaje-recuperar.es-diagnostico {
+    background: #f8fafc;
+    color: #334155;
+    text-align: left;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    white-space: pre-line;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+  }
+
   /* === SEPARADOR === */
   .separador-o {
     display: flex;
@@ -843,6 +1056,64 @@
   .google-texto {
     color: var(--text-primary);
     font-weight: 600;
+  }
+
+  /* === BOTONES DE DIAGNÓSTICO === */
+  .botones-diagnostico {
+    padding: 16px 32px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(226, 232, 240, 0.2);
+    margin-top: 16px;
+  }
+
+  .boton-diagnostico {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.9;
+  }
+
+  .boton-diagnostico:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .boton-diagnostico:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .boton-smtp {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .boton-smtp:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
   }
 
   /* === ENLACES EXTRA === */

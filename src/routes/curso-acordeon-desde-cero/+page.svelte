@@ -1,8 +1,22 @@
 <script lang="ts">
   import ContadorOferta from '$lib/components/ComponentesLanding/ContadorOferta.svelte';
+  import ModalPagoInteligente from '$lib/components/ComponentesLanding/ModalPagoInteligente.svelte';
+
+  // Modal de pago
+  let mostrarModalPago = false;
+
+  // Datos del curso "Aprende desde cero"
+  const cursoAcordeion = {
+    id: 'curso-acordeon-desde-cero',
+    titulo: 'Curso de Acordeón desde Cero',
+    precio_normal: 379000,
+    precio_rebajado: 289000,
+    descripcion: 'Aprende a tocar acordeón vallenato desde cero absoluto hasta tocar como un profesional'
+  };
 
   function comprarAhora() {
-    alert('🚀 ¡Perfecto! Te estamos redirigiendo al pago seguro...\n\n¡Prepárate para dominar el acordeón vallenato!');
+    console.log('🚀 Abriendo modal de pago para curso acordeón desde cero');
+    mostrarModalPago = true;
   }
 </script>
 
@@ -351,6 +365,10 @@
   .metodos-pago {
     margin: 25px 0;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   .metodos-pago img {
     max-width: 400px;
@@ -358,6 +376,9 @@
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
   }
   .metodos-pago p {
     color: #e2e8f0;
@@ -535,4 +556,11 @@
     .titulo { font-size: 1.8rem; }
     .insignia.actualizado { font-size: 0.8rem; padding: 8px 15px; }
   }
-</style> 
+</style>
+
+<!-- Modal de Pago Inteligente -->
+<ModalPagoInteligente 
+  bind:mostrar={mostrarModalPago} 
+  contenido={cursoAcordeion}
+  tipoContenido="curso"
+/> 

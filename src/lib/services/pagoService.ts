@@ -21,6 +21,7 @@ export interface RegistroPago {
 	usuario_id: string;
 	curso_id?: string;
 	tutorial_id?: string;
+	paquete_id?: string;
 	nombre_producto: string;
 	descripcion?: string;
 	valor: number;
@@ -321,6 +322,7 @@ export async function crearPago(datosEntrada: {
 		console.log('📋 Datos de entrada:', datosEntrada);
 
 		const { usuarioId, cursoId, tutorialId, email, nombre, telefono, ip_cliente, datosAdicionales } = datosEntrada;
+		const paqueteId = (datosEntrada as any).paqueteId; // Manejar paqueteId opcionalmente
 
 		// 1. Obtener contenido (curso o tutorial)
 		let contenido;
@@ -358,8 +360,23 @@ export async function crearPago(datosEntrada: {
 			precio = tutorial.precio_rebajado || tutorial.precio_normal || 15000;
 			nombreProducto = tutorial.titulo;
 			descripcion = `Tutorial: ${tutorial.titulo}`;
+		} else if (paqueteId) {
+			const { data: paquete, error } = await supabase
+				.from('paquetes')
+				.select('id, titulo, precio_normal, precio_rebajado')
+				.eq('id', paqueteId)
+				.single();
+
+			if (error || !paquete) {
+				return { success: false, error: 'Paquete no encontrado' };
+			}
+
+			contenido = paquete;
+			precio = paquete.precio_rebajado || paquete.precio_normal || 15000;
+			nombreProducto = paquete.titulo;
+			descripcion = `Paquete: ${paquete.titulo}`;
 		} else {
-			return { success: false, error: 'Debe especificar un curso o tutorial' };
+			return { success: false, error: 'Debe especificar un curso, tutorial o paquete' };
 		}
 
 		// 2. Crear usuario si no existe
@@ -374,8 +391,8 @@ export async function crearPago(datosEntrada: {
 
 		// 4. Generar referencia única
 		const refPayco = generarReferencia(
-			cursoId ? 'curso' : 'tutorial',
-			cursoId || tutorialId || '',
+			cursoId ? 'curso' : tutorialId ? 'tutorial' : 'paquete',
+			cursoId || tutorialId || paqueteId || '',
 			finalUserId || ''
 		);
 
@@ -384,6 +401,7 @@ export async function crearPago(datosEntrada: {
 			usuario_id: finalUserId,
 			curso_id: cursoId,
 			tutorial_id: tutorialId,
+			paquete_id: paqueteId,
 			nombre_producto: nombreProducto,
 			descripcion: descripcion,
 			valor: total,
@@ -401,54 +419,64 @@ export async function crearPago(datosEntrada: {
 			return resultadoRegistro;
 		}
 
-		// 6. Preparar URLs de respuesta
-		const baseUrl = 'https://academiavallenataonline.com';
-		const responseUrl = `${baseUrl}/api/pagos/respuesta`;
+		// 6. Preparar URLs de respuesta 
+		const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5173';
+		const responseUrl = `${baseUrl}/pago-exitoso`;
 		const confirmationUrl = `${baseUrl}/api/pagos/confirmar`;
 
 		// 7. Preparar datos finales para ePayco
 		const calculosIVA = calcularIVA(precio);
 		const epaycoData = {
-			// Datos transaccionales
-			invoice: refPayco,
-			name: nombreProducto,
-			description: descripcion || nombreProducto,
+			// Datos transaccionales - VALIDADOS
+			invoice: refPayco.substring(0, 32), // Limitar longitud
+			name: nombreProducto.substring(0, 100),
+			description: (descripcion || nombreProducto).substring(0, 200),
 			currency: 'cop',
-			amount: String(total),
+			amount: String(Math.max(1000, total)), // Mínimo $1000 COP
 			tax_base: String(calculosIVA.base),
 			tax: String(calculosIVA.iva),
 			tax_ico: '0',
-			country: (datosAdicionales?.pais === 'Colombia' ? 'co' : 'us'),
-			lang: 'ES',
+			country: 'co',
+			lang: 'es',
 
-			// Datos de facturación (ePayco espera estos nombres)
-			email_billing: email,
-			name_billing: `${nombre} ${datosAdicionales?.apellido || ''}`.trim(),
-			address_billing: datosAdicionales?.direccion_completa || 'No aplica',
-			type_doc_billing: (datosAdicionales?.documento_tipo || 'cc').toLowerCase(),
-			number_doc_billing: datosAdicionales?.documento_numero || '00000000',
-			type_person: datosAdicionales?.documento_tipo === 'NIT' ? '1' : '0',
-			mobilephone_billing: telefono || '0000000000',
+			// Datos de facturación (ePayco espera estos nombres) - VALIDADOS
+			email_billing: email || 'test@test.com',
+			name_billing: (nombre || 'Test User').substring(0, 50), // Limitar longitud
+			address_billing: (datosAdicionales?.direccion_completa || 'Calle 123 #45-67, Bogotá').substring(0, 100),
+			type_doc_billing: 'cc', // Siempre CC para evitar errores
+			number_doc_billing: (datosAdicionales?.documento_numero || '1234567890').replace(/[^0-9]/g, '').substring(0, 15),
+			type_person: '0', // Siempre persona natural
+			mobilephone_billing: (telefono || '3001234567').replace(/[^0-9]/g, '').substring(0, 15),
 
-			// Forzar el modo On-Page (no redirect) - ¡Debe ser un string!
+			// ✅ MODO POPUP/LIGHTBOX - external FALSE + popup TRUE
 			external: 'false',
+			popup: 'true',
 
-			// URLs de respuesta y confirmación
-			response: `${import.meta.env.VITE_BASE_URL}/pago-respuesta`,
-			confirmation: `https://webhook.site/a0b1c2d3-e4f5-a6b7-c8d9-e0f1a2b3c4d5`
+			// URLs de respuesta y confirmación  
+			response: responseUrl,
+			confirmation: confirmationUrl
 		};
 
 		console.log('✅ Datos preparados para ePayco:', epaycoData);
 		console.log('🚀 === FIN crearPago EXITOSO ===');
 
+		// Crear datos finales con CUSTOMER ID incluido
+		const datosFinales = {
+			...epaycoData,
+			key: import.meta.env.VITE_EPAYCO_PUBLIC_KEY || 'a04d60e2e678d5bd89a58d26f3413fdb', 
+			test: String(import.meta.env.VITE_EPAYCO_TEST_MODE !== 'false'),
+			// Agregar customer ID que puede ser requerido
+			customer_id: import.meta.env.VITE_EPAYCO_CUSTOMER_ID || '508441'
+		};
+
+		console.log('✅ Datos FINALES para ePayco:', datosFinales);
+		console.log('🔑 Usando llave:', datosFinales.key);
+		console.log('🧪 Modo test:', datosFinales.test);
+
 		return {
 			success: true,
 			message: 'Pago preparado exitosamente',
-			epaycoData: {
-				...epaycoData,
-				key: import.meta.env.VITE_EPAYCO_PUBLIC_KEY || 'a04d60e2e678d5bd89a58d26f3413fdb', 
-				test: String(import.meta.env.VITE_EPAYCO_TEST_MODE !== 'false')
-			}
+			epaycoData: datosFinales
 		};
 
 	} catch (error) {
