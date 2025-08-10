@@ -114,6 +114,12 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
             .select('tutorial_id')
         ]);
 
+        // Verificar errores en las consultas auxiliares
+        if (modulosRes.error) console.error('❌ Error módulos:', modulosRes.error);
+        if (leccionesRes.error) console.error('❌ Error lecciones:', leccionesRes.error);  
+        if (inscripcionesRes.error) console.error('❌ Error inscripciones:', inscripcionesRes.error);
+        if (partesRes.error) console.error('❌ Error partes:', partesRes.error);
+        
         // Procesar datos y hacer conteos manuales
         const modulosData = modulosRes.data || [];
         const leccionesData = leccionesRes.data || [];
@@ -121,15 +127,25 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
         const partesData = partesRes.data || [];
         
         console.log('📊 Datos auxiliares cargados:');
-        console.log('- Módulos:', modulosData.length);
-        console.log('- Lecciones:', leccionesData.length);
-        console.log('- Inscripciones:', inscripcionesData.length);
-        console.log('- Partes:', partesData.length);
+        console.log('- Módulos:', modulosData.length, modulosRes.error ? '(ERROR)' : '');
+        console.log('- Lecciones:', leccionesData.length, leccionesRes.error ? '(ERROR)' : '');
+        console.log('- Inscripciones:', inscripcionesData.length, inscripcionesRes.error ? '(ERROR)' : '');
+        console.log('- Partes:', partesData.length, partesRes.error ? '(ERROR)' : '');
         
         // Debug: Mostrar estructura de inscripciones
         if (inscripcionesData.length > 0) {
           console.log('🔍 [DEBUG] Muestra de inscripción:', inscripcionesData[0]);
           console.log('🔍 [DEBUG] Campos disponibles:', Object.keys(inscripcionesData[0]));
+        } else {
+          console.log('⚠️ [DEBUG] No hay inscripciones o error al cargar');
+        }
+        
+        // Debug: Mostrar estructura de lecciones
+        if (leccionesData.length > 0) {
+          console.log('🔍 [DEBUG] Muestra de lección:', leccionesData[0]);
+          console.log('🔍 [DEBUG] Campos disponibles:', Object.keys(leccionesData[0]));
+        } else {
+          console.log('⚠️ [DEBUG] No hay lecciones o error al cargar');
         }
 
         if (cursosRes.error) {
@@ -141,19 +157,30 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
             const leccionesDelCurso = leccionesData.filter(l => l.curso_id === curso.id).length;
             const estudiantesDelCurso = inscripcionesData.filter(i => i.curso_id === curso.id).length;
             
-            console.log(`🔍 [CURSO ${index}] ${curso.titulo}:`);
-            console.log(`📊 [CURSO ${index}] - Módulos reales: ${modulosDelCurso}`);
-            console.log(`📊 [CURSO ${index}] - Lecciones reales: ${leccionesDelCurso}`);
-            console.log(`📊 [CURSO ${index}] - Estudiantes reales: ${estudiantesDelCurso}`);
-            console.log(`📊 [CURSO ${index}] - Campo directo estudiantes_inscritos: ${curso.estudiantes_inscritos}`);
-            console.log(`📊 [CURSO ${index}] - Campo directo conteo_lecciones: ${curso.conteo_lecciones}`);
+            // Solo mostrar logs para el primer curso
+            if (index === 0) {
+              console.log(`🔍 [CURSO ${index}] ${curso.titulo}:`);
+              console.log(`📊 [CURSO ${index}] - Módulos reales: ${modulosDelCurso}`);
+              console.log(`📊 [CURSO ${index}] - Lecciones reales: ${leccionesDelCurso}`);
+              console.log(`📊 [CURSO ${index}] - Estudiantes reales: ${estudiantesDelCurso}`);
+              console.log(`📊 [CURSO ${index}] - Campo directo estudiantes_inscritos: ${curso.estudiantes_inscritos}`);
+              console.log(`📊 [CURSO ${index}] - Campo directo conteo_lecciones: ${curso.conteo_lecciones}`);
+            }
             
-            return {
-              ...curso,
-              modulos_count_real: modulosDelCurso,
-              lecciones_count_real: leccionesDelCurso,
-              estudiantes_inscritos_real: estudiantesDelCurso
-            };
+                          const cursoFinal = {
+                ...curso,
+                modulos_count_real: modulosDelCurso,
+                lecciones_count_real: leccionesDelCurso,
+                estudiantes_inscritos_real: estudiantesDelCurso
+              };
+              
+              // Debug para el primer curso
+              if (index === 0) {
+                console.log('🎯 [CURSO FINAL]', cursoFinal);
+                console.log('🎯 [CURSO FINAL] Campos:', Object.keys(cursoFinal));
+              }
+              
+              return cursoFinal;
           });
           console.log('✅ Cursos procesados:', cursos.length);
         }
@@ -166,17 +193,28 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
             const estudiantesDelTutorial = inscripcionesData.filter(i => i.tutorial_id === tutorial.id).length;
             const partesDelTutorial = partesData.filter(p => p.tutorial_id === tutorial.id).length;
             
-            console.log(`🔍 [TUTORIAL ${index}] ${tutorial.titulo}:`);
-            console.log(`📊 [TUTORIAL ${index}] - ID: ${tutorial.id}`);
-            console.log(`📊 [TUTORIAL ${index}] - Estudiantes reales: ${estudiantesDelTutorial}`);
-            console.log(`📊 [TUTORIAL ${index}] - Partes reales: ${partesDelTutorial}`);
-            console.log(`📊 [TUTORIAL ${index}] - Inscripciones que coinciden:`, inscripcionesData.filter(i => i.tutorial_id === tutorial.id));
+            // Solo mostrar logs para el primer tutorial  
+            if (index === 0) {
+              console.log(`🔍 [TUTORIAL ${index}] ${tutorial.titulo}:`);
+              console.log(`📊 [TUTORIAL ${index}] - ID: ${tutorial.id}`);
+              console.log(`📊 [TUTORIAL ${index}] - Estudiantes reales: ${estudiantesDelTutorial}`);
+              console.log(`📊 [TUTORIAL ${index}] - Partes reales: ${partesDelTutorial}`);
+              console.log(`📊 [TUTORIAL ${index}] - Inscripciones que coinciden:`, inscripcionesData.filter(i => i.tutorial_id === tutorial.id));
+            }
             
-            return {
-              ...tutorial,
-              estudiantes_inscritos_real: estudiantesDelTutorial,
-              partes_count_real: partesDelTutorial
-            };
+                          const tutorialFinal = {
+                ...tutorial,
+                estudiantes_inscritos_real: estudiantesDelTutorial,
+                partes_count_real: partesDelTutorial
+              };
+              
+              // Debug para el primer tutorial
+              if (index === 0) {
+                console.log('🎯 [TUTORIAL FINAL]', tutorialFinal);
+                console.log('🎯 [TUTORIAL FINAL] Campos:', Object.keys(tutorialFinal));
+              }
+              
+              return tutorialFinal;
           });
           console.log('✅ Tutoriales procesados:', tutoriales.length);
         }

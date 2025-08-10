@@ -53,6 +53,12 @@
     ...cursos.map(c => ({ ...c, tipo: 'curso' as const })),
     ...tutoriales.map(t => ({ ...t, tipo: 'tutorial' as const }))
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
+  // Debug temporal
+  $: if (contenidoUnificado.length > 0) {
+    console.log('🎨 [COMPONENTE] Primer item:', contenidoUnificado[0]);
+    console.log('🎨 [COMPONENTE] Campos disponibles:', Object.keys(contenidoUnificado[0]));
+  }
 
   function obtenerBadgeEstado(estado: string) {
     const estados: Record<string, string> = {
@@ -308,9 +314,9 @@
                 </svg>
                 <span class="stat-numero">
                   {#if item.tipo === 'curso'}
-                    {(item as any).estudiantes_inscritos_real || (item as any).estudiantes_inscritos || 0}
+                    {(item as any).estudiantes_inscritos_real ?? (item as any).estudiantes_inscritos ?? 0}
                   {:else}
-                    {(item as any).estudiantes_inscritos_real || 0}
+                    {(item as any).estudiantes_inscritos_real ?? 0}
                   {/if}
                 </span>
                 <span class="stat-label">Estudiantes</span>
@@ -321,7 +327,7 @@
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                   </svg>
-                  <span class="stat-numero">{(item as any).modulos_count_real || 0}</span>
+                  <span class="stat-numero">{(item as any).modulos_count_real ?? (item as any).modulos_count ?? 0}</span>
                   <span class="stat-label">Módulos</span>
                 </div>
 
@@ -329,7 +335,7 @@
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
-                  <span class="stat-numero">{(item as any).lecciones_count_real || (item as any).conteo_lecciones || 0}</span>
+                  <span class="stat-numero">{(item as any).lecciones_count_real ?? (item as any).lecciones_count ?? (item as any).conteo_lecciones ?? 0}</span>
                   <span class="stat-label">Lecciones</span>
                 </div>
                 
@@ -345,7 +351,7 @@
                   <svg class="stat-icono" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                   </svg>
-                  <span class="stat-numero">{(item as any).partes_count_real || 0}</span>
+                  <span class="stat-numero">{(item as any).partes_count_real ?? (item as any).partes_count ?? 0}</span>
                   <span class="stat-label">Partes</span>
                 </div>
 
