@@ -32,26 +32,7 @@
     modalPagoAbierto.set(false);
   }
 
-  // 🔧 MANEJO DE BFCACHE PARA NAVEGACIÓN HACIA ATRÁS
-  function manejarRestauracionPagina() {
-    console.log('🔄 [BFCACHE] Página restaurada desde cache - refrescando datos');
-    
-    // Forzar invalidación de todos los datos
-    invalidateAll();
-    
-    // Resetear stores críticos
-    modalPagoAbierto.set(false);
-    
-    // Forzar re-renderizado después de un frame
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        // Trigger un pequeño re-paint para asegurar renderizado
-        document.body.style.display = 'none';
-        document.body.offsetHeight; // trigger reflow
-        document.body.style.display = '';
-      }
-    }, 0);
-  }
+  // 🔧 SIN FUNCIONES PROBLEMÁTICAS
   
   // 🌍 FUNCIÓN INTELIGENTE DE GEOLOCALIZACIÓN
   // Solo ejecuta geolocalización cuando es realmente necesario
@@ -91,6 +72,10 @@
   // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
   
+  // 🔧 SISTEMA BÁSICO SIN PROBLEMAS
+
+  // 🔧 SIN VERIFICACIONES PROBLEMÁTICAS
+
   // 🕒 Tracking de tiempo por página
   $: if (browser && $page.url.pathname) {
     TiempoService.iniciarTiempoPagina($page.url.pathname);
@@ -450,37 +435,13 @@
     }
   }
 
-  onMount(async () => {
-    // 🔧 CONFIGURAR LISTENERS PARA BFCACHE
-    if (browser) {
-      // Detectar cuando la página se restaura desde bfcache
-      window.addEventListener('pageshow', (event) => {
-        if (event.persisted) {
-          console.log('🔄 [BFCACHE] Página restaurada desde bfcache');
-          manejarRestauracionPagina();
-        }
-      });
-
-      // Detectar cuando la página se vuelve visible (tab switching)
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-          console.log('👁️ [VISIBILITY] Página visible de nuevo');
-          // Pequeño delay para asegurar estabilidad
-          setTimeout(manejarRestauracionPagina, 100);
-        }
-      });
-
-      // Detectar navegación con focus
-      window.addEventListener('focus', () => {
-        console.log('🎯 [FOCUS] Ventana enfocada');
-        setTimeout(manejarRestauracionPagina, 50);
-      });
-    }
+  onMount(() => {
+    console.log('🔧 [LAYOUT] Inicializando layout básico');
     
-    // Inicializar tema al cargar
+    // Inicializar tema al cargar (función síncrona)
     inicializarTema();
     
-    // Sesión usuario CON MANEJO DE ERRORES
+    // Función async interna (SOLUCIÓN CORRECTA PARA TYPESCRIPT)
     (async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -512,7 +473,7 @@
       } finally {
         cargandoSesion = false;
       }
-    })();
+    })(); // ← CERRAR Y EJECUTAR LA FUNCIÓN ASYNC
 
     // Barra de progreso global
     window.addEventListener('scroll', manejarScroll, { passive: true });
@@ -860,5 +821,124 @@
     --color-accent-rgb: 168, 85, 247;
     --color-text-rgb: 229, 231, 235;
     --color-warning-rgb: 251, 191, 36;
+  }
+
+  /* =====================================================
+  🎨 CUSTOM SCROLLBAR - DISEÑO MODERNO Y ATRACTIVO  
+  ===================================================== */
+  
+  /* Firefox */
+  :global(html) {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.8) rgba(31, 41, 55, 0.3);
+  }
+  
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  :global(::-webkit-scrollbar) {
+    width: 12px;
+    height: 12px;
+  }
+  
+  :global(::-webkit-scrollbar-track) {
+    background: linear-gradient(135deg, 
+      rgba(31, 41, 55, 0.1) 0%, 
+      rgba(55, 65, 81, 0.2) 50%, 
+      rgba(31, 41, 55, 0.1) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.1);
+  }
+  
+  :global(::-webkit-scrollbar-thumb) {
+    background: linear-gradient(135deg, 
+      rgba(139, 92, 246, 0.9) 0%, 
+      rgba(168, 85, 247, 0.9) 50%, 
+      rgba(139, 92, 246, 0.9) 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 2px 8px rgba(139, 92, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  :global(::-webkit-scrollbar-thumb:hover) {
+    background: linear-gradient(135deg, 
+      rgba(139, 92, 246, 1) 0%, 
+      rgba(168, 85, 247, 1) 50%, 
+      rgba(139, 92, 246, 1) 100%);
+    box-shadow: 
+      0 4px 15px rgba(139, 92, 246, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+  
+  :global(::-webkit-scrollbar-thumb:active) {
+    background: linear-gradient(135deg, 
+      rgba(107, 70, 193, 1) 0%, 
+      rgba(147, 51, 234, 1) 50%, 
+      rgba(107, 70, 193, 1) 100%);
+    box-shadow: 
+      0 2px 8px rgba(107, 70, 193, 0.6),
+      inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  :global(::-webkit-scrollbar-corner) {
+    background: rgba(31, 41, 55, 0.2);
+  }
+  
+  /* Scrollbar horizontal */
+  :global(::-webkit-scrollbar:horizontal) {
+    height: 12px;
+  }
+  
+  /* ✨ SCROLLBAR PARA MODALES Y CONTENEDORES ESPECÍFICOS */
+  :global(.modal-contenido::-webkit-scrollbar),
+  :global(.sidebar::-webkit-scrollbar),
+  :global(.chat-mensajes::-webkit-scrollbar) {
+    width: 8px;
+  }
+  
+  :global(.modal-contenido::-webkit-scrollbar-thumb),
+  :global(.sidebar::-webkit-scrollbar-thumb),
+  :global(.chat-mensajes::-webkit-scrollbar-thumb) {
+    background: linear-gradient(135deg, 
+      rgba(139, 92, 246, 0.7) 0%, 
+      rgba(168, 85, 247, 0.7) 100%);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* 🌙 MODO OSCURO - Scrollbar ajustado */
+  :global([data-theme="dark"] ::-webkit-scrollbar-track) {
+    background: linear-gradient(135deg, 
+      rgba(17, 24, 39, 0.8) 0%, 
+      rgba(31, 41, 55, 0.9) 50%, 
+      rgba(17, 24, 39, 0.8) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+  }
+  
+  /* 📱 RESPONSIVE - Scrollbar más delgado en móviles */
+  @media (max-width: 768px) {
+    :global(::-webkit-scrollbar) {
+      width: 8px;
+      height: 8px;
+    }
+    
+    :global(::-webkit-scrollbar-thumb) {
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    :global(::-webkit-scrollbar) {
+      width: 6px;
+      height: 6px;
+    }
+    
+    :global(::-webkit-scrollbar-thumb) {
+      border-radius: 4px;
+      border: none;
+    }
   }
 </style>

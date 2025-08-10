@@ -35,10 +35,11 @@
     }).format(precio);
   }
   
-  // Calcular precio con descuento
+  // Calcular precio con descuento (usando precio_rebajado como en GridCursos)
   $: precioOriginal = curso.precio_normal || 0;
-  $: descuento = curso.descuento_porcentaje || 0;
-  $: precioFinal = descuento > 0 ? precioOriginal * (1 - descuento / 100) : precioOriginal;
+  $: precioRebajado = curso.precio_rebajado || 0;
+  $: precioFinal = precioRebajado && precioRebajado > 0 ? precioRebajado : precioOriginal;
+  $: hayDescuento = precioRebajado && precioRebajado < precioOriginal;
   $: esGratis = precioFinal === 0;
   
   // Objetivos por defecto optimizados
@@ -142,7 +143,7 @@
         <!-- Precio -->
         <div class="precio-container">
           {#if !esGratis}
-            {#if descuento > 0}
+            {#if hayDescuento}
               <span class="precio-tachado">{formatearPrecio(precioOriginal)}</span>
             {/if}
             <span class="precio">{formatearPrecio(precioFinal)}</span>
@@ -314,20 +315,75 @@
   }
   
   .precio-container {
-    margin-bottom: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
   }
   
   .precio-tachado {
-    color: #9ca3af;
     text-decoration: line-through;
-    font-size: 1.1rem;
-    margin-right: 12px;
+    color: #9ca3af;
+    font-size: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0.7;
+    position: relative;
+  }
+
+  .precio-tachado::before {
+    content: "Antes: ";
+    font-weight: 400;
+    color: #6b7280;
   }
   
-  .precio, .precio-gratis {
-    color: #10b981;
-    font-size: 2.2rem;
+  .precio {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+  }
+
+  .precio::after {
+    content: "¡AHORA!";
+    font-size: 0.7rem;
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
     font-weight: 700;
+    animation: pulse 2s infinite;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    position: absolute;
+    top: -8px;
+    right: -60px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    50% { 
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+    }
+  }
+  
+  .precio-gratis {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    text-align: center;
   }
   
   .acceso, .garantia {
@@ -412,7 +468,9 @@
   .thumbnail {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
+    background: #1a1a1a;
   }
   
   .placeholder {
@@ -555,8 +613,25 @@
       text-align: center;
     }
     
-    .precio, .precio-gratis {
+    .precio {
+      font-size: 2rem;
+    }
+
+    .precio::after {
+      font-size: 0.6rem;
+      padding: 0.2rem 0.6rem;
+      right: -50px;
+    }
+
+    .precio-gratis {
       font-size: 1.8rem;
+      padding: 0.4rem 1.2rem;
+    }
+
+    .precio-container {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
     }
     
     .acceso, .garantia {
@@ -573,8 +648,20 @@
       font-size: 1.8rem; 
     }
     
-    .precio, .precio-gratis { 
+    .precio { 
       font-size: 1.6rem; 
+    }
+
+    .precio::after {
+      font-size: 0.5rem;
+      padding: 0.15rem 0.5rem;
+      right: -40px;
+      top: -5px;
+    }
+
+    .precio-gratis { 
+      font-size: 1.6rem;
+      padding: 0.3rem 1rem;
     }
     
     .btn-principal, .btn-secundario { 

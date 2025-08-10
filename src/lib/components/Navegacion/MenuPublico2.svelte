@@ -248,9 +248,9 @@
 <div class="barra-principal-navegacion {isSticky ? 'sticky' : ''}">
   <div class="contenedor-barra-principal">
     		<!-- Logo -->
-		<div class="logo-navegacion">
+		<a href="/" class="logo-navegacion" aria-label="Ir a la página de inicio">
 			<img src="/logo academia vallenata.png" alt="Logo Academia Vallenata" />
-    </div>
+    </a>
     
     <!-- Menú de navegación -->
     <nav class="menu-enlaces">
@@ -364,7 +364,9 @@
       </button>
       
       <div class="encabezado-menu">
-        			<img src="/logo academia vallenata.png" alt="Academia Vallenata" class="logo-menu" />
+        			<a href="/" class="logo-menu-link" aria-label="Ir a la página de inicio" on:click={cerrarModales}>
+        				<img src="/logo academia vallenata.png" alt="Academia Vallenata" class="logo-menu" />
+        			</a>
         <p class="descripcion-menu">
           La mejor academia para aprender acordeón vallenato online. Aprende con los mejores maestros desde la comodidad de tu hogar.
         </p>
@@ -599,11 +601,21 @@
 .logo-navegacion {
   display: flex;
   align-items: center;
-  transition: transform 0.3s ease;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .logo-navegacion:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
+  background: rgba(255, 102, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2);
+}
+
+.logo-navegacion:active {
+  transform: scale(0.98);
 }
 
 .logo-navegacion img {
@@ -611,7 +623,11 @@
   max-width: 135px;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
-  transition: filter 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.logo-navegacion:hover img {
+  filter: drop-shadow(0 4px 15px rgba(255, 102, 0, 0.3));
 }
 
 .menu-enlaces {
@@ -782,10 +798,35 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+.logo-menu-link {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+.logo-menu-link:hover {
+  transform: scale(1.05);
+  background: rgba(255, 102, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2);
+}
+
+.logo-menu-link:active {
+  transform: scale(0.98);
+}
+
 .logo-menu {
   width: 120px;
   height: auto;
-  margin-bottom: 1.5rem;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+  transition: all 0.3s ease;
+}
+
+.logo-menu-link:hover .logo-menu {
+  filter: drop-shadow(0 4px 15px rgba(255, 102, 0, 0.3));
 }
 
 .descripcion-menu {
