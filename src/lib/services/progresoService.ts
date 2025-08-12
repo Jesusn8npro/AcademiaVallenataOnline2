@@ -97,17 +97,47 @@ export async function obtenerProgresoLeccion(leccionId: string) {
   }
   
   try {
+    console.log('[PROGRESO SERVICE] Consultando progreso para lección:', leccionId, 'usuario:', user.id);
+    
     const { data, error } = await supabase
       .from('progreso_lecciones')
       .select('*')
       .eq('usuario_id', user.id)
       .eq('leccion_id', leccionId)
-      .single();
+      .maybeSingle(); // ✅ CAMBIO CRÍTICO: usar maybeSingle() en lugar de single()
     
-    return { data, error };
+    if (error) {
+      console.error('[PROGRESO SERVICE] Error en consulta:', error);
+      return { data: null, error };
+    }
+    
+    // ✅ MANEJO SEGURO: Si no hay datos, crear estructura por defecto
+    if (!data) {
+      console.log('[PROGRESO SERVICE] No hay progreso para esta lección, creando estructura por defecto');
+      return { 
+        data: {
+          id: null,
+          usuario_id: user.id,
+          leccion_id: leccionId,
+          estado: 'pendiente',
+          porcentaje_completado: 0,
+          tiempo_total: 0,
+          calificacion: null,
+          notas: null,
+          ultima_actividad: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, 
+        error: null 
+      };
+    }
+    
+    console.log('[PROGRESO SERVICE] Progreso encontrado:', data);
+    return { data, error: null };
+    
   } catch (err) {
-    console.error('Error al obtener progreso:', err);
-    return { data: null, error: { message: 'Error al obtener progreso de la lección' } };
+    console.error('[PROGRESO SERVICE] Error inesperado:', err);
+    return { data: null, error: { message: 'Error inesperado al obtener progreso de la lección' } };
   }
 }
 
@@ -167,7 +197,7 @@ export async function obtenerProgresoCurso(cursoId: string) {
     
     // Considera completada si estado === 'completada' o porcentaje_completado === 100
     const leccionesCompletadas = progreso
-      ? progreso.filter(p => p.estado === 'completada' || p.porcentaje_completado === 100).length
+      ? progreso.filter((p: any) => p.estado === 'completada' || p.porcentaje_completado === 100).length
       : 0;
     const totalLecciones = lecciones.length;
     const porcentajeProgreso = totalLecciones > 0 ? Math.round((leccionesCompletadas / totalLecciones) * 100) : 0;

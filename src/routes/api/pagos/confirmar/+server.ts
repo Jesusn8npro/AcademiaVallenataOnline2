@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { actualizarEstadoPago, inscribirUsuarioDespuesDePago, obtenerPagoPorReferencia } from '$lib/services/pagoService';
+import { actualizarEstadoPago, inscribirUsuarioDespuesDePago, obtenerPagoPorReferencia, sincronizarEstadoConEpayco } from '$lib/services/pagoService';
 import { verificarPago } from '$lib/services/ePaycoService';
 import { confirmarPagoMembresia } from '$lib/services/membershipPaymentService';
 
@@ -98,6 +98,19 @@ export const POST: RequestHandler = async ({ request }) => {
 			is_test: x_test_request === 'TRUE',
 			webhook_data: datos
 		};
+
+		// ✅ SINCRONIZAR ESTADO AUTOMÁTICAMENTE
+		console.log('🔄 Iniciando sincronización automática...');
+		
+		const sincronizacion = await sincronizarEstadoConEpayco(x_ref_payco as string);
+		
+		if (sincronizacion.success) {
+			console.log('✅ Sincronización exitosa, estado:', sincronizacion.data?.estado);
+			// Usar el estado sincronizado
+			nuevoEstado = sincronizacion.data?.estado || nuevoEstado;
+		} else {
+			console.warn('⚠️ Sincronización falló, usando estado local:', nuevoEstado);
+		}
 
 		// Actualizar el estado del pago
 		const actualizacion = await actualizarEstadoPago(

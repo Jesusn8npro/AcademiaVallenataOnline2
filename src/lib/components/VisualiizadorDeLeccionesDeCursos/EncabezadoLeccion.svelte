@@ -474,16 +474,17 @@
 <style>
   .lesson-header {
     width: 100%;
-    min-height: 50px;
+    min-height: 70px; /* ✅ AUMENTADO: Más altura para móvil */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 20px;
+    padding: 12px 20px; /* ✅ AUMENTADO: Más padding vertical */
     background-color: #1c1d1f;
     color: white;
     border-bottom: 0.5px solid #fff;
     transition: box-shadow 0.3s ease;
     z-index: 1000;
+    box-sizing: border-box; /* ✅ AGREGADO: Asegurar que padding no afecte width */
   }
   
   .scrolled {
@@ -508,8 +509,9 @@
   }
   
   .logo {
-    height: 35px;
-    margin-right: 15px;
+    height: 45px; /* ✅ AUMENTADO: Logo más grande */
+    margin-right: 20px; /* ✅ AUMENTADO: Más espacio */
+    flex-shrink: 0; /* ✅ AGREGADO: Evitar que se comprima */
   }
   
   .curso-info {
@@ -533,8 +535,8 @@
   .breadcrumb-container {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
+    gap: 10px; /* ✅ AUMENTADO: Más espacio entre elementos */
+    font-size: 1rem; /* ✅ AUMENTADO: Texto más legible */
   }
   
   .curso-titulo-breadcrumb {
@@ -560,23 +562,25 @@
   
   .leccion-contador {
     color: #fbbf24;
-    font-weight: 600;
-    font-size: 0.9rem;
-    background: rgba(251, 191, 36, 0.1);
-    padding: 2px 8px;
-    border-radius: 12px;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    font-weight: 700; /* ✅ AUMENTADO: Más peso visual */
+    font-size: 1rem; /* ✅ AUMENTADO: Texto más legible */
+    background: rgba(251, 191, 36, 0.15); /* ✅ AUMENTADO: Fondo más visible */
+    padding: 4px 12px; /* ✅ AUMENTADO: Más padding */
+    border-radius: 16px; /* ✅ AUMENTADO: Bordes más redondeados */
+    border: 1px solid rgba(251, 191, 36, 0.4); /* ✅ AUMENTADO: Borde más visible */
+    white-space: nowrap; /* ✅ AGREGADO: Evitar que se rompa */
   }
   
   .leccion-titulo-desktop {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.2rem; /* ✅ AUMENTADO: Título más prominente */
+    font-weight: 700; /* ✅ AUMENTADO: Más peso visual */
     margin: 0;
     color: #fff;
-    line-height: 1.2;
+    line-height: 1.3; /* ✅ AUMENTADO: Mejor espaciado */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-top: 4px; /* ✅ AGREGADO: Separación del breadcrumb */
   }
   
   .curso-titulo {
@@ -1176,22 +1180,38 @@
   
   @media (max-width: 480px) {
     .lesson-header {
-      padding: 4px 6px;
+      padding: 8px 12px; /* ✅ AUMENTADO: Más padding en móvil pequeño */
+      min-height: 80px; /* ✅ AUMENTADO: Más altura en móvil */
     }
     
     .header-left {
-      gap: 8px;
+      gap: 10px; /* ✅ AUMENTADO: Más espacio entre elementos */
     }
     
     .sidebar-mobile-btn {
-      padding: 4px 2px 4px 0;
-      margin-right: 2px;
+      padding: 8px 6px 8px 0; /* ✅ AUMENTADO: Botón más grande */
+      margin-right: 8px; /* ✅ AUMENTADO: Más margen */
     }
     
     .logo {
-      height: 42px;
-      max-width: 42px;
-      margin-right: 6px;
+      height: 48px; /* ✅ AUMENTADO: Logo más grande en móvil */
+      max-width: 48px;
+      margin-right: 12px; /* ✅ AUMENTADO: Más margen */
+    }
+    
+    /* ✅ AGREGADO: Estilos para móvil muy pequeño */
+    .curso-info-tablet {
+      font-size: 0.9rem; /* ✅ Ajustado para móvil */
+      gap: 4px; /* ✅ Reducido para móvil */
+    }
+    
+    .leccion-titulo-desktop {
+      font-size: 1.1rem; /* ✅ Ajustado para móvil */
+    }
+    
+    .breadcrumb-container {
+      font-size: 0.9rem; /* ✅ Ajustado para móvil */
+      gap: 6px; /* ✅ Reducido para móvil */
     }
     
     .info-mobile-platzi {
@@ -1234,6 +1254,43 @@
       background-color: rgba(255, 255, 255, 0.1);
       border-color: transparent;
       transform: none;
+    }
+  }
+  
+  /* ✅ AGREGADO: Media query para móvil muy pequeño */
+  @media (max-width: 360px) {
+    .lesson-header {
+      padding: 6px 8px; /* ✅ Ajustado para pantallas muy pequeñas */
+      min-height: 75px; /* ✅ Ajustado para pantallas muy pequeñas */
+    }
+    
+    .header-left {
+      gap: 6px; /* ✅ Reducido para pantallas muy pequeñas */
+    }
+    
+    .logo {
+      height: 40px; /* ✅ Ajustado para pantallas muy pequeñas */
+      max-width: 40px;
+      margin-right: 8px; /* ✅ Reducido para pantallas muy pequeñas */
+    }
+    
+    .sidebar-mobile-btn {
+      padding: 6px 4px 6px 0; /* ✅ Ajustado para pantallas muy pequeñas */
+      margin-right: 6px; /* ✅ Reducido para pantallas muy pequeñas */
+    }
+    
+    .curso-info-tablet {
+      font-size: 0.8rem; /* ✅ Ajustado para pantallas muy pequeñas */
+      gap: 3px; /* ✅ Reducido para pantallas muy pequeñas */
+    }
+    
+    .breadcrumb-container {
+      font-size: 0.8rem; /* ✅ Ajustado para pantallas muy pequeñas */
+      gap: 4px; /* ✅ Reducido para pantallas muy pequeñas */
+    }
+    
+    .leccion-titulo-desktop {
+      font-size: 1rem; /* ✅ Ajustado para pantallas muy pequeñas */
     }
   }
 </style> 
