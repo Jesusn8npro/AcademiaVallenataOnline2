@@ -97,47 +97,17 @@ export async function obtenerProgresoLeccion(leccionId: string) {
   }
   
   try {
-    console.log('[PROGRESO SERVICE] Consultando progreso para lección:', leccionId, 'usuario:', user.id);
-    
     const { data, error } = await supabase
       .from('progreso_lecciones')
       .select('*')
       .eq('usuario_id', user.id)
       .eq('leccion_id', leccionId)
-      .maybeSingle(); // ✅ CAMBIO CRÍTICO: usar maybeSingle() en lugar de single()
+      .single();
     
-    if (error) {
-      console.error('[PROGRESO SERVICE] Error en consulta:', error);
-      return { data: null, error };
-    }
-    
-    // ✅ MANEJO SEGURO: Si no hay datos, crear estructura por defecto
-    if (!data) {
-      console.log('[PROGRESO SERVICE] No hay progreso para esta lección, creando estructura por defecto');
-      return { 
-        data: {
-          id: null,
-          usuario_id: user.id,
-          leccion_id: leccionId,
-          estado: 'pendiente',
-          porcentaje_completado: 0,
-          tiempo_total: 0,
-          calificacion: null,
-          notas: null,
-          ultima_actividad: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, 
-        error: null 
-      };
-    }
-    
-    console.log('[PROGRESO SERVICE] Progreso encontrado:', data);
-    return { data, error: null };
-    
+    return { data, error };
   } catch (err) {
-    console.error('[PROGRESO SERVICE] Error inesperado:', err);
-    return { data: null, error: { message: 'Error inesperado al obtener progreso de la lección' } };
+    console.error('Error al obtener progreso:', err);
+    return { data: null, error: { message: 'Error al obtener progreso de la lección' } };
   }
 }
 
@@ -187,7 +157,7 @@ export async function obtenerProgresoCurso(cursoId: string) {
     const leccionIds = lecciones.map((l: any) => l.id);
     const { data: progreso, error: errorProgreso } = await supabase
       .from('progreso_lecciones')
-      .select('*')
+      .select('leccion_id, estado, porcentaje_completado')
       .eq('usuario_id', user.id)
       .in('leccion_id', leccionIds);
     

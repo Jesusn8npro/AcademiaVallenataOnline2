@@ -31,103 +31,45 @@
   let usuarioActual: any = null;
   $: usuarioActual = get(estadoUsuarioActual).user;
 
-  // ✅ Suscripción al store para usarlo en los props - CON MAPEO SEGURO
+  // Suscripción al store para usarlo en los props
   let progresoLeccionesValue: any = {};
   const unsubscribeProgreso = progresoLecciones.subscribe(val => {
-    // ✅ MAPEO SEGURO: Verificar que el valor sea válido
-    if (val && typeof val === 'object') {
-      progresoLeccionesValue = val;
-      console.log('[STORE progresoLecciones] Cambio detectado:', JSON.stringify(val));
-    } else {
-      console.warn('[STORE progresoLecciones] Valor inválido recibido:', val);
-      progresoLeccionesValue = {};
-    }
+    progresoLeccionesValue = val;
+    console.log('[STORE progresoLecciones] Cambio detectado:', JSON.stringify(val));
   });
-
-  // ✅ FUNCIÓN DE INICIALIZACIÓN SEGURA
-  function inicializarProgresoSeguro() {
-    if (!curso?.id) return;
-    
-    // Inicializar con valores por defecto si no existe
-    const progresoActual = progresoLeccionesValue[curso.id];
-    if (!progresoActual) {
-      console.log('[INICIALIZACIÓN] Creando progreso por defecto para curso:', curso.id);
-      progresoLecciones.update(prev => ({
-        ...prev,
-        [curso.id]: {
-          partes_completadas: 0,
-          total_partes: 0,
-          progreso: 0
-        }
-      }));
-    }
-  }
 
   // NUEVA VARIABLE COMPUTADA: Transforma el progreso al formato que espera la sidebar
   let progresoParaSidebar: Record<string, number> = {};
 
-  // ✅ Carga el estado de completado de TODAS las lecciones del curso - VERSIÓN CORREGIDA
+  // Carga el estado de completado de TODAS las lecciones del curso
   async function cargarProgresoLeccionesIndividuales() {
-    if (!curso || !curso.modulos || !usuarioActual) {
-      console.log('[PROGRESO] Datos insuficientes para cargar progreso');
+    if (!curso || !curso.modulos || !usuarioActual) return;
+
+    // 1. Obtener todos los IDs de las lecciones del curso
+    const todosLosIds = curso.modulos.flatMap((m: any) => m.lecciones?.map((l: any) => l.id) || []).filter(Boolean);
+
+    if (todosLosIds.length === 0) return;
+
+    // 2. Consultar el progreso para esos IDs - CORREGIDO PARA EVITAR ERROR 406
+    const { data: progresos, error } = await supabase
+      .from('progreso_lecciones')
+      .select('leccion_id, estado, porcentaje_completado')
+      .eq('usuario_id', usuarioActual.id)
+      .in('leccion_id', todosLosIds);
+
+    if (error) {
+      console.error("Error cargando progreso de lecciones individuales:", error);
       return;
     }
 
-    try {
-      // 1. Obtener todos los IDs de las lecciones del curso
-      const todosLosIds = curso.modulos.flatMap((m: any) => m.lecciones?.map((l: any) => l.id) || []).filter(Boolean);
+    // 3. Formatear para la sidebar
+    const progresoFormateado: Record<string, number> = {};
+    progresos.forEach((p: any) => {
+      progresoFormateado[p.leccion_id] = p.estado === 'completada' ? 100 : 0;
+    });
 
-      if (todosLosIds.length === 0) {
-        console.log('[PROGRESO] No hay lecciones para cargar progreso');
-        return;
-      }
-
-      console.log('[PROGRESO] Intentando cargar progreso para', todosLosIds.length, 'lecciones');
-
-      // 2. Consultar el progreso para esos IDs - CON MANEJO DE ERRORES ROBUSTO
-      console.log('[PROGRESO] Usuario ID:', usuarioActual.id);
-      console.log('[PROGRESO] Lecciones a consultar:', todosLosIds);
-      
-      // 🚨 CONSULTA CORREGIDA: Verificar que usuario_id no sea null
-      const { data: progresos, error } = await supabase
-        .from('progreso_lecciones')
-        .select('leccion_id, estado')
-        .not('usuario_id', 'is', null)  // Asegurar que usuario_id no sea null
-        .eq('usuario_id', usuarioActual.id)
-        .in('leccion_id', todosLosIds);
-
-      if (error) {
-        console.error("❌ [PROGRESO] Error cargando progreso:", error);
-        
-        // 🚨 SOLUCIÓN TEMPORAL: Usar valores por defecto
-        progresoParaSidebar = {};
-        console.log('[PROGRESO] Usando progreso por defecto debido al error');
-        return;
-      }
-
-      // 3. Formatear para la sidebar - CON MAPEO SEGURO
-      const progresoFormateado: Record<string, number> = {};
-      if (progresos && Array.isArray(progresos) && progresos.length > 0) {
-        progresos.forEach((p: any) => {
-          // ✅ MAPEO SEGURO: Verificar que las propiedades existen
-          if (p && p.leccion_id && typeof p.estado === 'string') {
-            progresoFormateado[p.leccion_id] = p.estado === 'completada' ? 100 : 0;
-          } else {
-            console.warn('[PROGRESO] Registro inválido:', p);
-          }
-        });
-      } else {
-        console.log('[PROGRESO] No hay registros de progreso para formatear');
-      }
-
-      progresoParaSidebar = progresoFormateado;
-      console.log('✅ [PROGRESO INDIVIDUAL] Cargado para sidebar:', progresoParaSidebar);
-      
-    } catch (err) {
-      console.error('❌ [PROGRESO] Error inesperado:', err);
-      // 🚨 SOLUCIÓN TEMPORAL: Usar valores por defecto
-      progresoParaSidebar = {};
-    }
+    progresoParaSidebar = progresoFormateado;
+    console.log('[PROGRESO INDIVIDUAL] Cargado para sidebar:', progresoParaSidebar);
   }
 
   // --- Estados y funciones para marcar como completada ---
@@ -135,21 +77,18 @@
   let loadingCompletar = false;
   let errorCompletar = '';
 
-  // ✅ Cargar progreso global del curso en el store - VERSIÓN CORREGIDA
+  // Cargar progreso global del curso en el store
   async function cargarProgresoGlobal() {
     if (!curso?.id) {
-      console.log('[PROGRESO GLOBAL] No hay ID de curso');
       return;
     }
     
     try {
-      console.log('[PROGRESO GLOBAL] Cargando progreso para curso:', curso.id);
-      
       const { data, error } = await import('$lib/services/progresoService').then(m => m.obtenerProgresoCurso(curso.id));
       
       if (error) {
-        console.error('❌ [PROGRESO GLOBAL] Error:', error);
-        // 🚨 SOLUCIÓN TEMPORAL: Usar valores por defecto
+        console.error('[cargarProgresoGlobal] Error:', error);
+        // En caso de error, usar valores por defecto
         progresoLecciones.update(prev => ({
           ...prev,
           [curso.id]: {
@@ -158,29 +97,22 @@
             progreso: 0
           }
         }));
-        console.log('[PROGRESO GLOBAL] Usando valores por defecto debido al error');
         return;
       }
       
       if (data) {
-        // ✅ MAPEO SEGURO: Asegurar que todos los campos existen con valores por defecto
+        // Asegurar que todos los campos existen con valores por defecto
         const datosSeguro = {
-          partes_completadas: typeof data.partes_completadas === 'number' ? data.partes_completadas : 0,
-          total_partes: typeof data.total_partes === 'number' ? data.total_partes : 0,
-          progreso: typeof data.progreso === 'number' ? data.progreso : 0
+          partes_completadas: data.partes_completadas ?? 0,
+          total_partes: data.total_partes ?? 0,
+          progreso: data.progreso ?? 0
         };
-        
-        console.log('[PROGRESO GLOBAL] Datos originales:', data);
-        console.log('[PROGRESO GLOBAL] Datos seguros:', datosSeguro);
         
         progresoLecciones.update(prev => ({
           ...prev,
           [curso.id]: datosSeguro
         }));
-        
-        console.log('✅ [PROGRESO GLOBAL] Progreso cargado:', datosSeguro);
       } else {
-        console.log('[PROGRESO GLOBAL] No hay datos, usando valores por defecto');
         progresoLecciones.update(prev => ({
           ...prev,
           [curso.id]: {
@@ -191,8 +123,8 @@
         }));
       }
     } catch (error) {
-      console.error('❌ [PROGRESO GLOBAL] Error inesperado:', error);
-      // 🚨 SOLUCIÓN TEMPORAL: Usar valores por defecto
+      console.error('[cargarProgresoGlobal] Error inesperado:', error);
+      // En caso de cualquier error, usar valores por defecto
       progresoLecciones.update(prev => ({
         ...prev,
         [curso.id]: {
@@ -204,42 +136,13 @@
     }
   }
 
-  // ✅ Verificar si la lección está completada - VERSIÓN CORREGIDA CON MAPEO SEGURO
   async function verificarCompletada() {
-    if (!leccion?.id || !usuarioActual) {
-      console.log('[VERIFICAR COMPLETADA] Datos insuficientes');
-      completada = false; // ✅ VALOR POR DEFECTO
-      return;
-    }
-    
+    if (!leccion?.id || !usuarioActual) return;
     try {
-      console.log('[VERIFICAR COMPLETADA] Verificando lección:', leccion.id);
-      
-      const { data, error } = await import('$lib/services/progresoService').then(m => m.obtenerProgresoLeccion(leccion.id));
-      
-      if (error) {
-        console.error('❌ [VERIFICAR COMPLETADA] Error:', error);
-        completada = false; // ✅ VALOR POR DEFECTO
-        return;
-      }
-      
-      // ✅ MAPEO SEGURO: Verificar que data existe y tiene las propiedades necesarias
-      if (!data) {
-        console.log('[VERIFICAR COMPLETADA] No hay datos de progreso, usando valor por defecto');
-        completada = false;
-        return;
-      }
-      
-      // ✅ MAPEO SEGURO: Verificar propiedades antes de acceder
-      const estado = data.estado || 'pendiente';
-      const porcentaje = data.porcentaje_completado || 0;
-      
-      completada = estado === 'completada' || porcentaje === 100;
-      console.log('✅ [VERIFICAR COMPLETADA] Estado:', completada, 'Estado DB:', estado, 'Porcentaje:', porcentaje);
-      
+      const { data } = await import('$lib/services/progresoService').then(m => m.obtenerProgresoLeccion(leccion.id));
+      completada = !!(data && (data.estado === 'completada' || data.porcentaje_completado === 100));
     } catch (e) {
-      console.error('❌ [VERIFICAR COMPLETADA] Error inesperado:', e);
-      completada = false; // ✅ VALOR POR DEFECTO
+      completada = false;
     }
   }
 
@@ -279,47 +182,71 @@
   }
 
   onMount(() => {
-    console.log('[ONMOUNT] Iniciando página de lección...');
-    console.log('[ONMOUNT] Curso:', curso);
-    console.log('[ONMOUNT] Módulo:', modulo);
-    console.log('[ONMOUNT] Lección:', leccion);
-    console.log('[ONMOUNT] Usuario:', usuarioActual);
+    console.log('🚀 [PÁGINA LECCIÓN] Componente montado');
+    console.log('🚀 [PÁGINA LECCIÓN] Estado inicial:', {
+      mostrarSidebar,
+      windowWidth,
+      curso: !!curso,
+      leccion: !!leccion,
+      modulo: !!modulo,
+      usuarioActual: !!usuarioActual
+    });
     
-    // ✅ INICIALIZACIÓN SEGURA DEL PROGRESO
-    inicializarProgresoSeguro();
-    
-    // ✅ EJECUTAR FUNCIONES DE PROGRESO DE FORMA ASÍNCRONA
-    const inicializarProgreso = async () => {
-      if (usuarioActual) {
-        await cargarProgresoGlobal();
-        await cargarProgresoLeccionesIndividuales();
-        await verificarCompletada();
-      } else {
-        console.log('[ONMOUNT] Usuario no autenticado, usando progreso por defecto');
-        // ✅ ESTABLECER VALORES POR DEFECTO SI NO HAY USUARIO
-        completada = false;
-        progresoParaSidebar = {};
-      }
-    };
-    
-    // Ejecutar inicialización de progreso
-    inicializarProgreso();
+    // Verificar si la lección ya está completada al cargar
+    verificarCompletada();
+    cargarProgresoLeccionesIndividuales();
+    cargarProgresoGlobal();
     
     // Configuración del responsive
     windowWidth = window.innerWidth;
+    console.log('🔍 [PÁGINA LECCIÓN] Ancho inicial:', windowWidth);
+    
     if (windowWidth < 768) {
+      console.log('📱 [PÁGINA LECCIÓN] Móvil detectado, ocultando sidebar');
       mostrarSidebar = false;
     }
     
     const handleResize = () => {
-      windowWidth = window.innerWidth;
-      if (windowWidth < 768) {
+      const newWidth = window.innerWidth;
+      console.log('🔍 [PÁGINA LECCIÓN] Resize detectado:', windowWidth, '→', newWidth);
+      
+      if (newWidth < 768 && mostrarSidebar) {
+        console.log('📱 [PÁGINA LECCIÓN] Cambio a móvil, ocultando sidebar');
         mostrarSidebar = false;
       }
+      
+      windowWidth = newWidth;
     };
     
     window.addEventListener('resize', handleResize);
+    
+    // 🚨 VERIFICAR VISIBILIDAD DEL ENCABEZADO CADA 3 SEGUNDOS
+    const headerVisibilityCheck = setInterval(() => {
+      const headerElement = document.querySelector('.lesson-header') as HTMLElement;
+      const encabezadoElement = document.querySelector('header') as HTMLElement;
+      
+      if (headerElement || encabezadoElement) {
+        const element = headerElement || encabezadoElement;
+        const isVisible = element.offsetHeight > 0 && 
+                         window.getComputedStyle(element).display !== 'none' &&
+                         window.getComputedStyle(element).visibility !== 'hidden';
+        
+        console.log('🔍 [PÁGINA LECCIÓN] Verificación encabezado:', {
+          offsetHeight: element.offsetHeight,
+          display: window.getComputedStyle(element).display,
+          visibility: window.getComputedStyle(element).visibility,
+          isVisible,
+          mostrarSidebar,
+          windowWidth
+        });
+      } else {
+        console.log('❌ [PÁGINA LECCIÓN] NO SE ENCUENTRA EL ENCABEZADO');
+      }
+    }, 3000);
+    
     return () => {
+      console.log('❌ [PÁGINA LECCIÓN] Componente desmontando');
+      clearInterval(headerVisibilityCheck);
       window.removeEventListener('resize', handleResize);
     };
   });
@@ -360,24 +287,27 @@
 
 <div class="contenido-container" class:sidebar-visible={mostrarSidebar}>
   <div class="contenido-principal">
-    <EncabezadoLeccion 
-      cursoTitulo={curso.titulo} 
-      leccionTitulo={leccion.titulo} 
-      cursoId={curso.id}
-      leccionId={leccion.id}
-      tipo="leccion"
-      curso={curso}
-      moduloActivo={modulo ? modulo.id : ''}
-      progreso={progresoParaSidebar}
-      usuarioActual={usuarioActual}
-      leccionAnterior={data.leccionAnterior}
-      leccionSiguiente={data.leccionSiguiente}
-      mostrarSidebar={mostrarSidebar}
-      onToggleSidebar={toggleSidebar}
-      on:toggle-sidebar={toggleSidebar}
-      on:anterior-leccion={cambiarLeccion}
-      on:siguiente-leccion={cambiarLeccion}
-    />
+    <!-- 🚨 ENCABEZADO FORZADO A SER VISIBLE -->
+    <div style="position: relative; z-index: 1000;">
+      <EncabezadoLeccion 
+        cursoTitulo={curso.titulo} 
+        leccionTitulo={leccion.titulo} 
+        cursoId={curso.id}
+        leccionId={leccion.id}
+        tipo="leccion"
+        curso={curso}
+        moduloActivo={modulo ? modulo.id : ''}
+        progreso={progresoParaSidebar}
+        usuarioActual={usuarioActual}
+        leccionAnterior={data.leccionAnterior}
+        leccionSiguiente={data.leccionSiguiente}
+        mostrarSidebar={mostrarSidebar}
+        onToggleSidebar={toggleSidebar}
+        on:toggle-sidebar={toggleSidebar}
+        on:anterior-leccion={cambiarLeccion}
+        on:siguiente-leccion={cambiarLeccion}
+      />
+    </div>
     <div class="reproductor-y-contenido">
       <ReproductorLecciones
         videoUrl={leccion.video_url}

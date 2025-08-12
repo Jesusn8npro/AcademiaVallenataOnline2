@@ -2,6 +2,13 @@
   import { usuario } from '$lib/UsuarioActivo/usuario';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { onMount, onDestroy } from 'svelte';
+  
+  // 🚨 COMPORTAMIENTO INTELIGENTE DEL MENU
+  let menuVisible = false; // 🚨 OCULTO POR DEFECTO
+  let timeoutInactividad: NodeJS.Timeout;
+  let ultimaActividad = Date.now();
+  const TIEMPO_INACTIVIDAD = 2000; // 2 segundos de inactividad (más rápido)
 
   // Determinar el tipo de usuario y ruta actual
   $: tipoUsuario = $usuario?.rol === 'admin' ? 'admin' : 'estudiante';
@@ -98,6 +105,89 @@
   function navegarA(ruta: string) {
     goto(ruta);
   }
+  
+  // 🚨 FUNCIONES PARA COMPORTAMIENTO INTELIGENTE
+  function detectarActividad() {
+    ultimaActividad = Date.now();
+    if (!menuVisible) {
+      mostrarMenu(); // 🚨 MOSTRAR MENU AL TOCAR
+    }
+    reiniciarTimeoutInactividad();
+  }
+  
+  // 🚨 FUNCIÓN MEJORADA PARA DETECTAR ACTIVIDAD
+  function detectarActividadMejorada(evento: string, elemento: string = '') {
+    console.log(`🎯 [MENU] Actividad detectada: ${evento} ${elemento}`);
+    detectarActividad();
+  }
+  
+  function ocultarMenu() {
+    menuVisible = false;
+    console.log('📱 [MENU] Ocultando menu por actividad del usuario');
+  }
+  
+  function mostrarMenu() {
+    menuVisible = true;
+    console.log('📱 [MENU] Mostrando menu por inactividad');
+  }
+  
+  function reiniciarTimeoutInactividad() {
+    if (timeoutInactividad) {
+      clearTimeout(timeoutInactividad);
+    }
+    
+    timeoutInactividad = setTimeout(() => {
+      if (Date.now() - ultimaActividad >= TIEMPO_INACTIVIDAD) {
+        ocultarMenu(); // 🚨 OCULTAR MENU POR INACTIVIDAD
+      }
+    }, TIEMPO_INACTIVIDAD);
+  }
+  
+  // 🚨 DETECTAR ACTIVIDAD DEL USUARIO - VERSIÓN SIMPLIFICADA
+  function configurarDetectoresActividad() {
+    console.log('🚀 [MENU] Configurando detectores de actividad...');
+    
+    // 🚨 EVENTOS BÁSICOS DEL USUARIO
+    const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    eventos.forEach(evento => {
+      document.addEventListener(evento, detectarActividad, { passive: true });
+    });
+    
+    // 🚨 DETECCIÓN DE VIDEO - VERSIÓN SIMPLE
+    setTimeout(() => {
+      const videos = document.querySelectorAll('video, iframe');
+      console.log(`🎥 [MENU] Videos encontrados: ${videos.length}`);
+      
+      videos.forEach((video, index) => {
+        video.addEventListener('play', () => detectarActividadMejorada('play', `video-${index}`));
+        video.addEventListener('pause', () => detectarActividadMejorada('pause', `video-${index}`));
+        video.addEventListener('seeking', () => detectarActividadMejorada('seeking', `video-${index}`));
+      });
+    }, 1000); // Esperar 1 segundo para que se carguen los videos
+    
+    // 🚨 DETECCIÓN DE TABS - VERSIÓN SIMPLE
+    setTimeout(() => {
+      const tabs = document.querySelectorAll('[role="tab"], .tab, .tab-button');
+      console.log(`📑 [MENU] Tabs encontrados: ${tabs.length}`);
+      
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => detectarActividadMejorada('click', `tab-${index}`));
+      });
+    }, 1000); // Esperar 1 segundo para que se carguen los tabs
+    
+    // 🚨 DETECCIÓN DE BOTONES DE NAVEGACIÓN - VERSIÓN SIMPLE
+    setTimeout(() => {
+      const botones = document.querySelectorAll('button');
+      console.log(`🔄 [MENU] Botones encontrados: ${botones.length}`);
+      
+      botones.forEach((boton, index) => {
+        const texto = boton.textContent || '';
+        if (texto.includes('Anterior') || texto.includes('Siguiente') || texto.includes('Marcar como completada')) {
+          boton.addEventListener('click', () => detectarActividadMejorada('click', `boton-${texto.trim()}`));
+        }
+      });
+    }, 1000); // Esperar 1 segundo para que se carguen los botones
+  }
 
   function obtenerIcono(tipo: string) {
     const iconos: { [key: string]: string } = {
@@ -150,11 +240,45 @@
     };
     return iconos[tipo] || iconos.dashboard;
   }
+  
+  // 🚨 INICIALIZAR COMPORTAMIENTO INTELIGENTE
+  onMount(() => {
+    try {
+      console.log('🚀 [MENU] Menu inferior responsivo montado');
+      
+      configurarDetectoresActividad();
+      reiniciarTimeoutInactividad();
+      
+    } catch (error) {
+      console.error('❌ [MENU] Error al inicializar:', error);
+      // Fallback: mostrar menu siempre
+      menuVisible = true;
+    }
+  });
+  
+  // 🚨 FUNCIÓN SIMPLE: MOSTRAR/OCULTAR MENU
+  function toggleMenu() {
+    menuVisible = !menuVisible;
+    console.log(`📱 [MENU] Menu ${menuVisible ? 'mostrado' : 'oculto'}`);
+  }
+  
+  onDestroy(() => {
+    console.log('❌ [MENU] Menu inferior responsivo desmontando');
+    if (timeoutInactividad) {
+      clearTimeout(timeoutInactividad);
+    }
+    
+    // Limpiar event listeners
+    const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    eventos.forEach(evento => {
+      document.removeEventListener(evento, detectarActividad);
+    });
+  });
 </script>
 
 <!-- Solo mostrar para usuarios logueados y en pantallas móviles -->
 {#if $usuario}
-  <nav class="menu-inferior-responsivo">
+  <nav class="menu-inferior-responsivo" class:visible={menuVisible}>
     <div class="menu-container">
       {#each menuItems as item}
         <button 
@@ -189,8 +313,24 @@
     border-top: 1px solid #e2e8f0 !important;
     z-index: 999999 !important;
     padding: 0 !important;
-    display: none !important; /* Oculto por defecto */
+    display: block !important; /* 🚨 VISIBLE EN MÓVIL */
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: translateY(100%) !important; /* 🚨 OCULTO POR DEFECTO */
+  }
+  
+  /* 🚨 CLASE PARA MOSTRAR EL MENU */
+  .menu-inferior-responsivo.visible {
+    transform: translateY(0) !important; /* Visible */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* 🚨 CLASE PARA OCULTAR EL MENU */
+  .menu-inferior-responsivo:not(.visible) {
+    transform: translateY(100%) !important; /* Oculto */
+    opacity: 0 !important;
   }
 
   /* Mostrar solo en pantallas móviles */
@@ -381,5 +521,29 @@
     :global(.pantalla-completa) {
       min-height: calc(100vh - 110px) !important;
     }
+  }
+  
+  /* 🚨 CSS DE EMERGENCIA - FORZAR VISIBILIDAD SIEMPRE */
+  .menu-inferior-responsivo {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999999 !important;
+  }
+  
+  /* 🚨 SOBRESCRIBIR CUALQUIER ESTILO DEL LAYOUT */
+  .menu-inferior-responsivo[style*="display: none"],
+  .menu-inferior-responsivo[style*="visibility: hidden"],
+  .menu-inferior-responsivo[style*="opacity: 0"],
+  .menu-inferior-responsivo[style*="transform: translateY(100%)"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
   }
 </style> 

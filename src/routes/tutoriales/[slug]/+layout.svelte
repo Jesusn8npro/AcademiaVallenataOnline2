@@ -9,7 +9,7 @@
   let esClase = false;
   
   $: esClase = $page.url.pathname.includes('/clase/') || $page.url.pathname.includes('/contenido/');
-  
+
   onMount(() => {
     // 🚫 FORZAR ESTILOS PARA ELIMINAR NAVEGACIÓN
     if (typeof document !== 'undefined') {
@@ -25,16 +25,16 @@
           el.style.margin = '0';
           el.style.padding = '0';
           el.style.overflow = 'hidden';
-        }
+          }
       });
-      
+
       // Aplicar estilos al body para eliminar espacios
       document.body.style.margin = '0';
       document.body.style.padding = '0';
       document.body.style.overflowX = 'hidden';
       document.body.style.width = '100%';
       document.body.style.maxWidth = '100%';
-      
+    
       // Aplicar estilos al html
       document.documentElement.style.margin = '0';
       document.documentElement.style.padding = '0';
@@ -43,7 +43,7 @@
       document.documentElement.style.maxWidth = '100%';
     }
   });
-  
+
   onDestroy(() => {
     // 🔄 RESTAURAR ESTILOS AL SALIR
     if (typeof document !== 'undefined') {
@@ -104,7 +104,7 @@
     overflow: auto;
     box-sizing: border-box;
   }
-  
+
   /* 🚫 FORZAR QUE TODOS LOS ELEMENTOS HIJOS NO DESBORDEN */
   .tutorial-pantalla-completa * {
     max-width: 100% !important;
@@ -149,7 +149,7 @@
     padding-right: 0 !important;
     overflow-x: hidden !important;
   }
-  
+
   /* 🚫 ASEGURAR QUE NO HAYA ESPACIOS EXTRA */
   .tutorial-pantalla-completa > *:first-child {
     margin-top: 0 !important;
