@@ -39,20 +39,21 @@
 			descripcion: parametrosUrl.get('x_description')
 		};
 
-		// Si no hay datos de pago, usar datos de ejemplo para pruebas
-		if (!datosPago.referencia) {
-			datosPago = {
-				referencia: 'AVA-' + Date.now(),
-				respuesta: 'Aceptada',
-				razonRespuesta: 'Transacción exitosa',
-				codigoRespuesta: '1',
-				monto: '49000',
-				moneda: 'COP',
-				fechaTransaccion: new Date().toLocaleString('es-CO'),
-				metodoPago: 'VISA',
-				emailCliente: 'usuario@test.com',
-				nombreCliente: 'Usuario Nuevo',
-				descripcion: 'Tutorial de Acordeón'
+		// ✅ OBTENER DATOS REALES DEL USUARIO ACTUAL
+		if ($usuario) {
+			datosUsuarioNuevo = {
+				email: $usuario.correo_electronico || datosPago.emailCliente,
+				nombre: $usuario.nombre || datosPago.nombreCliente,
+				fechaRegistro: $usuario.fecha_creacion ? new Date($usuario.fecha_creacion).toLocaleString('es-CO') : new Date().toLocaleString('es-CO'),
+				contenidoAdquirido: datosPago.descripcion
+			};
+		} else {
+			// Si no hay usuario, usar datos del pago
+			datosUsuarioNuevo = {
+				email: datosPago.emailCliente || 'usuario@academia.com',
+				nombre: datosPago.nombreCliente || 'Estudiante',
+				fechaRegistro: new Date().toLocaleString('es-CO'),
+				contenidoAdquirido: datosPago.descripcion
 			};
 		}
 

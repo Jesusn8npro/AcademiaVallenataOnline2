@@ -16,8 +16,56 @@
   export let irAPrimeraClase: () => void = () => {}; // Para tutoriales
   
   // Datos del contenido (curso o tutorial)
-  const contenido = data?.curso || data?.tutorial;
+  let contenido: any = data?.curso || data?.tutorial;
   const tipo = data?.curso ? 'curso' : 'tutorial';
+  
+  // 🔧 LIMPIAR DATOS DE PRUEBA REPETITIVOS
+  if (contenido) {
+    // Limpiar descripción duplicada/repetitiva
+    if (contenido.descripcion) {
+      const descripcionOriginal = contenido.descripcion;
+      // Detectar patrones repetitivos como "Tutorial pruebaTutorial prueba..."
+      const patronRepetido = /^(.+?)\1+$/;
+      if (patronRepetido.test(descripcionOriginal)) {
+        // Extraer solo la primera parte no repetida
+        const match = descripcionOriginal.match(/^(.+?)(?:\1)+$/);
+        if (match && match[1]) {
+          contenido.descripcion = match[1].trim();
+        }
+      }
+      // También limpiar patrones como "Tutorial prueba Tutorial prueba Tutorial prueba"
+      const palabrasRepetidas = contenido.descripcion.split(' ');
+      const palabrasLimpias = [];
+      const secuenciaVista = new Set();
+      
+      for (let i = 0; i < palabrasRepetidas.length; i++) {
+        const secuencia = palabrasRepetidas.slice(i, i + 2).join(' ');
+        if (!secuenciaVista.has(secuencia) || palabrasLimpias.length < 6) {
+          palabrasLimpias.push(palabrasRepetidas[i]);
+          secuenciaVista.add(secuencia);
+        } else {
+          break; // Detener si encontramos repetición
+        }
+      }
+      
+      // Solo actualizar si realmente limpiamos algo
+      if (palabrasLimpias.length < palabrasRepetidas.length && palabrasLimpias.length > 0) {
+        contenido.descripcion = palabrasLimpias.join(' ').trim();
+      }
+    }
+    
+    // Limpiar título repetitivo también
+    if (contenido.titulo) {
+      const tituloOriginal = contenido.titulo;
+      const patronRepetido = /^(.+?)\1+$/;
+      if (patronRepetido.test(tituloOriginal)) {
+        const match = tituloOriginal.match(/^(.+?)(?:\1)+$/);
+        if (match && match[1]) {
+          contenido.titulo = match[1].trim();
+        }
+      }
+    }
+  }
   
   // Estado de inscripción - usar exactamente la misma lógica que PremiumView
   let estaInscrito = data?.estaInscrito || false;
@@ -168,11 +216,7 @@
 
 <!-- Contador de oferta (si hay fecha de expiración) -->
 {#if contenido?.fecha_expiracion}
-  <ContadorOferta 
-    fechaExpiracion={contenido.fecha_expiracion}
-    descuento={contenido.descuento_porcentaje || 0}
-    mostrarDescuento={contenido.descuento_porcentaje > 0}
-  />
+  <ContadorOferta />
 {/if}
 
 <!-- Hero principal del curso -->

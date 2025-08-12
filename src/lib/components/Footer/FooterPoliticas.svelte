@@ -72,7 +72,7 @@
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     color: white;
     padding: 30px 20px 20px;
-    margin-top: auto;
+    margin-top: 0;
     border-top: 3px solid #f59e0b;
   }
 

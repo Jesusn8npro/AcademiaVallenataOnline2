@@ -69,38 +69,23 @@
     }
   }
 
-  // Detectar si la ruta es de detalle de tutorial o curso (SIN MENÚ NI SIDEBAR)
+  // ✅ DETECCIÓN SIMPLIFICADA DE RUTAS - SIN COMPLEJIDAD
   $: rutaEsDetalleTutorial = $page.url.pathname.match(/^\/tutoriales\/[^\/]+$/) !== null;
   
-  // 🔧 SISTEMA BÁSICO SIN PROBLEMAS
-
-  // 🔧 SIN VERIFICACIONES PROBLEMÁTICAS
-
-  // 🕒 Tracking de tiempo por página
-  $: if (browser && $page.url.pathname) {
+  // 🕒 Tracking de tiempo por página - SIMPLIFICADO
+  $: if (browser && $page.url.pathname && $usuario) {
     TiempoService.iniciarTiempoPagina($page.url.pathname);
+    trackingRealService.cambiarPagina($page.url.pathname);
     
-    // 🎯 TRACKING ESPECÍFICO DE ACTIVIDAD - solo para usuarios autenticados
-    if ($usuario) {
-      trackingRealService.cambiarPagina($page.url.pathname);
-      
-      // 🌍 GEOLOCALIZACIÓN INTELIGENTE - solo cuando sea necesario
-      verificarYEjecutarGeolocalizacion();
-      
-      // También actualizar actividad en inscripciones si está en curso/tutorial
-      actualizarActividadReal($page.url.pathname);
+    // 🌍 GEOLOCALIZACIÓN INTELIGENTE - solo cuando sea necesario
+    verificarYEjecutarGeolocalizacion();
     
-    // 🔥 TRACKING AUTOMÁTICO MEJORADO - registrar cada navegación
-    if ($usuario && $page.url.pathname.includes('/panel-administracion')) {
-      // Registrar actividad en panel de admin
+    // 🔥 TRACKING ADMIN - solo cuando esté en panel admin
+    if ($page.url.pathname.includes('/panel-administracion')) {
       registrarActividadAdmin();
-      
-      // Iniciar heartbeat para admin (cada 30 segundos)
       iniciarHeartbeatAdmin();
     } else {
-      // Detener heartbeat si sale del panel
       detenerHeartbeatAdmin();
-    }
     }
   }
 
@@ -338,67 +323,29 @@
   }
 
   /**
-   * 🚀 CRITICAL: Corregir problemas de renderización y scroll
+   * ✅ SIMPLIFICADO: Función básica de corrección de renderizado
    */
   function corregirRenderizacion() {
     if (!browser) return;
     
-    // Múltiples intentos para asegurar renderización correcta
-    const intentarCorreccion = () => {
-      try {
-        console.log('🔧 [LAYOUT] Corrigiendo renderización...');
-        
-        // 1. Forzar reflow del documento
-        const body = document.body;
-        const html = document.documentElement;
-        
-        // 2. Corregir overflow y scroll
-        body.style.overflow = 'auto';
-        html.style.overflow = 'auto';
-        body.style.height = 'auto';
-        html.style.height = '100%';
-        
-        // 3. Forzar recálculo de layout
-        body.offsetHeight; // Trigger reflow
-        html.offsetHeight; // Trigger reflow
-        
-        // 4. Corregir scroll behavior
-        body.style.scrollBehavior = 'smooth';
-        html.style.scrollBehavior = 'smooth';
-        
-        // 5. Asegurar que el scroll funcione
-        if (body.scrollHeight <= window.innerHeight) {
-          body.style.minHeight = '100vh';
-        }
-        
-        console.log('✅ [LAYOUT] Renderización corregida');
-      } catch (err) {
-        console.warn('⚠️ [LAYOUT] Error corrigiendo renderización:', err);
-      }
-    };
-    
-    // Ejecutar inmediatamente
-    intentarCorreccion();
-    
-    // Ejecutar después de que el DOM esté completamente listo
-    setTimeout(intentarCorreccion, 100);
-    
-    // Ejecutar después de que la hidratación esté completa
-    setTimeout(intentarCorreccion, 500);
-    
-    // Escuchar cambios de ruta para re-corregir
-    if (typeof window !== 'undefined') {
-      window.addEventListener('popstate', intentarCorreccion);
+    try {
+      console.log('🔧 [LAYOUT] Aplicando correcciones básicas...');
       
-      // 🚨 EMERGENCY: Detectar si el scroll no funciona y corregirlo
-      setTimeout(() => {
-        detectarYCorregirScrollProblemas();
-      }, 1000);
+      // Correcciones básicas y estables
+      const body = document.body;
+      const html = document.documentElement;
+      
+      body.style.overflow = 'auto';
+      html.style.overflow = 'auto';
+      
+      console.log('✅ [LAYOUT] Correcciones básicas aplicadas');
+    } catch (err) {
+      console.warn('⚠️ [LAYOUT] Error en correcciones:', err);
     }
   }
 
   /**
-   * 🚨 EMERGENCY: Detectar y corregir problemas de scroll automáticamente
+   * ✅ SIMPLIFICADO: Función básica de detección de scroll
    */
   function detectarYCorregirScrollProblemas() {
     if (!browser) return;
@@ -407,31 +354,14 @@
       const body = document.body;
       const html = document.documentElement;
       
-      // Verificar si el contenido es más alto que la ventana pero no se puede hacer scroll
-      const contenidoAlto = body.scrollHeight > window.innerHeight;
-      const scrollPosible = window.scrollY > 0 || body.scrollTop > 0 || html.scrollTop > 0;
-      
-      if (contenidoAlto && !scrollPosible) {
-        console.warn('🚨 [LAYOUT] Problema de scroll detectado, corrigiendo...');
-        
-        // Corrección de emergencia
-        body.style.overflow = 'auto !important';
-        html.style.overflow = 'auto !important';
-        body.style.height = 'auto !important';
-        body.style.minHeight = '100vh';
-        
-        // Forzar reflow agresivo
-        body.offsetHeight;
-        html.offsetHeight;
-        
-        // Intentar scroll de prueba
-        window.scrollTo(0, 1);
-        setTimeout(() => window.scrollTo(0, 0), 100);
-        
-        console.log('✅ [LAYOUT] Corrección de emergencia aplicada');
+      // Verificación básica de scroll
+      if (body.scrollHeight > window.innerHeight) {
+        body.style.overflow = 'auto';
+        html.style.overflow = 'auto';
+        console.log('✅ [LAYOUT] Scroll corregido básicamente');
       }
     } catch (err) {
-      console.warn('⚠️ [LAYOUT] Error en detección de scroll:', err);
+      console.warn('⚠️ [LAYOUT] Error en corrección de scroll:', err);
     }
   }
 
@@ -524,57 +454,46 @@
 {:else}
   
   {#if esPaginaPantallaCompleta}
-    <!-- PÁGINAS DE PANTALLA COMPLETA TOTAL (Simulador, etc.) - SIN NADA -->
-    {#key $page.url.pathname}
-      <div class="pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-        <slot />
-      </div>
-    {/key}
+    <!-- ✅ PÁGINAS DE PANTALLA COMPLETA - SIN NAVEGACIÓN -->
+    <div class="pantalla-completa">
+      <slot />
+    </div>
     
   {:else if esPaginaSoloMenuInferior && $usuario}
-    <!-- PÁGINAS DE CLASES/LECCIONES - SOLO MENÚ INFERIOR -->
-    {#key $page.url.pathname}
-      <div class="pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-        <slot />
-      </div>
-    {/key}
+    <!-- ✅ PÁGINAS DE CLASES/LECCIONES - SOLO MENÚ INFERIOR -->
+    <div class="pantalla-completa">
+      <slot />
+    </div>
     <MenuInferiorResponsivo />
     
   {:else if $usuario}
-    <!-- USUARIO AUTENTICADO - CON MENÚ Y SIDEBAR -->
+    <!-- ✅ USUARIO AUTENTICADO - CON MENÚ Y SIDEBAR -->
     {#if !$modalPagoAbierto}
       <MenuSuperiorAutenticado />
     {/if}
     
-    <div class="layout-autenticado">
-      <AdminSidebar />
-      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''}`}>
-        {#if esPaginaPerfilFijo}
-          <!-- 🔒 PÁGINAS DE PERFIL - SIN TRANSICIÓN NI KEY BLOCK PARA MÁXIMA ESTABILIDAD -->
-          <slot />
-        {:else}
-          <!-- 🔄 OTRAS PÁGINAS - CON TRANSICIÓN NORMAL -->
-          {#key $page.url.pathname}
-            <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-              <slot />
-            </div>
-          {/key}
-        {/if}
+    <div class="layout-autenticado" class:pantalla-completa={esPaginaPantallaCompleta}>
+      {#if !esPaginaPantallaCompleta}
+        <AdminSidebar />
+      {/if}
+      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''} ${esPaginaPantallaCompleta ? 'sin-sidebar' : ''}`}>
+        <!-- ✅ RENDERIZADO ESTABLE - SIN TRANSICIONES PROBLEMÁTICAS -->
+        <slot />
       </main>
     </div>
     
-    <MenuInferiorResponsivo />
+    {#if !esPaginaPantallaCompleta}
+      <MenuInferiorResponsivo />
+    {/if}
     
   {:else}
-    <!-- USUARIO NO AUTENTICADO - SOLO MENÚ PÚBLICO -->
+    <!-- ✅ USUARIO NO AUTENTICADO - SOLO MENÚ PÚBLICO -->
     {#if !$modalPagoAbierto}
       <MenuPublico />
     {/if}
-    {#key $page.url.pathname}
-      <div transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-        <slot />
-      </div>
-    {/key}
+    <div class="contenido-publico">
+      <slot />
+    </div>
     <!-- 🏛️ FOOTER CON POLÍTICAS -->
     <FooterPoliticas />
   {/if}
@@ -610,30 +529,22 @@
     box-sizing: border-box;
   }
   
-  /* ✅ CRITICAL: Forzar renderización correcta del body y html */
+  /* ✅ CRITICAL: CSS SIMPLIFICADO PARA RENDERIZADO ESTABLE */
   :global(html) {
     height: 100%;
     overflow-x: hidden;
-    overflow-y: auto !important;
+    overflow-y: auto;
     scroll-behavior: smooth;
   }
   
   :global(body) {
     height: 100%;
     overflow-x: hidden;
-    overflow-y: auto !important;
+    overflow-y: auto;
     scroll-behavior: smooth;
-    /* Forzar reflow para corregir renderización */
-    will-change: scroll-position;
   }
   
-  /* ✅ CRITICAL: Corregir elementos que pueden interferir con el scroll */
-  :global([style*="position: fixed"]),
-  :global([style*="position: absolute"]) {
-    backface-visibility: hidden;
-  }
-  
-  /* ✅ CRITICAL: Asegurar que los containers principales funcionen correctamente */
+  /* ✅ CRITICAL: Containers principales estables */
   :global(.container),
   :global(.contenedor),
   :global(.main-content),
@@ -915,6 +826,31 @@
       rgba(31, 41, 55, 0.9) 50%, 
       rgba(17, 24, 39, 0.8) 100%);
     border: 1px solid rgba(139, 92, 246, 0.2);
+  }
+  
+  /* 🎬 PÁGINAS DE PANTALLA COMPLETA (Cursos y Tutoriales) */
+  .layout-autenticado.pantalla-completa {
+    margin-left: 0;
+    padding-top: 0;
+  }
+  
+  .main-content.sin-sidebar {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* ✅ CONTENEDOR PÚBLICO ESTABLE */
+  .contenido-publico {
+    min-height: 100vh;
+    background: transparent;
+  }
+  
+  /* Asegurar que no haya espacios negros en las páginas de detalles */
+  .layout-autenticado.pantalla-completa .main-content {
+    background: transparent;
+    min-height: 100vh;
   }
   
   /* 📱 RESPONSIVE - Scrollbar más delgado en móviles */

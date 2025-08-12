@@ -185,6 +185,30 @@
 				test: epaycoData.test
 			});
 
+			// ✅ CONFIGURAR CALLBACKS OFICIALES DE EPAYCO
+			handler.onCreated = function(response: any) {
+				console.log('✅ Checkout creado:', response);
+			};
+
+			handler.onResponse = function(response: any) {
+				console.log('✅ Respuesta recibida:', response);
+				// Procesar respuesta del pago
+				if (response.x_response === 'Aceptada' || response.x_cod_response === '1') {
+					console.log('✅ Pago exitoso de membresía');
+					// Aquí podrías redirigir o mostrar confirmación
+				} else {
+					console.error('❌ Pago rechazado:', response.x_response_reason_text || response.x_response);
+				}
+			};
+
+			handler.onClosed = function(response: any) {
+				console.log('✅ Modal cerrado:', response);
+			};
+
+			handler.onErrors = function(error: any) {
+				console.error('❌ Error en ePayco:', error);
+			};
+
 			handler.open(epaycoData);
 
 			console.log('✅ Formulario de ePayco abierto exitosamente');
