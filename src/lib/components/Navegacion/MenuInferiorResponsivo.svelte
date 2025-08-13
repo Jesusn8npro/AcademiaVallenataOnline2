@@ -313,30 +313,61 @@
     border-top: 1px solid #e2e8f0 !important;
     z-index: 999999 !important;
     padding: 0 !important;
-    display: block !important; /* 🚨 VISIBLE EN MÓVIL */
+    /* 🚨 ESTADO BASE - SE CONTROLA CON MEDIA QUERIES */
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    transform: translateY(100%) !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    transform: translateY(100%) !important; /* 🚨 OCULTO POR DEFECTO */
   }
   
-  /* 🚨 CLASE PARA MOSTRAR EL MENU */
-  .menu-inferior-responsivo.visible {
-    transform: translateY(0) !important; /* Visible */
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+  /* 🚨 CLASE PARA MOSTRAR EL MENU - SOLO EN MÓVIL */
+  @media (max-width: 900px) {
+    .menu-inferior-responsivo.visible {
+      transform: translateY(0) !important; /* Visible */
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* 🚨 CLASE PARA OCULTAR EL MENU - SOLO EN MÓVIL */
+    .menu-inferior-responsivo:not(.visible) {
+      transform: translateY(100%) !important; /* Oculto */
+      opacity: 0 !important;
+    }
   }
   
-  /* 🚨 CLASE PARA OCULTAR EL MENU */
-  .menu-inferior-responsivo:not(.visible) {
-    transform: translateY(100%) !important; /* Oculto */
-    opacity: 0 !important;
+  /* 🚨 EN ESCRITORIO - SIEMPRE OCULTO */
+  @media (min-width: 901px) {
+    .menu-inferior-responsivo.visible,
+    .menu-inferior-responsivo:not(.visible) {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      transform: translateY(100%) !important;
+      pointer-events: none !important;
+    }
   }
 
-  /* Mostrar solo en pantallas móviles */
+  /* 🚨 MOSTRAR SOLO EN PANTALLAS MÓVILES - OCULTAR EN ESCRITORIO */
   @media (max-width: 900px) {
     .menu-inferior-responsivo {
       display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: translateY(100%) !important; /* Oculto por defecto en móvil */
+    }
+  }
+  
+  /* 🚨 OCULTAR COMPLETAMENTE EN ESCRITORIO */
+  @media (min-width: 901px) {
+    .menu-inferior-responsivo {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      transform: translateY(100%) !important;
+      pointer-events: none !important;
     }
   }
 
@@ -503,7 +534,7 @@
     }
   }
 
-  /* ✅ PADDING EFECTIVO para evitar que el contenido se oculte detrás del menú */
+  /* ✅ PADDING EFECTIVO para evitar que el contenido se oculte detrás del menú - SOLO EN MÓVIL */
   @media (max-width: 900px) {
     :global(body) {
       padding-bottom: 130px !important;
@@ -523,27 +554,20 @@
     }
   }
   
-  /* 🚨 CSS DE EMERGENCIA - FORZAR VISIBILIDAD SIEMPRE */
-  .menu-inferior-responsivo {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 999999 !important;
+  /* 🚨 EN ESCRITORIO - SIN PADDING ADICIONAL */
+  @media (min-width: 901px) {
+    :global(body) {
+      padding-bottom: 0 !important;
+    }
+    
+    :global(.pantalla-completa),
+    :global(.main-content),
+    :global(main),
+    :global(.contenido-principal) {
+      padding-bottom: 0 !important;
+    }
   }
   
-  /* 🚨 SOBRESCRIBIR CUALQUIER ESTILO DEL LAYOUT */
-  .menu-inferior-responsivo[style*="display: none"],
-  .menu-inferior-responsivo[style*="visibility: hidden"],
-  .menu-inferior-responsivo[style*="opacity: 0"],
-  .menu-inferior-responsivo[style*="transform: translateY(100%)"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
+  /* 🚨 CSS LIMPIO - SIN EMERGENCIA */
+  /* El menu se controla completamente con media queries */
 </style> 
