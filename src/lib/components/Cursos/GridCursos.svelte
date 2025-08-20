@@ -132,10 +132,10 @@
 						
 											{#if item.precio_rebajado && item.precio_normal}
 						{@const descuento = calcularDescuento(item.precio_normal, item.precio_rebajado)}
-						{#if descuento > 0}
-							<div class="descuento-badge">-{descuento}%</div>
+							{#if descuento > 0}
+								<div class="descuento-badge">-{descuento}%</div>
+							{/if}
 						{/if}
-					{/if}
 						
 						<div class="imagen-overlay">
 							<button class="btn-ver-curso">

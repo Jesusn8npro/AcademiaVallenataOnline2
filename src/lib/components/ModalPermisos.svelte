@@ -28,7 +28,7 @@
       setTimeout(() => {
         // 🔧 VERIFICAR QUE NO HAYA OTROS MODALES ABIERTOS
         if (!hayModalAbierto()) {
-          abrirModal();
+        abrirModal();
         }
       }, 2000);
     } else {

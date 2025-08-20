@@ -45,7 +45,7 @@ const config = {
 					'self', 
 					'https://*.supabase.co', 
 					'wss://*.supabase.co', 
-					'https://api.epayco.co',
+					'https://api.epayco.co', 
 					'https://checkout.epayco.co',
 					'https://secure.epayco.co', 
 					'https://getify-private.epayco.co',
@@ -63,7 +63,7 @@ const config = {
 				],
 				'frame-src': [
 					'self', 
-					'https://checkout.epayco.co',
+					'https://checkout.epayco.co', 
 					'https://secure.epayco.co', 
 					'https://*.epayco.co',
 					'https://www.youtube.com', 

@@ -365,7 +365,7 @@
       
       <div class="encabezado-menu">
         			<a href="/" class="logo-menu-link" aria-label="Ir a la página de inicio" on:click={cerrarModales}>
-        				<img src="/logo academia vallenata.png" alt="Academia Vallenata" class="logo-menu" />
+        			<img src="/logo academia vallenata.png" alt="Academia Vallenata" class="logo-menu" />
         			</a>
         <p class="descripcion-menu">
           La mejor academia para aprender acordeón vallenato online. Aprende con los mejores maestros desde la comodidad de tu hogar.

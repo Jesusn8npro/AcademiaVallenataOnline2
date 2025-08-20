@@ -349,7 +349,7 @@
     gap: 0.5rem;
     position: relative;
   }
-
+  
   .precio::after {
     content: "¡AHORA!";
     font-size: 0.7rem;

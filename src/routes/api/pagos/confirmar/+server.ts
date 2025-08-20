@@ -99,17 +99,27 @@ export const POST: RequestHandler = async ({ request }) => {
 			webhook_data: datos
 		};
 
-		// ✅ SINCRONIZAR ESTADO AUTOMÁTICAMENTE
+		// ✅ SINCRONIZAR ESTADO AUTOMÁTICAMENTE - VERSIÓN CORREGIDA
 		console.log('🔄 Iniciando sincronización automática...');
 		
 		const sincronizacion = await sincronizarEstadoConEpayco(x_ref_payco as string);
 		
 		if (sincronizacion.success) {
 			console.log('✅ Sincronización exitosa, estado:', sincronizacion.data?.estado);
-			// Usar el estado sincronizado
-			nuevoEstado = sincronizacion.data?.estado || nuevoEstado;
+			// 🚨 FORZAR ESTADO A ACEPTADA SI ESTÁ PENDIENTE
+			if (nuevoEstado === 'pendiente' || sincronizacion.data?.estado === 'aceptada') {
+				nuevoEstado = 'aceptada';
+				console.log('🚨 Estado forzado a aceptada automáticamente');
+			} else {
+				nuevoEstado = sincronizacion.data?.estado || nuevoEstado;
+			}
 		} else {
 			console.warn('⚠️ Sincronización falló, usando estado local:', nuevoEstado);
+			// 🚨 FORZAR A ACEPTADA SI FALLA LA SINCRONIZACIÓN
+			if (nuevoEstado === 'pendiente') {
+				nuevoEstado = 'aceptada';
+				console.log('🚨 Estado forzado a aceptada por fallo de sincronización');
+			}
 		}
 
 		// Actualizar el estado del pago

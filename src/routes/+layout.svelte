@@ -290,11 +290,14 @@
   
   // ✅ LÓGICA GRANULAR PARA DIFERENTES TIPOS DE PÁGINAS
   
-  // Páginas de PANTALLA COMPLETA TOTAL (sin nada)
-  $: esPaginaPantallaCompleta = rutaEsDetalleTutorial || rutaEsContenidoTutorial || rutaEsDetalleCurso || rutaEsSimuladorAcordeon;
+  // Páginas de PANTALLA COMPLETA TOTAL (sin nada) - SOLO simulador
+  $: esPaginaPantallaCompleta = rutaEsSimuladorAcordeon;
   
   // Páginas que solo deben tener MENÚ INFERIOR (clases y lecciones)
   $: esPaginaSoloMenuInferior = rutaEsClaseTutorial || rutaEsClaseCurso || rutaEsLeccionCurso;
+  
+  // Páginas de DETALLE (con encabezado pero sin sidebar)
+  $: esPaginaDetalle = rutaEsDetalleTutorial || rutaEsContenidoTutorial || rutaEsDetalleCurso;
   
   // Variable combinada para compatibilidad
   $: esPaginaSinMenu = esPaginaPantallaCompleta;
@@ -304,7 +307,7 @@
   $: esPaginaPerfilFijo = ['/mi-perfil', '/mis-cursos', '/mis-eventos', '/publicaciones', '/grabaciones', '/configuracion'].includes(rutaActual);
   
   // Detectar si se debe ocultar la barra de progreso
-  $: ocultarBarraProgreso = esPaginaPantallaCompleta;
+  $: ocultarBarraProgreso = esPaginaPantallaCompleta || esPaginaDetalle;
 
   let cargandoSesion = true;
 
@@ -453,38 +456,50 @@
   <div style="height:64px"></div>
 {:else}
   
-  {#if esPaginaPantallaCompleta}
-    <!-- ✅ PÁGINAS DE PANTALLA COMPLETA - SIN NAVEGACIÓN -->
-    <div class="pantalla-completa">
-      <slot />
-    </div>
-    
-  {:else if esPaginaSoloMenuInferior && $usuario}
-    <!-- ✅ PÁGINAS DE CLASES/LECCIONES - SOLO MENÚ INFERIOR -->
-    <div class="pantalla-completa">
-      <slot />
-    </div>
-    <MenuInferiorResponsivo />
-    
-  {:else if $usuario}
+      {#if esPaginaPantallaCompleta}
+      <!-- ✅ PÁGINAS DE PANTALLA COMPLETA TOTAL - SIN NADA -->
+      <div class="pantalla-completa">
+        <slot />
+      </div>
+      
+    {:else if esPaginaSoloMenuInferior && $usuario}
+      <!-- ✅ PÁGINAS DE CLASES/LECCIONES - CON ENCABEZADO Y MENÚ INFERIOR -->
+      <div class="pantalla-completa">
+        <slot />
+      </div>
+      <MenuInferiorResponsivo />
+      
+    {:else if esPaginaDetalle && $usuario}
+      <!-- ✅ PÁGINAS DE DETALLE - CON ENCABEZADO PERO SIN SIDEBAR -->
+      {#if !$modalPagoAbierto}
+        <MenuSuperiorAutenticado />
+      {/if}
+      <div class="layout-autenticado" class:pantalla-completa={true}>
+        <main class="main-content sin-sidebar">
+          <slot />
+        </main>
+      </div>
+      <MenuInferiorResponsivo />
+      
+    {:else if $usuario}
     <!-- ✅ USUARIO AUTENTICADO - CON MENÚ Y SIDEBAR -->
-    {#if !$modalPagoAbierto}
+    {#if !$modalPagoAbierto && !esPaginaDetalle}
       <MenuSuperiorAutenticado />
     {/if}
     
-    <div class="layout-autenticado" class:pantalla-completa={esPaginaPantallaCompleta}>
-      {#if !esPaginaPantallaCompleta}
-        <AdminSidebar />
+          <div class="layout-autenticado" class:pantalla-completa={esPaginaPantallaCompleta || esPaginaDetalle}>
+        {#if !esPaginaPantallaCompleta && !esPaginaDetalle}
+          <AdminSidebar />
+        {/if}
+        <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''} ${(esPaginaPantallaCompleta || esPaginaDetalle) ? 'sin-sidebar' : ''}`}>
+          <!-- ✅ RENDERIZADO ESTABLE - SIN TRANSICIONES PROBLEMÁTICAS -->
+          <slot />
+        </main>
+      </div>
+      
+      {#if !esPaginaPantallaCompleta && !esPaginaDetalle}
+        <MenuInferiorResponsivo />
       {/if}
-      <main class={`main-content ${$sidebarColapsado ? 'sidebar-colapsado' : ''} ${esPaginaPerfilFijo ? 'perfil-sin-padding' : ''} ${esPaginaPantallaCompleta ? 'sin-sidebar' : ''}`}>
-        <!-- ✅ RENDERIZADO ESTABLE - SIN TRANSICIONES PROBLEMÁTICAS -->
-        <slot />
-      </main>
-    </div>
-    
-    {#if !esPaginaPantallaCompleta}
-      <MenuInferiorResponsivo />
-    {/if}
     
   {:else}
     <!-- ✅ USUARIO NO AUTENTICADO - SOLO MENÚ PÚBLICO -->
@@ -500,8 +515,8 @@
   
 {/if}
 
-<!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería, pantalla completa y clases) -->
-{#if !$page.url.pathname.includes('/mensajes') && !esPaginaPantallaCompleta && !esPaginaSoloMenuInferior && !$modalPagoAbierto}
+<!-- Chat Widget flotante - Disponible en toda la aplicación (excepto en mensajería, pantalla completa, clases y páginas de detalle) -->
+{#if !$page.url.pathname.includes('/mensajes') && !esPaginaPantallaCompleta && !esPaginaSoloMenuInferior && !esPaginaDetalle && !$modalPagoAbierto}
   <ChatWidget />
 {/if}
 

@@ -556,7 +556,7 @@
     .titulo { font-size: 1.8rem; }
     .insignia.actualizado { font-size: 0.8rem; padding: 8px 15px; }
   }
-</style>
+</style> 
 
 <!-- Modal de Pago Inteligente -->
 <ModalPagoInteligente 

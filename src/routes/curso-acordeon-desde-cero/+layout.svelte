@@ -26,7 +26,7 @@
         elementos.forEach(elemento => {
           if (elemento instanceof HTMLElement) {
             elemento.style.display = 'none';
-          }
+    }
         });
       });
 
@@ -51,7 +51,7 @@
         setTimeout(ocultarElementosNavegacion, 0);
         setTimeout(ocultarElementosNavegacion, 100);
         setTimeout(ocultarElementosNavegacion, 500);
-      }
+    }
     });
 
     // 🔧 DETECTAR CUANDO LA PÁGINA SE VUELVE VISIBLE
@@ -59,7 +59,7 @@
       if (!document.hidden) {
         console.log('👁️ [CURSO VISIBILITY] Página visible - re-aplicando estilos');
         setTimeout(ocultarElementosNavegacion, 50);
-      }
+    }
     });
     
     // 🔧 OBSERVER PARA DETECTAR NUEVOS ELEMENTOS QUE SE AGREGUEN

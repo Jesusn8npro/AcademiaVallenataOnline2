@@ -5,7 +5,6 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { actividadService } from '$lib/services/actividadTiempoRealService';
   import { trackearUbicacionUsuario } from '$lib/services/geoLocationService';
-  import { diagnosticarConfiguracionSupabase, probarRecuperacionContrasena } from '$lib/utils/diagnosticoSupabase';
   export let abierto = false;
   export let onCerrar = () => {};
   let usuario = '';
@@ -24,7 +23,6 @@
   // Recuperar contraseña
   let correoRecuperar = '';
   let mensajeRecuperar = '';
-  let mostrandoDiagnostico = false;
   
   // Estados para mostrar/ocultar contraseñas
   let mostrarContrasena = false;
@@ -244,48 +242,6 @@
     goto('/panel-estudiante');
   }
 
-  // 🧪 FUNCIÓN DE PRUEBA PARA DEBUGGEAR SUPABASE
-  async function probarConfiguracionSupabase() {
-    try {
-      console.log('🔍 [DEBUG] Probando configuración de Supabase...');
-      console.log('🔍 [DEBUG] Supabase URL:', supabase.supabaseUrl);
-      console.log('🔍 [DEBUG] Window Origin:', window.location.origin);
-      console.log('🔍 [DEBUG] Hostname:', window.location.hostname);
-      
-      const { data, error } = await supabase.auth.getSession();
-      console.log('🔍 [DEBUG] Sesión actual:', data);
-      if (error) console.error('🔍 [DEBUG] Error de sesión:', error);
-      
-    } catch (err) {
-      console.error('🔍 [DEBUG] Error general:', err);
-    }
-  }
-
-  // 🔍 FUNCIÓN SIMPLIFICADA PARA VERIFICAR PERFIL (SIN ADMIN)
-  async function verificarPerfilExiste(email: string) {
-    try {
-      console.log('🔍 [VERIFICACIÓN] Checkeando perfil para:', email);
-      
-      // Solo buscar en la tabla de perfiles (SIN AUTH ADMIN)
-      const { data: perfilData, error: perfilError } = await supabase
-        .from('perfiles')
-        .select('correo, nombre, apellido, id')
-        .eq('correo', email)
-        .single();
-      
-      console.log('🔍 [VERIFICACIÓN] Perfil encontrado:', perfilData);
-      if (perfilError) {
-        console.log('🔍 [VERIFICACIÓN] Error perfil:', perfilError);
-        return { existe: false, datos: null };
-      }
-      
-      return { existe: !!perfilData, datos: perfilData };
-    } catch (error) {
-      console.error('🔍 [VERIFICACIÓN] Error general:', error);
-      return { existe: false, datos: null };
-    }
-  }
-
   // 🔄 FUNCIÓN SIMPLIFICADA Y MEJORADA PARA RECUPERACIÓN DE CONTRASEÑA
   async function enviarRecuperacion(e: Event) {
     e.preventDefault();
@@ -372,61 +328,6 @@
     }
   }
 
-  // 🔍 FUNCIÓN DE DIAGNÓSTICO PARA DEPURACIÓN
-  async function ejecutarDiagnostico() {
-    console.log('🔍 [MODAL] Ejecutando diagnóstico completo...');
-    mostrandoDiagnostico = true;
-    
-    try {
-      const diagnostico = await diagnosticarConfiguracionSupabase();
-      
-      // Mostrar resumen en el mensaje
-      let resumen = '🔍 DIAGNÓSTICO COMPLETO:\n\n';
-      resumen += `📍 URL: ${diagnostico.url}\n`;
-      resumen += `🌐 Origin: ${window.location.origin}\n\n`;
-      
-      if (diagnostico.errores.length > 0) {
-        resumen += '❌ ERRORES ENCONTRADOS:\n';
-        diagnostico.errores.forEach(error => resumen += `• ${error}\n`);
-        resumen += '\n';
-      }
-      
-      if (diagnostico.recomendaciones.length > 0) {
-        resumen += '💡 RECOMENDACIONES:\n';
-        diagnostico.recomendaciones.forEach(rec => resumen += `• ${rec}\n`);
-      }
-      
-      mensajeRecuperar = resumen;
-    } catch (error) {
-      mensajeRecuperar = `❌ Error ejecutando diagnóstico: ${error}`;
-    } finally {
-      mostrandoDiagnostico = false;
-    }
-  }
-
-  // 🧪 FUNCIÓN PARA PROBAR RECUPERACIÓN CON EMAIL ESPECÍFICO
-  async function probarConEmail() {
-    if (!correoRecuperar.trim()) {
-      mensajeRecuperar = '📧 Ingresa un email para probar';
-      return;
-    }
-    
-    cargando = true;
-    try {
-      const resultado = await probarRecuperacionContrasena(correoRecuperar);
-      
-      if (resultado.exito) {
-        mensajeRecuperar = `✅ PRUEBA EXITOSA: ${resultado.mensaje}\n🔗 Redirect: ${resultado.redirectURL}`;
-      } else {
-        mensajeRecuperar = `❌ PRUEBA FALLÓ: ${resultado.error}\n💡 ${resultado.recomendacion}`;
-      }
-    } catch (error) {
-      mensajeRecuperar = `❌ Error en prueba: ${error}`;
-    } finally {
-      cargando = false;
-    }
-  }
-
   // 🔐 GOOGLE SIGN-IN
   async function iniciarSesionConGoogle() {
     try {
@@ -497,19 +398,6 @@
             {cargando ? 'Enviando...' : 'Enviar enlace'}
           </button>
         </form>
-        
-        <!-- 🛠️ BOTONES DE DIAGNÓSTICO PARA DEPURACIÓN -->
-        <div class="botones-diagnostico">
-          <button type="button" class="boton-diagnostico" on:click={ejecutarDiagnostico} disabled={mostrandoDiagnostico}>
-            {mostrandoDiagnostico ? '🔍 Diagnosticando...' : '🔍 Diagnóstico completo'}
-          </button>
-          <button type="button" class="boton-diagnostico" on:click={probarConEmail} disabled={cargando || !correoRecuperar.trim()}>
-            {cargando ? '🧪 Probando...' : '🧪 Probar con este email'}
-          </button>
-          <button type="button" class="boton-smtp" on:click={() => window.open('https://supabase.com/dashboard/project/' + supabase.supabaseUrl.split('/')[2] + '/auth/settings', '_blank')}>
-            🔧 Configurar SMTP en Supabase
-          </button>
-        </div>
         
         <div class="enlaces-extra">
           <button type="button" class="enlace-olvido" on:click={() => { vistaRecuperar = false; mensajeRecuperar = ''; correoRecuperar = ''; }}>Volver al inicio de sesión</button>
@@ -1058,63 +946,7 @@
     font-weight: 600;
   }
 
-  /* === BOTONES DE DIAGNÓSTICO === */
-  .botones-diagnostico {
-    padding: 16px 32px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid rgba(226, 232, 240, 0.2);
-    margin-top: 16px;
-  }
 
-  .boton-diagnostico {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    opacity: 0.9;
-  }
-
-  .boton-diagnostico:hover {
-    opacity: 1;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  }
-
-  .boton-diagnostico:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .boton-smtp {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .boton-smtp:hover {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-  }
 
   /* === ENLACES EXTRA === */
   .enlaces-extra {

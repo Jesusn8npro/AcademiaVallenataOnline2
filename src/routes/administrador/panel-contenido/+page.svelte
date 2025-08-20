@@ -36,7 +36,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
         ...cursos.map(c => ({ ...c, tipo: 'curso' })),
         ...tutoriales.map(t => ({ ...t, tipo: 'tutorial' }))
       ];
-
+  
       console.log('📋 [UNIFICADO] Total items antes de filtrar:', items.length);
 
       // FILTRO POR TIPO PRIMERO
@@ -67,14 +67,14 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
         );
         console.log(`🔍 [BÚSQUEDA] Filtrado por "${busqueda}":`, items.length, 'items');
       }
-
+  
       const resultado = items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       console.log('✅ [RESULTADO] Items finales:', resultado.length);
       
       return resultado;
     }
   
-        onMount(async () => {
+    onMount(async () => {
       try {
         console.log('🔄 Cargando contenido del panel admin...');
         
@@ -299,12 +299,12 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
                 <circle cx="11" cy="11" r="8"/>
                 <path d="m21 21-4.35-4.35"/>
               </svg>
-              <input 
-                type="text" 
+            <input 
+              type="text" 
                 placeholder="Buscar por título, descripción, artista, tonalidad..." 
-                bind:value={textoBusqueda}
-                class="search-input"
-              />
+              bind:value={textoBusqueda}
+              class="search-input"
+            />
               {#if textoBusqueda}
                 <button class="clear-search" on:click={() => textoBusqueda = ''}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -332,7 +332,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
             <button class="btn-limpiar" on:click={limpiarFiltros}>
               🔄 Limpiar
             </button>
-
+  
             <div class="view-toggle">
               <button 
                 class="view-btn {modoVista === 'cuadricula' ? 'active' : ''}"
@@ -376,11 +376,11 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
               </div>
             </div>
           {:else}
-            <MostradorCursosTutoriales 
-              cursos={itemsFiltrados.filter(item => item.tipo === 'curso')} 
-              tutoriales={itemsFiltrados.filter(item => item.tipo === 'tutorial')}
-              {modoVista}
-            />
+          <MostradorCursosTutoriales 
+            cursos={itemsFiltrados.filter(item => item.tipo === 'curso')} 
+            tutoriales={itemsFiltrados.filter(item => item.tipo === 'tutorial')}
+            {modoVista}
+          />
           {/if}
         </div>
         <aside class="sidebar">
@@ -543,7 +543,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
       align-items: center;
     }
   
-        .search-box {
+    .search-box {
       flex: 1;
       max-width: 500px;
     }
@@ -560,7 +560,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
       color: #9ca3af;
       z-index: 1;
     }
-
+  
     .search-input {
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.5rem;
@@ -571,7 +571,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
       transition: all 0.2s;
       background: #fafafa;
     }
-
+  
     .search-input:focus {
       outline: none;
       border-color: #667eea;
@@ -643,14 +643,14 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
       box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
   
-        .view-toggle {
+    .view-toggle {
       display: flex;
       background: #f1f5f9;
       border-radius: 12px;
       padding: 0.25rem;
       border: 1px solid #e2e8f0;
     }
-
+  
     .view-btn {
       padding: 0.75rem;
       border: none;
@@ -670,7 +670,7 @@ import SidebarResumenAdmin from './SidebarResumenAdmin.svelte';
       background: rgba(255, 255, 255, 0.7);
       color: #475569;
     }
-
+  
     .view-btn.active {
       background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

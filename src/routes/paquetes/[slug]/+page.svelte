@@ -614,7 +614,7 @@
             font-size: 1.75rem;
         }
     }
-</style>
+</style> 
 
 <!-- Modal de Pago Inteligente -->
 <ModalPagoInteligente 
