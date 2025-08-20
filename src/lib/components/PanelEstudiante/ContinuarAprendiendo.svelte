@@ -19,6 +19,23 @@
   let autoPlayInterval: any = null;
   let isPaused = false;
   let isChanging = false;
+  
+  // ⚡ ESTADOS DE CARGA VISUALES
+  let cargandoCursos = true;
+  let cargandoTutoriales = true;
+  let cargandoActividad = true;
+  
+  // 🎯 DATOS POR DEFECTO PARA MOSTRAR INMEDIATAMENTE
+  const datosPorDefecto = {
+    curso: {
+      titulo: 'Fundamentos del Acordeón Vallenato',
+      descripcion: 'Aprende desde cero con el método probado del Maestro Jesús González',
+      imagen_url: '/images/Home/academia-vallenata-1.jpg',
+      progreso: 0,
+      clases_totales: 4,
+      ultima_actividad: 'Hoy'
+    }
+  };
 
     // 🎯 LÓGICA EXACTA DE "MIS CURSOS" - COPIADA COMPLETA
   async function cargarUltimaActividad() {
@@ -580,9 +597,51 @@
 <section class="continuar-aprendiendo">
   
   {#if cargando}
-    <!-- Estado de carga -->
-    <div class="hero-loading">
-      <div class="skeleton-hero"></div>
+    <!-- 🎯 MENSAJE MOTIVACIONAL MIENTRAS CARGA -->
+    <div class="hero-motivacional">
+      <div class="motivacion-container">
+        <!-- 🎵 Icono animado -->
+        <div class="icono-acordeon">
+          <span class="acordeon-animado">🎹</span>
+          <div class="notas-musicales">
+            <span class="nota">♪</span>
+            <span class="nota">♫</span>
+            <span class="nota">♬</span>
+          </div>
+        </div>
+        
+        <!-- 🚀 Mensaje principal -->
+        <div class="mensaje-principal">
+          <h2 class="titulo-bienvenida">¡Bienvenido a tu Panel de Estudiante!</h2>
+          <p class="subtitulo-motivacional">Aquí podrás ver todas tus clases, retos completados y mucho más</p>
+        </div>
+        
+        <!-- ✨ Características destacadas -->
+        <div class="caracteristicas-destacadas">
+          <div class="caracteristica">
+            <span class="icono-caracteristica">📚</span>
+            <span class="texto-caracteristica">Tus cursos en progreso</span>
+          </div>
+          <div class="caracteristica">
+            <span class="icono-caracteristica">🏆</span>
+            <span class="texto-caracteristica">Logros y retos</span>
+          </div>
+          <div class="caracteristica">
+            <span class="icono-caracteristica">🎵</span>
+            <span class="texto-caracteristica">Próxima clase</span>
+          </div>
+        </div>
+        
+        <!-- 🔄 Indicador de carga sutil -->
+        <div class="indicador-carga">
+          <div class="puntos-carga">
+            <span class="punto"></span>
+            <span class="punto"></span>
+            <span class="punto"></span>
+          </div>
+          <p class="texto-carga">Preparando tu experiencia de aprendizaje...</p>
+        </div>
+      </div>
     </div>
     
   {:else if ultimaActividad && todasLasActividades.length > 0}
@@ -782,198 +841,27 @@
 
   /* 🎠 SLIDER CONTAINER */
   .slider-container {
-    position: relative;
-    width: 100%;
-  }
-
-  /* 📱 HEADER DEL SLIDER */
-  .slider-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding: 0 20px;
-  }
-
-  .usuario-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .avatar-usuario {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    object-fit: cover;
-  }
-
-  .avatar-usuario:hover {
-    border-color: rgba(255, 255, 255, 0.7);
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
-  }
-
-  .saludo-usuario {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .saludo {
-    color: white;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-
-  .submensaje {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
-  }
-
-  .navegacion-externa {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .nav-btn-external {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .nav-btn-external:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: scale(1.1);
-  }
-
-  .nav-btn-external:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: scale(0.9);
-  }
-
-  .nav-btn-external svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .contador-externo {
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-    min-width: 50px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .auto-indicator {
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-  }
-
-  .auto-indicator.active {
-    color: #10b981;
-    animation: autoPlayPulse 3s infinite;
-  }
-
-  .auto-indicator.paused {
-    color: #f59e0b;
-    opacity: 0.8;
-  }
-
-  @keyframes autoPlayPulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: scale(0.9);
-    }
-  }
-
-  /* ✨ TRANSICIONES CSS MUY SUTILES - NO SVELTE */
-  .slide-content {
-    /* Sin transiciones globales que afecten layout */
-  }
-
-  .slider-container {
-    /* Contenedor estable sin animaciones */
-    position: relative;
-  }
-
-  /* 🎯 TRANSICIONES MUY SUTILES CONTROLADAS */
-  .hero-actividad {
-    opacity: 1;
-    transition: opacity 0.2s ease-in-out;
-  }
-
-  .hero-actividad.changing {
-    opacity: 0.85;
-  }
-
-  /* 🎭 SOLO elementos específicos con transición mínima */
-  .titulo-principal,
-  .descripcion,
-  .imagen-curso {
-    transition: opacity 0.15s ease;
-  }
-
-  .hero-actividad.changing .titulo-principal,
-  .hero-actividad.changing .descripcion,
-  .hero-actividad.changing .imagen-curso {
-    opacity: 0.7;
-  }
-
-  /* 🔄 Indicador muy sutil */
-  .slider-container:hover .indicator.active {
-    opacity: 0.9;
-    transition: opacity 0.3s ease;
-  }
-
-  /* 🔄 Loading skeleton */
-  .hero-loading {
-    padding: 40px;
-    background: rgba(99, 102, 241, 0.1);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
     border-radius: 20px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 40px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
   }
 
-  .skeleton-hero {
-    height: 200px;
-    background: linear-gradient(90deg, 
-      rgba(99, 102, 241, 0.1) 0%, 
-      rgba(99, 102, 241, 0.2) 50%, 
-      rgba(99, 102, 241, 0.1) 100%);
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s ease-in-out infinite;
-    border-radius: 12px;
+  .slider-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
   }
 
-  @keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  /* 🎯 Hero con actividad */
+  /* 🎯 HERO CON ACTIVIDAD */
   .hero-actividad {
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -1122,7 +1010,7 @@
     height: 20px;
   }
 
-  /* 🖼️ Imagen y progreso circular */
+  /* 🖼️ IMAGEN Y PROGRESO CIRCULAR */
   .contenido-derecho {
     display: flex;
     align-items: center;
@@ -1185,7 +1073,7 @@
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
-  /* 🌟 Sin actividad */
+  /* 🌟 SIN ACTIVIDAD */
   .hero-sin-actividad {
     padding: 60px 40px;
     background: rgba(100, 116, 139, 0.1);
@@ -1248,7 +1136,7 @@
     box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
   }
 
-  /* 📱 Responsive */
+  /* 📱 RESPONSIVE */
   @media (max-width: 900px) {
     .hero-actividad {
       grid-template-columns: 1fr;
@@ -1280,7 +1168,7 @@
       max-width: 250px;
     }
 
-    /* 🎠 Slider móvil */
+    /* 🎠 SLIDER MÓVIL */
     .slider-header {
       padding: 0 10px;
       margin-bottom: 15px;
@@ -1346,7 +1234,337 @@
     }
   }
 
+  /* 📱 HEADER DEL SLIDER */
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+  }
 
+  .usuario-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar-usuario {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    object-fit: cover;
+  }
+
+  .avatar-usuario:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+  }
+
+  .saludo-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .saludo {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .submensaje {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+  }
+
+  .navegacion-externa {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-btn-external {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-btn-external:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+  }
+
+  .nav-btn-external:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: scale(0.9);
+  }
+
+  .nav-btn-external svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .contador-externo {
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .auto-indicator {
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+  }
+
+  .auto-indicator.active {
+    color: #10b981;
+    animation: autoPlayPulse 3s infinite;
+  }
+
+  .auto-indicator.paused {
+    color: #f59e0b;
+    opacity: 0.8;
+  }
+
+  @keyframes autoPlayPulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(0.9);
+    }
+  }
+
+  /* 🎯 MENSAJE MOTIVACIONAL MIENTRAS CARGA */
+  .hero-motivacional {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border-radius: 24px;
+    padding: 40px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+  }
+
+  .hero-motivacional::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .motivacion-container {
+    text-align: center;
+    color: white;
+    max-width: 600px;
+    z-index: 1;
+    position: relative;
+  }
+
+  /* 🎵 ICONO ACORDEÓN ANIMADO */
+  .icono-acordeon {
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .acordeon-animado {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 16px;
+    animation: acordeon-float 3s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  }
+
+  .notas-musicales {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .nota {
+    font-size: 1.5rem;
+    opacity: 0.8;
+    animation: nota-bounce 2s ease-in-out infinite;
+  }
+
+  .nota:nth-child(1) { animation-delay: 0s; }
+  .nota:nth-child(2) { animation-delay: 0.3s; }
+  .nota:nth-child(3) { animation-delay: 0.6s; }
+
+  /* 🚀 MENSAJE PRINCIPAL */
+  .mensaje-principal {
+    margin-bottom: 32px;
+  }
+
+  .titulo-bienvenida {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0 0 16px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(45deg, #ffffff, #f0f0f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: titulo-glow 2s ease-in-out infinite alternate;
+  }
+
+  .subtitulo-motivacional {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin: 0;
+    line-height: 1.6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ✨ CARACTERÍSTICAS DESTACADAS */
+  .caracteristicas-destacadas {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .caracteristica {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    min-width: 120px;
+  }
+
+  .caracteristica:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .icono-caracteristica {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .texto-caracteristica {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0.9;
+  }
+
+  /* 🔄 INDICADOR DE CARGA SUTIL */
+  .indicador-carga {
+    margin-top: 24px;
+  }
+
+  .puntos-carga {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .punto {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: punto-pulse 1.5s ease-in-out infinite;
+  }
+
+  .punto:nth-child(1) { animation-delay: 0s; }
+  .punto:nth-child(2) { animation-delay: 0.2s; }
+  .punto:nth-child(3) { animation-delay: 0.4s; }
+
+  .texto-carga {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* 🎭 ANIMACIONES */
+  @keyframes acordeon-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes nota-bounce {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes titulo-glow {
+    0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.3)); }
+    100% { filter: brightness(1.1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); }
+  }
+
+  @keyframes punto-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* 📱 RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero-motivacional {
+      padding: 24px;
+      min-height: 350px;
+    }
+
+    .titulo-bienvenida {
+      font-size: 2rem;
+    }
+
+    .subtitulo-motivacional {
+      font-size: 1rem;
+    }
+
+    .caracteristicas-destacadas {
+      gap: 16px;
+    }
+
+    .caracteristica {
+      min-width: 100px;
+      padding: 12px;
+    }
+
+    .acordeon-animado {
+      font-size: 3rem;
+    }
+  }
 
   /* 📍 INDICADORES DEL SLIDER */
   .slider-indicators {

@@ -114,14 +114,16 @@ class TrackingActividadReal {
         .eq('fecha', today)
         .single();
       
-      const tiempoTotalActualizado = (sesionActual?.tiempo_total_minutos || 0) + 1; // +1 minuto por heartbeat
+      // ✅ CORRECCIÓN: NO incrementar tiempo por heartbeat, solo mantener sesión activa
+      // 🎯 RAZÓN: El tiempo debe calcularse basado en actividad REAL, no en heartbeats
+      const tiempoTotalActualizado = sesionActual?.tiempo_total_minutos || 0; // ✅ Mantener tiempo existente
       
       await supabase
         .from('sesiones_usuario')
         .upsert({
           usuario_id: this.usuarioActual.id,
           fecha: today,
-          tiempo_total_minutos: tiempoTotalActualizado,
+          tiempo_total_minutos: tiempoTotalActualizado, // ✅ Sin incremento automático
           sesiones_totales: sesionActual?.sesiones_totales || 1,
           ultima_actividad: ahora,
           pagina_actual: this.paginaActual || window.location.pathname,

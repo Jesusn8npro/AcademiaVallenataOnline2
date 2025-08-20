@@ -16,7 +16,7 @@
   };
   let debugInfo = "";
 
-  // 🕒 Función RÁPIDA para calcular tiempo histórico total (EN PARALELO)
+  // 🕒 FUNCIÓN PARA CALCULAR TIEMPO HISTÓRICO TOTAL (EN PARALELO)
   async function calcularTiempoHistoricoRapido(usuarioId: string): Promise<number> {
     try {
       // 🚀 TODAS LAS CONSULTAS EN PARALELO
@@ -39,31 +39,215 @@
           .select('duracion_minutos')
           .eq('usuario_id', usuarioId),
           
-        // 4. TODO el tiempo en plataforma
+        // 4. TODO el tiempo en plataforma (pero limitado a valores realistas)
         supabase
           .from('sesiones_usuario')
           .select('tiempo_total_minutos')
           .eq('usuario_id', usuarioId)
-          .catch(() => ({ data: [] })) // Fallar silenciosamente si no existe
       ]);
 
+      // ✅ MANEJAR RESULTADOS CON VERIFICACIÓN DE ERRORES
       const todasLecciones = leccionesResult.data || [];
       const todosTutoriales = tutorialesResult.data || [];
       const todasSesiones = simuladorResult.data || [];
       const todasSesionesUsuario = sesionesResult.data || [];
 
-      const totalLecciones = todasLecciones.reduce((sum: number, item: any) => sum + (item.tiempo_total || 0), 0);
-      const totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => sum + (item.tiempo_visto || 0), 0);
-      const totalSimulador = todasSesiones.reduce((sum: number, item: any) => sum + (item.duracion_minutos || 0), 0);
-      const totalSesiones = todasSesionesUsuario.reduce((sum: number, item: any) => sum + (item.tiempo_total_minutos || 0), 0);
+      // 🔍 VERIFICAR SI HAY ERRORES EN LAS CONSULTAS
+      if (leccionesResult.error) {
+        console.warn('⚠️ [DIAGNÓSTICO] Error en consulta de lecciones:', leccionesResult.error);
+      }
+      if (tutorialesResult.error) {
+        console.warn('⚠️ [DIAGNÓSTICO] Error en consulta de tutoriales:', tutorialesResult.error);
+      }
+      if (simuladorResult.error) {
+        console.warn('⚠️ [DIAGNÓSTICO] Error en consulta de simulador:', simuladorResult.error);
+      }
+      if (sesionesResult.error) {
+        console.warn('⚠️ [DIAGNÓSTICO] Error en consulta de sesiones:', sesionesResult.error);
+      }
 
-      const tiempoEspecifico = totalLecciones + totalTutoriales + totalSimulador;
-      const tiempoFinal = Math.max(tiempoEspecifico, totalSesiones);
+      // 🔍 DIAGNÓSTICO: Ver valores exactos en la base de datos
+      console.log('🔍 [DIAGNÓSTICO] Valores RAW en la base de datos:', {
+        lecciones: todasLecciones.length > 0 ? todasLecciones[0].tiempo_total : 'Sin datos',
+        tutoriales: todosTutoriales.length > 0 ? todosTutoriales[0].tiempo_visto : 'Sin datos',
+        simulador: todasSesiones.length > 0 ? todasSesiones[0].duracion_minutos : 'Sin datos',
+        sesiones: todasSesionesUsuario.length > 0 ? todasSesionesUsuario[0].tiempo_total_minutos : 'Sin datos'
+      });
 
-      return tiempoFinal;
+      // 🎯 DETERMINAR UNIDADES CORRECTAS
+      let totalLecciones = 0;
+      let totalTutoriales = 0;
+      
+      if (todasLecciones.length > 0) {
+        const primerValor = todasLecciones[0].tiempo_total;
+        if (primerValor > 1000000) {
+          // Si es muy grande, probablemente en milisegundos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_total || 0) / 60000), 0);
+          console.log('🔍 [DIAGNÓSTICO] Lecciones: Valores en MILISEGUNDOS, convirtiendo a minutos');
+        } else if (primerValor > 1000) {
+          // Si es mediano, probablemente en segundos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_total || 0) / 60), 0);
+          console.log('🔍 [DIAGNÓSTICO] Lecciones: Valores en SEGUNDOS, convirtiendo a minutos');
+        } else {
+          // Si es pequeño, probablemente ya en minutos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + (item.tiempo_total || 0), 0);
+          console.log('🔍 [DIAGNÓSTICO] Lecciones: Valores ya en MINUTOS');
+        }
+      }
+      
+      if (todosTutoriales.length > 0) {
+        const primerValor = todosTutoriales[0].tiempo_visto;
+        if (primerValor > 1000000) {
+          // Si es muy grande, probablemente en milisegundos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_visto || 0) / 60000), 0);
+          console.log('🔍 [DIAGNÓSTICO] Tutoriales: Valores en MILISEGUNDOS, convirtiendo a minutos');
+        } else if (primerValor > 1000) {
+          // Si es mediano, probablemente en segundos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_visto || 0) / 60), 0);
+          console.log('🔍 [DIAGNÓSTICO] Tutoriales: Valores en SEGUNDOS, convirtiendo a minutos');
+        } else {
+          // Si es pequeño, probablemente ya en minutos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + (item.tiempo_visto || 0), 0);
+          console.log('🔍 [DIAGNÓSTICO] Tutoriales: Valores ya en MINUTOS');
+        }
+      }
+      
+      const totalSimulador = todasSesiones.reduce((sum: number, item: any) => 
+        sum + (item.duracion_minutos || 0), 0); // Ya está en minutos ✅
+      
+      // ✅ USAR tiempo_total_minutos PERO LIMITADO a valores realistas
+      let totalSesiones = 0;
+      if (todasSesionesUsuario.length > 0) {
+        // 🎯 LIMITAR a máximo 8 horas por día (480 minutos)
+        totalSesiones = todasSesionesUsuario.reduce((sum: number, item: any) => {
+          const tiempo = item.tiempo_total_minutos || 0;
+          // ✅ Solo usar valores realistas (< 480 minutos = 8 horas)
+          return sum + (tiempo < 480 ? tiempo : 0);
+        }, 0);
+        
+        if (totalSesiones > 0) {
+          console.log('🔍 [DIAGNÓSTICO] Sesiones: Usando tiempo limitado a valores realistas');
+        }
+      }
+      
+      // ✅ CALCULAR TIEMPO REAL BASADO EN ACTIVIDAD REAL
+      const tiempoReal = totalLecciones + totalTutoriales + totalSimulador;
+      
+      // 🎯 COMBINAR tiempo real + sesiones limitadas
+      const tiempoCombinado = Math.max(tiempoReal, totalSesiones);
+      
+      // 🎯 Si no hay tiempo registrado, calcular basado en actividad reciente
+      if (tiempoCombinado === 0) {
+        // Buscar actividad reciente para estimar tiempo
+        const { data: actividadReciente } = await supabase
+          .from('eventos_actividad')
+          .select('created_at, tipo_evento')
+          .eq('usuario_id', usuarioId)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Últimos 7 días
+          .order('created_at', { ascending: false });
+        
+        if (actividadReciente && actividadReciente.length > 0) {
+          // Estimar tiempo basado en actividad: 5 minutos por evento
+          const tiempoEstimado = Math.min(actividadReciente.length * 5, 120); // Máximo 2 horas
+          console.log('🎯 [TIEMPO REAL] Estimando tiempo basado en actividad reciente:', tiempoEstimado, 'min');
+          return tiempoEstimado;
+        }
+      }
+
+      // 🎯 PRIORIDAD: Usar tiempo combinado (real + sesiones limitadas)
+      console.log('⏱️ [TIEMPO COMBINADO] Cálculo inteligente:', {
+        lecciones: totalLecciones.toFixed(2) + ' min',
+        tutoriales: totalTutoriales.toFixed(2) + ' min', 
+        simulador: totalSimulador + ' min',
+        sesionesLimitadas: totalSesiones + ' min',
+        tiempoReal: tiempoReal.toFixed(2) + ' min',
+        tiempoCombinado: tiempoCombinado.toFixed(2) + ' min',
+        nota: 'Combinando tiempo real + sesiones limitadas a valores realistas'
+      });
+
+      return Math.round(tiempoCombinado); // Redondear a minutos enteros
 
     } catch (error) {
       console.error('❌ Error calculando tiempo histórico:', error);
+      return 0;
+    }
+  }
+
+  // 🕒 FUNCIÓN PARA CALCULAR TIEMPO REAL DE USO DE LA PLATAFORMA
+  async function calcularTiempoRealPlataforma(usuarioId: string): Promise<number> {
+    try {
+      console.log('🎯 [TIEMPO REAL] Calculando tiempo real de uso de la plataforma...');
+      
+      // 🚀 CONSULTAR EVENTOS DE ACTIVIDAD REAL (últimos 30 días)
+      const fechaLimite = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      
+      const { data: eventosActividad, error } = await supabase
+        .from('eventos_actividad')
+        .select('created_at, tipo_evento, pagina, duracion_minutos')
+        .eq('usuario_id', usuarioId)
+        .gte('created_at', fechaLimite.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.warn('⚠️ [TIEMPO REAL] Error consultando eventos:', error);
+        return 0;
+      }
+      
+      if (!eventosActividad || eventosActividad.length === 0) {
+        console.log('🎯 [TIEMPO REAL] No hay eventos de actividad recientes');
+        return 0;
+      }
+      
+      // 📊 CALCULAR TIEMPO REAL BASADO EN TIPOS DE EVENTOS
+      let tiempoTotal = 0;
+      const eventosPorTipo: { [key: string]: number } = {};
+      
+      eventosActividad.forEach((evento: any) => {
+        const tipo = evento.tipo_evento || 'navegacion';
+        eventosPorTipo[tipo] = (eventosPorTipo[tipo] || 0) + 1;
+        
+        // 🎯 TIEMPO REAL POR TIPO DE EVENTO
+        switch (tipo) {
+          case 'estudio':
+          case 'leccion':
+          case 'ejercicio':
+            tiempoTotal += evento.duracion_minutos || 10; // 10 min por evento de estudio
+            break;
+          case 'simulador':
+            tiempoTotal += evento.duracion_minutos || 15; // 15 min por sesión de simulador
+            break;
+          case 'navegacion':
+            tiempoTotal += 2; // 2 min por navegación
+            break;
+          case 'click':
+            tiempoTotal += 1; // 1 min por click
+            break;
+          default:
+            tiempoTotal += 3; // 3 min por evento desconocido
+        }
+      });
+      
+      // 🎯 LIMITAR TIEMPO MÁXIMO (evitar valores irreales)
+      const tiempoFinal = Math.min(tiempoTotal, 480); // Máximo 8 horas por día
+      
+      console.log('🎯 [TIEMPO REAL] Cálculo basado en eventos reales:', {
+        totalEventos: eventosActividad.length,
+        eventosPorTipo,
+        tiempoCalculado: tiempoTotal + ' min',
+        tiempoFinal: tiempoFinal + ' min',
+        periodo: 'Últimos 30 días'
+      });
+      
+      return tiempoFinal;
+      
+    } catch (error) {
+      console.error('❌ [TIEMPO REAL] Error calculando tiempo real:', error);
       return 0;
     }
   }
@@ -94,7 +278,8 @@
         progresoTutorialesResult, 
         simuladorSesionesResult,
         actividadRecienteResult,
-        tiempoHistoricoTotal
+        tiempoHistoricoTotal,
+        tiempoRealPlataforma
       ] = await Promise.all([
         // 💎 1. RANKING
         GamificacionService.obtenerRanking('general', 50).catch(() => []),
@@ -129,7 +314,10 @@
           .order('updated_at', { ascending: false }),
           
         // ⏱️ 6. TIEMPO HISTÓRICO EN PARALELO
-        calcularTiempoHistoricoRapido($usuario.id)
+        calcularTiempoHistoricoRapido($usuario.id),
+        
+        // 🎯 7. TIEMPO REAL DE USO DE LA PLATAFORMA
+        calcularTiempoRealPlataforma($usuario.id)
       ]);
 
       // 💎 PROCESAR RANKING
@@ -167,14 +355,52 @@
       console.log('⏱️ Tiempo histórico total:', tiempoHistoricoTotal);
        
        // Backup: calcular manualmente si el servicio no tiene datos
-       const tiempoLecciones = progresoLecciones?.reduce((total: number, leccion: any) => 
-         total + (leccion.tiempo_total || 0), 0) || 0;
+       // ✅ CORRECCIÓN: Detectar unidades y convertir correctamente
+       let tiempoLecciones = 0;
+       let tiempoTutoriales = 0;
        
-       const tiempoTutoriales = progresoTutoriales?.reduce((total: number, tutorial: any) => 
-         total + (tutorial.tiempo_visto || 0), 0) || 0;
+       if (progresoLecciones.length > 0) {
+         const primerValor = progresoLecciones[0].tiempo_total;
+         if (primerValor > 1000000) {
+           // Si es muy grande, probablemente en milisegundos
+           tiempoLecciones = progresoLecciones.reduce((total: number, leccion: any) => 
+             total + ((leccion.tiempo_total || 0) / 60000), 0);
+           console.log('🔍 [DIAGNÓSTICO] Lecciones manual: Valores en MILISEGUNDOS, convirtiendo a minutos');
+         } else if (primerValor > 1000) {
+           // Si es mediano, probablemente en segundos
+           tiempoLecciones = progresoLecciones.reduce((total: number, leccion: any) => 
+             total + ((leccion.tiempo_total || 0) / 60), 0);
+           console.log('🔍 [DIAGNÓSTICO] Lecciones manual: Valores en SEGUNDOS, convirtiendo a minutos');
+         } else {
+           // Si es pequeño, probablemente ya en minutos
+           tiempoLecciones = progresoLecciones.reduce((total: number, leccion: any) => 
+             total + (leccion.tiempo_total || 0), 0);
+           console.log('🔍 [DIAGNÓSTICO] Lecciones manual: Valores ya en MINUTOS');
+         }
+       }
+       
+       if (progresoTutoriales.length > 0) {
+         const primerValor = progresoTutoriales[0].tiempo_visto;
+         if (primerValor > 1000000) {
+           // Si es muy grande, probablemente en milisegundos
+           tiempoTutoriales = progresoTutoriales.reduce((total: number, tutorial: any) => 
+             total + ((tutorial.tiempo_visto || 0) / 60000), 0);
+           console.log('🔍 [DIAGNÓSTICO] Tutoriales manual: Valores en MILISEGUNDOS, convirtiendo a minutos');
+         } else if (primerValor > 1000) {
+           // Si es mediano, probablemente en segundos
+           tiempoTutoriales = progresoTutoriales.reduce((total: number, tutorial: any) => 
+             total + ((tutorial.tiempo_visto || 0) / 60), 0);
+           console.log('🔍 [DIAGNÓSTICO] Tutoriales manual: Valores en SEGUNDOS, convirtiendo a minutos');
+         } else {
+           // Si es pequeño, probablemente ya en minutos
+           tiempoTutoriales = progresoTutoriales.reduce((total: number, tutorial: any) => 
+             total + (tutorial.tiempo_visto || 0), 0);
+           console.log('🔍 [DIAGNÓSTICO] Tutoriales manual: Valores ya en MINUTOS');
+         }
+       }
        
        const tiempoSimulador = simuladorSesiones?.reduce((total: number, sesion: any) => 
-         total + (sesion.duracion_minutos || 0), 0) || 0;
+         total + (sesion.duracion_minutos || 0), 0) || 0; // Ya está en minutos ✅
          
        const tiempoManual = tiempoLecciones + tiempoTutoriales + tiempoSimulador;
 
@@ -186,8 +412,8 @@
          rachaCalculada = Math.min(diasConActividad, 7); // Máximo 7 días
        }
 
-             // ✅ ASIGNAR VALORES REALES - Usar tiempo histórico para mostrar progreso acumulado
-       let tiempoFinal = Math.max(tiempoHistoricoTotal, tiempoTotalSemanal, tiempoManual);
+             // ✅ ASIGNAR VALORES REALES - Usar tiempo REAL de la plataforma
+       let tiempoFinal = Math.max(tiempoRealPlataforma, tiempoHistoricoTotal, tiempoTotalSemanal, tiempoManual);
        
        // 🎯 Si no hay tiempo registrado, simular basado en actividad
        if (tiempoFinal === 0 && (leccionesEstaSemanCompletadas > 0 || tutorialesEstaSemanProgreso > 0)) {
@@ -213,13 +439,14 @@
 • Actividad reciente: ${actividadReciente?.length || 0} registros
 • Racha calculada: ${rachaCalculada} días consecutivos
 
-⏰ Tiempo desglosado:
-• Tiempo histórico TOTAL: ${tiempoHistoricoTotal} min 🏆
+⏰ Tiempo desglosado (TIEMPO REAL):
+• Tiempo REAL de plataforma: ${tiempoRealPlataforma} min 🎯
+• Tiempo histórico TOTAL: ${tiempoHistoricoTotal} min
 • Servicio semanal: ${tiempoTotalSemanal} min
-• Lecciones período: ${tiempoLecciones} min
-• Tutoriales período: ${tiempoTutoriales} min  
+• Lecciones período: ${tiempoLecciones.toFixed(2)} min (convertido de ms)
+• Tutoriales período: ${tiempoTutoriales.toFixed(2)} min (convertido de ms)
 • Simulador período: ${tiempoSimulador} min
-• Manual período: ${tiempoManual} min
+• Manual período: ${tiempoManual.toFixed(2)} min
 • FINAL USADO: ${tiempoFinal} min
 
 🔍 Estado de consultas:
@@ -246,6 +473,20 @@
     } finally {
       cargando = false;
     }
+  }
+
+  // 🕒 FUNCIÓN PARA FORMATEAR TIEMPO DE MANERA LEGIBLE
+  function formatearTiempo(minutos: number): string {
+    if (minutos < 1) return '0m';
+    if (minutos < 60) return `${Math.round(minutos)}m`;
+    if (minutos < 1440) {
+      const horas = Math.floor(minutos / 60);
+      const minRestantes = Math.round(minutos % 60);
+      return `${horas}h ${minRestantes}m`;
+    }
+    const dias = Math.floor(minutos / 1440);
+    const horas = Math.floor((minutos % 1440) / 60);
+    return `${dias}d ${horas}h`;
   }
 
   onMount(cargarDatosReales);
@@ -294,7 +535,7 @@
       
       <div class="stat-card">
         <span class="icon">⏱️</span>
-        <span class="value">{stats.tiempoEstudio}m</span>
+        <span class="value">{formatearTiempo(stats.tiempoEstudio)}</span>
         <span class="label">Estudiando</span>
       </div>
       

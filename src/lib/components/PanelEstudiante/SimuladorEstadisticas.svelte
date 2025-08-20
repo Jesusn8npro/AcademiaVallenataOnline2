@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { supabase } from '$lib/supabase/clienteSupabase';
+  import { usuario } from '$lib/UsuarioActivo/usuario';
+  import { GamificacionService } from '$lib/services/gamificacionService';
 
   // 🚀 Características del simulador próximo
   const caracteristicas = [
@@ -41,12 +45,256 @@
     }
   ];
 
+  // 🎯 Estados del componente
   let caracteristicaActiva = 0;
+  
+  // ⚡ ESTADOS DE CARGA VISUALES
+  let cargandoEstadisticas = true;
+  let estadisticasReales: any[] = [];
+  
+  // 🎯 DATOS POR DEFECTO PARA MOSTRAR INMEDIATAMENTE
+  const estadisticasPorDefecto = [
+    { icono: '📚', valor: '0', label: 'Lecciones' },
+    { icono: '⏱️', valor: '0m', label: 'Estudiando' },
+    { icono: '🔥', valor: '0', label: 'Racha' },
+    { icono: '💎', valor: '0', label: 'Puntos' }
+  ];
+
+  // 🕒 FUNCIÓN PARA FORMATEAR TIEMPO DE MANERA LEGIBLE
+  function formatearTiempo(minutos: number): string {
+    if (minutos < 1) return '0m';
+    if (minutos < 60) return `${Math.round(minutos)}m`;
+    if (minutos < 1440) {
+      const horas = Math.floor(minutos / 60);
+      const minRestantes = Math.round(minutos % 60);
+      return `${horas}h ${minRestantes}m`;
+    }
+    const dias = Math.floor(minutos / 1440);
+    const horas = Math.floor((minutos % 1440) / 60);
+    return `${dias}d ${horas}h`;
+  }
+
+  // 📊 CARGAR ESTADÍSTICAS REALES DEL USUARIO
+  async function cargarEstadisticasReales() {
+    if (!$usuario?.id) {
+      cargandoEstadisticas = false;
+      return;
+    }
+
+    try {
+      console.log('🚀 [SIMULADOR] Cargando estadísticas reales para:', $usuario.id);
+      
+      // 🚀 CARGAR DATOS EN PARALELO
+      const [ranking, tiempoHistorico] = await Promise.all([
+        // 💎 1. RANKING DEL USUARIO
+        GamificacionService.obtenerRanking('general', 50).catch(() => []),
+        
+        // ⏱️ 2. TIEMPO HISTÓRICO TOTAL
+        calcularTiempoHistoricoRapido($usuario.id)
+      ]);
+
+      // 💎 PROCESAR RANKING
+      let puntosFinales = 0;
+      const miRanking = ranking.find((r: any) => r.usuario_id === $usuario.id);
+      if (miRanking) {
+        puntosFinales = miRanking.puntuacion || 0;
+        console.log('💎 [SIMULADOR] Puntos del ranking:', puntosFinales);
+      }
+
+      // 📊 CALCULAR ESTADÍSTICAS REALES
+      const leccionesCompletadas = 0; // Por ahora en 0, se puede expandir después
+      const tiempoEstudio = tiempoHistorico;
+      const rachaActual = 0; // Por ahora en 0, se puede expandir después
+
+      // ✅ ASIGNAR ESTADÍSTICAS REALES
+      estadisticasReales = [
+        { icono: '📚', valor: leccionesCompletadas.toString(), label: 'Lecciones' },
+        { icono: '⏱️', valor: formatearTiempo(tiempoEstudio), label: 'Estudiando' },
+        { icono: '🔥', valor: rachaActual.toString(), label: 'Racha' },
+        { icono: '💎', valor: puntosFinales.toString(), label: 'Puntos' }
+      ];
+
+      console.log('✅ [SIMULADOR] Estadísticas reales cargadas:', estadisticasReales);
+      cargandoEstadisticas = false;
+
+    } catch (error) {
+      console.error('❌ [SIMULADOR] Error cargando estadísticas:', error);
+      cargandoEstadisticas = false;
+    }
+  }
+
+  // 🕒 Función RÁPIDA para calcular tiempo histórico total (EN PARALELO)
+  async function calcularTiempoHistoricoRapido(usuarioId: string): Promise<number> {
+    try {
+      // 🚀 TODAS LAS CONSULTAS EN PARALELO
+      const [leccionesResult, tutorialesResult, simuladorResult, sesionesResult] = await Promise.all([
+        // 1. TODO el tiempo en lecciones 
+        supabase
+          .from('progreso_lecciones')
+          .select('tiempo_total')
+          .eq('usuario_id', usuarioId),
+          
+        // 2. TODO el tiempo en tutoriales
+        supabase
+          .from('progreso_tutorial')
+          .select('tiempo_visto')
+          .eq('usuario_id', usuarioId),
+          
+        // 3. TODO el tiempo en simulador
+        supabase
+          .from('sesiones_simulador_acordeon')
+          .select('duracion_minutos')
+          .eq('usuario_id', usuarioId),
+          
+        // 4. TODO el tiempo en plataforma
+        supabase
+          .from('sesiones_usuario')
+          .select('tiempo_total_minutos')
+          .eq('usuario_id', usuarioId)
+      ]);
+
+      // ✅ MANEJAR RESULTADOS CON VERIFICACIÓN DE ERRORES
+      const todasLecciones = leccionesResult.data || [];
+      const todosTutoriales = tutorialesResult.data || [];
+      const todasSesiones = simuladorResult.data || [];
+      const todasSesionesUsuario = sesionesResult.data || [];
+
+      // 🔍 VERIFICAR SI HAY ERRORES EN LAS CONSULTAS
+      if (leccionesResult.error) {
+        console.warn('⚠️ [SIMULADOR] Error en consulta de lecciones:', leccionesResult.error);
+      }
+      if (tutorialesResult.error) {
+        console.warn('⚠️ [SIMULADOR] Error en consulta de tutoriales:', tutorialesResult.error);
+      }
+      if (simuladorResult.error) {
+        console.warn('⚠️ [SIMULADOR] Error en consulta de simulador:', simuladorResult.error);
+      }
+      if (sesionesResult.error) {
+        console.warn('⚠️ [SIMULADOR] Error en consulta de sesiones:', sesionesResult.error);
+      }
+
+      // 🔍 DIAGNÓSTICO: Ver valores exactos en la base de datos
+      console.log('🔍 [SIMULADOR] Valores RAW en la base de datos:', {
+        lecciones: todasLecciones.length > 0 ? todasLecciones[0].tiempo_total : 'Sin datos',
+        tutoriales: todosTutoriales.length > 0 ? todosTutoriales[0].tiempo_visto : 'Sin datos',
+        simulador: todasSesiones.length > 0 ? todasSesiones[0].duracion_minutos : 'Sin datos',
+        sesiones: todasSesionesUsuario.length > 0 ? todasSesionesUsuario[0].tiempo_total_minutos : 'Sin datos'
+      });
+
+      // 🎯 DETERMINAR UNIDADES CORRECTAS
+      let totalLecciones = 0;
+      let totalTutoriales = 0;
+      
+      if (todasLecciones.length > 0) {
+        const primerValor = todasLecciones[0].tiempo_total;
+        if (primerValor > 1000000) {
+          // Si es muy grande, probablemente en milisegundos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_total || 0) / 60000), 0);
+          console.log('🔍 [SIMULADOR] Lecciones: Valores en MILISEGUNDOS, convirtiendo a minutos');
+        } else if (primerValor > 1000) {
+          // Si es mediano, probablemente en segundos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_total || 0) / 60), 0);
+          console.log('🔍 [SIMULADOR] Lecciones: Valores en SEGUNDOS, convirtiendo a minutos');
+        } else {
+          // Si es pequeño, probablemente ya en minutos
+          totalLecciones = todasLecciones.reduce((sum: number, item: any) => 
+            sum + (item.tiempo_total || 0), 0);
+          console.log('🔍 [SIMULADOR] Lecciones: Valores ya en MINUTOS');
+        }
+      }
+      
+      if (todosTutoriales.length > 0) {
+        const primerValor = todosTutoriales[0].tiempo_visto;
+        if (primerValor > 1000000) {
+          // Si es muy grande, probablemente en milisegundos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_visto || 0) / 60000), 0);
+          console.log('🔍 [SIMULADOR] Tutoriales: Valores en MILISEGUNDOS, convirtiendo a minutos');
+        } else if (primerValor > 1000) {
+          // Si es mediano, probablemente en segundos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + ((item.tiempo_visto || 0) / 60), 0);
+          console.log('🔍 [SIMULADOR] Tutoriales: Valores en SEGUNDOS, convirtiendo a minutos');
+        } else {
+          // Si es pequeño, probablemente ya en minutos
+          totalTutoriales = todosTutoriales.reduce((sum: number, item: any) => 
+            sum + (item.tiempo_visto || 0), 0);
+          console.log('🔍 [SIMULADOR] Tutoriales: Valores ya en MINUTOS');
+        }
+      }
+      
+      const totalSimulador = todasSesiones.reduce((sum: number, item: any) => 
+        sum + (item.duracion_minutos || 0), 0); // Ya está en minutos ✅
+      
+      // ✅ USAR tiempo_total_minutos PERO LIMITADO a valores realistas
+      let totalSesiones = 0;
+      if (todasSesionesUsuario.length > 0) {
+        // 🎯 LIMITAR a máximo 8 horas por día (480 minutos)
+        totalSesiones = todasSesionesUsuario.reduce((sum: number, item: any) => {
+          const tiempo = item.tiempo_total_minutos || 0;
+          // ✅ Solo usar valores realistas (< 480 minutos = 8 horas)
+          return sum + (tiempo < 480 ? tiempo : 0);
+        }, 0);
+        
+        if (totalSesiones > 0) {
+          console.log('🔍 [SIMULADOR] Sesiones: Usando tiempo limitado a valores realistas');
+        }
+      }
+      
+      // ✅ CALCULAR TIEMPO REAL BASADO EN ACTIVIDAD REAL
+      const tiempoReal = totalLecciones + totalTutoriales + totalSimulador;
+      
+      // 🎯 COMBINAR tiempo real + sesiones limitadas
+      const tiempoCombinado = Math.max(tiempoReal, totalSesiones);
+      
+      // 🎯 Si no hay tiempo registrado, calcular basado en actividad reciente
+      if (tiempoCombinado === 0) {
+        // Buscar actividad reciente para estimar tiempo
+        const { data: actividadReciente } = await supabase
+          .from('eventos_actividad')
+          .select('created_at, tipo_evento')
+          .eq('usuario_id', usuarioId)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Últimos 7 días
+          .order('created_at', { ascending: false });
+        
+        if (actividadReciente && actividadReciente.length > 0) {
+          // Estimar tiempo basado en actividad: 5 minutos por evento
+          const tiempoEstimado = Math.min(actividadReciente.length * 5, 120); // Máximo 2 horas
+          console.log('🎯 [SIMULADOR] Estimando tiempo basado en actividad reciente:', tiempoEstimado, 'min');
+          return tiempoEstimado;
+        }
+      }
+
+      // 🎯 PRIORIDAD: Usar tiempo combinado (real + sesiones limitadas)
+      console.log('⏱️ [SIMULADOR] Tiempo combinado inteligente:', {
+        lecciones: totalLecciones.toFixed(2) + ' min',
+        tutoriales: totalTutoriales.toFixed(2) + ' min', 
+        simulador: totalSimulador + ' min',
+        sesionesLimitadas: totalSesiones + ' min',
+        tiempoReal: tiempoReal.toFixed(2) + ' min',
+        tiempoCombinado: tiempoCombinado.toFixed(2) + ' min',
+        nota: 'Combinando tiempo real + sesiones limitadas a valores realistas'
+      });
+
+      return Math.round(tiempoCombinado); // Redondear a minutos enteros
+
+    } catch (error) {
+      console.error('❌ [SIMULADOR] Error calculando tiempo histórico:', error);
+      return 0;
+    }
+  }
 
   // 🔄 Rotar características automáticamente
   setInterval(() => {
     caracteristicaActiva = (caracteristicaActiva + 1) % caracteristicas.length;
   }, 3000);
+
+  // 🚀 CARGAR ESTADÍSTICAS AL MONTAR
+  onMount(() => {
+    cargarEstadisticasReales();
+  });
 
   // 🎮 Ir al simulador actual
   function explorarSimulador() {
@@ -100,6 +348,39 @@
         </div>
       {/each}
     </div>
+  </div>
+
+  <!-- 📊 ESTADÍSTICAS GAMING - CON SKELETON LOADER -->
+  <div class="estadisticas-gaming">
+    <h4 class="estadisticas-titulo">📊 Estadísticas Gaming</h4>
+    
+    {#if cargandoEstadisticas}
+      <!-- ⚡ SKELETON LOADER PARA ESTADÍSTICAS -->
+      <div class="estadisticas-skeleton">
+        {#each estadisticasPorDefecto as stat}
+          <div class="stat-skeleton">
+            <div class="stat-icon-skeleton"></div>
+            <div class="stat-content-skeleton">
+              <div class="stat-valor-skeleton"></div>
+              <div class="stat-label-skeleton"></div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <!-- ✅ ESTADÍSTICAS REALES -->
+      <div class="estadisticas-grid">
+        {#each (estadisticasReales.length > 0 ? estadisticasReales : estadisticasPorDefecto) as stat}
+          <div class="stat-item">
+            <span class="stat-icon">{stat.icono}</span>
+            <div class="stat-info">
+              <span class="stat-valor">{stat.valor}</span>
+              <span class="stat-label">{stat.label}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 
   <!-- 📋 Resumen de beneficios -->
@@ -303,6 +584,18 @@
     text-overflow: ellipsis;
   }
 
+  /* 📊 ESTADÍSTICAS GAMING */
+  .estadisticas-gaming {
+    margin-bottom: 8px;
+  }
+
+  .estadisticas-titulo {
+    margin: 0 0 8px 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+
   /* 📋 BENEFICIOS RESUMEN */
   .beneficios-resumen {
     display: flex;
@@ -331,6 +624,98 @@
     font-size: 0.6rem;
     font-weight: 600;
     opacity: 0.8;
+  }
+
+  /* 📊 SKELETON LOADER */
+  .estadisticas-skeleton {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .stat-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .stat-icon-skeleton {
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+  }
+
+  .stat-content-skeleton {
+    flex: 1;
+  }
+
+  .stat-valor-skeleton {
+    width: 40%;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+
+  .stat-label-skeleton {
+    width: 60%;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  /* ✅ ESTADÍSTICAS REALES */
+  .estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .stat-icon {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-valor {
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    opacity: 0.8;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
   /* 🎮 BOTÓN DE EXPLORACIÓN */

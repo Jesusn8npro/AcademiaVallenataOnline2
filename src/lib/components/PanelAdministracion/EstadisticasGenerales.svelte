@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { LimpiadorDatosCorruptos } from '$lib/utils/limpiarDatosCorruptos';
+
   export let datos: any = null;
 
   // Estado para el modal de inscripciones
   let mostrarModalInscripciones = false;
+  
+  // Estado para limpieza de datos corruptos
+  let limpiandoDatos = false;
+  let mensajeLimpieza = '';
 
   // Formatear números grandes
   function formatearNumero(num: number): string {
@@ -50,6 +56,35 @@
 
   function irAPagos() {
     window.location.href = '/administrador/pagos';
+  }
+
+  // 🧹 LIMPIAR DATOS CORRUPTOS DE TIEMPO
+  async function limpiarDatosCorruptos() {
+    if (!confirm('🧹 ¿Estás seguro de que quieres limpiar los datos corruptos de tiempo?\n\nEsto reseteará valores imposibles (> 16.6 horas) a 0.')) {
+      return;
+    }
+    
+    try {
+      limpiandoDatos = true;
+      mensajeLimpieza = '🧹 Limpiando datos corruptos...';
+      
+      const resultado = await LimpiadorDatosCorruptos.ejecutarLimpiezaCompleta();
+      
+      if (resultado.exito) {
+        mensajeLimpieza = resultado.mensaje;
+        alert(`✅ LIMPIEZA COMPLETADA\n\n${resultado.mensaje}\n\nLos valores de tiempo ahora serán realistas.`);
+      } else {
+        mensajeLimpieza = resultado.mensaje;
+        alert(`❌ ERROR EN LIMPIEZA\n\n${resultado.mensaje}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error limpiando datos corruptos:', error);
+      mensajeLimpieza = `❌ Error inesperado: ${error}`;
+      alert(`❌ ERROR INESPERADO\n\n${error}`);
+    } finally {
+      limpiandoDatos = false;
+    }
   }
 
   // 💎 Gestionar usuarios premium y membresías
@@ -200,6 +235,24 @@
           <i class="fas fa-arrow-right"></i>
         </div>
         <div class="fondo-decorativo ventas-bg"></div>
+      </div>
+
+      <div class="estadistica-card">
+        <div class="estadistica-icon">🧹</div>
+        <div class="estadistica-info">
+          <h3>Limpiar Datos Corruptos</h3>
+          <p>Resetear valores imposibles de tiempo</p>
+          <button 
+            class="btn-limpieza" 
+            on:click={limpiarDatosCorruptos}
+            disabled={limpiandoDatos}
+          >
+            {limpiandoDatos ? '🧹 Limpiando...' : '🧹 Limpiar Ahora'}
+          </button>
+          {#if mensajeLimpieza}
+            <p class="mensaje-limpieza">{mensajeLimpieza}</p>
+          {/if}
+        </div>
       </div>
 
     </div>
@@ -564,5 +617,37 @@
     .encabezado-seccion h2 {
       font-size: 1.25rem;
     }
+  }
+
+  /* 🧹 BOTÓN DE LIMPIEZA */
+  .btn-limpieza {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .btn-limpieza:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+  }
+
+  .btn-limpieza:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .mensaje-limpieza {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
   }
 </style> 

@@ -57,12 +57,23 @@
       
       if (esInicioSesion || esPanelAdmin || esPrimeraCargaDia) {
         console.log('🌍 [GEO-SMART] Ejecutando rastreo inteligente...');
-        await servicioGeoEspanol.rastreoCompleto();
         
-        // Marcar como rastreado hoy
-        sessionStorage.setItem(cacheKey, 'true');
-        sessionStorage.setItem('geo_today', hoy);
-        sessionStorage.removeItem('nueva_sesion'); // Limpiar flag
+        // ⚡ EJECUTAR EN SEGUNDO PLANO SIN BLOQUEAR
+        setTimeout(async () => {
+          try {
+            await servicioGeoEspanol.rastreoCompleto();
+            
+            // Marcar como rastreado hoy
+            sessionStorage.setItem(cacheKey, 'true');
+            sessionStorage.setItem('geo_today', hoy);
+            sessionStorage.removeItem('nueva_sesion'); // Limpiar flag
+            
+            console.log('✅ [GEO-SMART] Rastreo completado en segundo plano');
+          } catch (error) {
+            console.warn('⚠️ [GEO-SMART] Error en rastreo en segundo plano:', error);
+          }
+        }, 100); // 100ms después para no bloquear
+        
       }
     } catch (error) {
       console.warn('⚠️ [GEO-SMART] Error en rastreo inteligente:', error);
@@ -74,6 +85,7 @@
   
   // 🕒 Tracking de tiempo por página - SIMPLIFICADO
   $: if (browser && $page.url.pathname && $usuario) {
+    // ⚡ TRACKING INMEDIATO SIN BLOQUEAR
     TiempoService.iniciarTiempoPagina($page.url.pathname);
     trackingRealService.cambiarPagina($page.url.pathname);
     
@@ -82,8 +94,11 @@
     
     // 🔥 TRACKING ADMIN - solo cuando esté en panel admin
     if ($page.url.pathname.includes('/panel-administracion')) {
-      registrarActividadAdmin();
-      iniciarHeartbeatAdmin();
+      // ⚡ EJECUTAR EN SEGUNDO PLANO
+      setTimeout(() => {
+        registrarActividadAdmin();
+        iniciarHeartbeatAdmin();
+      }, 50); // 50ms después para no bloquear
     } else {
       detenerHeartbeatAdmin();
     }
@@ -211,7 +226,7 @@
             pagina_actual: rutaActual,
             esta_activo: true,
             tiempo_sesion_actual: tiempoSesionActual,
-            tiempo_total_minutos: tiempoTotalAcumulado + Math.floor(tiempoSesionActual / 5), // ✅ Incrementar gradualmente
+            tiempo_total_minutos: tiempoTotalAcumulado + Math.min(Math.floor(tiempoSesionActual / 10), 1), // ✅ Máximo 1 minuto por 10 minutos de sesión
             sesiones_totales: sesionesTotales,
             updated_at: ahora
           }, {
@@ -221,7 +236,14 @@
         if (upsertError) {
           console.warn('⚠️ [SESIONES] Error upsert:', upsertError.message);
         } else {
-          console.log('✅ [SESIONES] Sesión actualizada para:', $usuario.nombre);
+          const incrementoTiempo = Math.min(Math.floor(tiempoSesionActual / 10), 1);
+          console.log('✅ [SESIONES] Sesión actualizada para:', $usuario.nombre, {
+            tiempoAcumulado: tiempoTotalAcumulado,
+            tiempoSesion: tiempoSesionActual,
+            incremento: incrementoTiempo,
+            tiempoTotal: tiempoTotalAcumulado + incrementoTiempo,
+            razon: '1 min por 10 min de sesión (conservador)'
+          });
         }
       } catch (sessionError) {
         console.warn('⚠️ [SESIONES] Error:', sessionError);

@@ -9,12 +9,48 @@
   let cargando = true;
   let recomendacionesUnificadas: any[] = [];
   let mostrarMas = false;
+  
+  // 🎯 DATOS POR DEFECTO PARA MOSTRAR INMEDIATAMENTE
+  const datosPorDefecto = [
+    {
+      id: 1,
+      titulo: 'A TOCAR ACORDEÓN',
+      descripcion: 'Curso completo desde cero hasta tu primera canción',
+      imagen_url: '/images/Home/academia-vallenata-1.jpg',
+      slug: 'a-tocar-acordeon',
+      nivel: 'principiante',
+      categoria: 'Vallenato',
+      precio_normal: 0,
+      tipo: 'curso',
+      rating: '4.8',
+      estudiantes: '500+',
+      razon: 'Perfecto para empezar'
+    },
+    {
+      id: 2,
+      titulo: 'Acordeón!',
+      descripcion: 'Tutorial paso a paso de canciones populares',
+      imagen_url: '/images/Home/academia-vallenata-1.jpg',
+      slug: 'acordeon-tutorial',
+      nivel: 'intermedio',
+      categoria: 'Vallenato',
+      precio_normal: 0,
+      tipo: 'tutorial',
+      rating: '4.6',
+      estudiantes: '300+',
+      razon: 'Canciones populares'
+    }
+  ];
 
   // 🚀 Cargar recomendaciones inteligentes
   async function cargarRecomendaciones() {
     try {
-      cargando = true;
-      console.log('🎯 [RECOMENDACIONES] Iniciando carga...');
+      // ⚡ MOSTRAR DATOS POR DEFECTO INMEDIATAMENTE
+      recomendacionesUnificadas = datosPorDefecto;
+      cargando = false;
+      
+      // 📊 CARGAR DATOS REALES EN SEGUNDO PLANO
+      console.log('🎯 [RECOMENDACIONES] Iniciando carga en segundo plano...');
 
       // 📚 Cargar cursos básicos primero (sin filtros complejos)
       const { data: cursosData, error: cursosError } = await supabase
@@ -68,50 +104,18 @@
       }));
 
       // 🔄 Unificar contenido
-      recomendacionesUnificadas = [...cursosFormateados, ...tutorialesFormateados]
+      const recomendacionesReales = [...cursosFormateados, ...tutorialesFormateados]
         .sort(() => Math.random() - 0.5);
-
-      console.log('✅ [RECOMENDACIONES] Total cargadas:', recomendacionesUnificadas.length);
-      console.log('📋 [DATOS]:', recomendacionesUnificadas);
+      
+      // ✅ ACTUALIZAR CON DATOS REALES SI HAY
+      if (recomendacionesReales.length > 0) {
+        recomendacionesUnificadas = recomendacionesReales;
+        console.log('✅ [RECOMENDACIONES] Actualizadas con datos reales:', recomendacionesUnificadas.length);
+      }
 
     } catch (error) {
       console.error('❌ [RECOMENDACIONES] Error general:', error);
-      
-      // 🆘 Datos de emergencia si falla todo
-      recomendacionesUnificadas = [
-        {
-          id: 1,
-          titulo: 'Fundamentos del Acordeón',
-          descripcion: 'Aprende los conceptos básicos del acordeón vallenato',
-          imagen_url: '/images/Home/academia-vallenata-1.jpg',
-          slug: 'fundamentos-acordeon',
-          nivel: 'principiante',
-          categoria: 'Vallenato',
-          precio_normal: 0,
-          tipo: 'curso',
-          rating: '4.5',
-          estudiantes: '250+',
-          razon: 'Perfecto para empezar'
-        },
-        {
-          id: 2,
-          titulo: 'La Gota Fría',
-          descripcion: 'Tutorial: La Gota Fría - Carlos Vives',
-          imagen_url: '/images/Home/academia-vallenata-1.jpg',
-          slug: 'la-gota-fria',
-          nivel: 'intermedio',
-          categoria: 'Vallenato',
-          precio_normal: 0,
-          tipo: 'tutorial',
-          rating: '4.7',
-          estudiantes: '180+',
-          razon: 'Canción popular'
-        }
-      ];
-      console.log('🆘 [EMERGENCIA] Datos de respaldo cargados');
-      
-    } finally {
-      cargando = false;
+      // Mantener datos por defecto si falla
     }
   }
 

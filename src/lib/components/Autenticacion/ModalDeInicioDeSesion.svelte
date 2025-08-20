@@ -69,133 +69,121 @@
     e.stopPropagation();
   }
 
+  // 🔄 FUNCIÓN DE LOGIN OPTIMIZADA - REDIRECCIÓN INMEDIATA
   async function manejarLogin(e: Event) {
     e.preventDefault();
     errorLogin = '';
     cargando = true;
-    const { usuario: usuarioSesion, error } = await iniciarSesionConCorreo(usuario, contrasena);
-    cargando = false;
-    if (error) {
-      errorLogin = error;
-      return;
-    }
-    // Obtener el perfil para saber el rol
-    let perfil = null;
-    let errorPerfil = null;
-    if (usuarioSesion && usuarioSesion.id) {
-      const resultadoPerfil = await obtenerPerfil(usuarioSesion.id);
-      perfil = resultadoPerfil.perfil;
-      errorPerfil = resultadoPerfil.error;
-    }
-    if (perfil && !errorPerfil) {
-      setUsuario(perfil); // Guardar usuario global
+    
+    try {
+      console.log('🚀 [LOGIN] Iniciando autenticación para:', usuario);
       
-      // 🚀 REGISTRAR ACTIVIDAD DE LOGIN
-      try {
-        const ahora = new Date().toISOString();
-        
-        // Actualizar timestamp en perfiles
-        await supabase
-          .from('perfiles')
-          .update({ updated_at: ahora })
-          .eq('id', perfil.id);
-        
-        // 🔥 CONSULTAR TIEMPO HISTÓRICO TOTAL DEL USUARIO
-        let tiempoHistoricoTotal = 0;
-        let sesionesTotalesHistoricas = 0;
-        
-        // Sumar TODAS las sesiones anteriores del usuario
-        const { data: sesionesAnteriores } = await supabase
-          .from('sesiones_usuario')
-          .select('tiempo_total_minutos, sesiones_totales')
-          .eq('usuario_id', perfil.id)
-          .neq('fecha', ahora.split('T')[0]); // Todas las fechas ANTERIORES
-        
-        if (sesionesAnteriores && sesionesAnteriores.length > 0) {
-          // Sumar tiempo total histórico
-          tiempoHistoricoTotal = sesionesAnteriores.reduce((total: number, sesion: any) => {
-            return total + (sesion.tiempo_total_minutos || 0);
-          }, 0);
-          
-          // Sumar sesiones totales históricas
-          sesionesTotalesHistoricas = sesionesAnteriores.reduce((total: number, sesion: any) => {
-            return total + (sesion.sesiones_totales || 0);
-          }, 0);
-          
-          console.log('📊 [LOGIN] Tiempo histórico encontrado:', tiempoHistoricoTotal, 'min de', sesionesAnteriores.length, 'días');
-        }
-        
-        // Verificar si ya existe sesión HOY
-        const { data: sesionHoy } = await supabase
-          .from('sesiones_usuario')
-          .select('tiempo_total_minutos, sesiones_totales, esta_activo')
-          .eq('usuario_id', perfil.id)
-          .eq('fecha', ahora.split('T')[0])
-          .single();
-        
-        let tiempoTotalFinal = tiempoHistoricoTotal + 1; // +1 min por esta sesión
-        let sesionesTotalesFinal = sesionesTotalesHistoricas + 1;
-        
-        if (sesionHoy) {
-          // Si ya hay sesión hoy, preservar el tiempo de hoy y sumar al histórico
-          tiempoTotalFinal = tiempoHistoricoTotal + (sesionHoy.tiempo_total_minutos || 0) + 1;
-          
-          // Solo incrementar sesiones si estaba inactivo
-          if (!sesionHoy.esta_activo) {
-            sesionesTotalesFinal = sesionesTotalesHistoricas + (sesionHoy.sesiones_totales || 0) + 1;
-          } else {
-            sesionesTotalesFinal = sesionesTotalesHistoricas + (sesionHoy.sesiones_totales || 0);
-          }
-          
-          console.log('📊 [LOGIN] Reanudando sesión. Tiempo total:', tiempoTotalFinal, 'min');
-        } else {
-          console.log('📊 [LOGIN] Nueva sesión del día. Tiempo total:', tiempoTotalFinal, 'min');
-        }
-
-        // Crear/actualizar sesión con tiempo acumulado REAL
-        await supabase
-          .from('sesiones_usuario')
-          .upsert({
-            usuario_id: perfil.id,
-            fecha: ahora.split('T')[0],
-            ultima_actividad: ahora,
-            pagina_actual: window.location.pathname,
-            esta_activo: true,
-            tiempo_sesion_actual: 1,
-            tiempo_total_minutos: tiempoTotalFinal, // ✅ TIEMPO HISTÓRICO TOTAL
-            sesiones_totales: sesionesTotalesFinal, // ✅ SESIONES HISTÓRICAS TOTALES
-            updated_at: ahora
-          }, {
-            onConflict: 'usuario_id,fecha'
-          });
-        
-        // Inicializar tracking si está disponible
-        await actividadService.inicializarTracking(perfil.id, window.location.pathname);
-        console.log('✅ [LOGIN] Sesión y actividad registrada para:', perfil.nombre);
-
-        // 🌍 TRACKING DE GEOLOCALIZACIÓN AUTOMÁTICO
-        try {
-          console.log('🌍 [AUTH] Iniciando tracking de geolocalización...');
-          const datosGeo = await trackearUbicacionUsuario(perfil.id);
-          if (datosGeo) {
-            console.log(`✅ [AUTH] Ubicación detectada: ${datosGeo.ciudad}, ${datosGeo.pais} (${datosGeo.ip})`);
-          }
-        } catch (geoError) {
-          console.warn('⚠️ [AUTH] Error en geolocalización (no crítico):', geoError);
-          // No interrumpir el login por errores de geolocalización
-        }
-
-      } catch (error) {
-        console.warn('⚠️ [LOGIN] Error registrando actividad:', error);
+      // 1️⃣ AUTENTICACIÓN BÁSICA (SOLO LO ESENCIAL)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: usuario,
+        password: contrasena
+      });
+      
+      if (error) {
+        console.error('❌ [LOGIN] Error de autenticación:', error);
+        errorLogin = error.message;
+        cargando = false;
+        return;
       }
       
+      if (!data.user) {
+        console.error('❌ [LOGIN] No se obtuvo usuario');
+        errorLogin = 'Error en la autenticación';
+        cargando = false;
+        return;
+      }
+      
+      console.log('✅ [LOGIN] Usuario autenticado:', data.user.email);
+      
+      // 2️⃣ OBTENER PERFIL BÁSICO (SOLO LO NECESARIO PARA REDIRIGIR)
+      const { data: perfilData, error: perfilError } = await supabase
+        .from('perfiles')
+        .select('id, nombre, apellido, rol, correo_electronico')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (perfilError) {
+        console.error('❌ [LOGIN] Error obteniendo perfil:', perfilError);
+        errorLogin = 'Error obteniendo perfil de usuario';
+        cargando = false;
+        return;
+      }
+      
+      if (!perfilData) {
+        console.error('❌ [LOGIN] No se encontró perfil');
+        errorLogin = 'Perfil de usuario no encontrado';
+        cargando = false;
+        return;
+      }
+      
+      console.log('✅ [LOGIN] Perfil obtenido:', perfilData.nombre);
+      
+      // 3️⃣ GUARDAR USUARIO EN STORE (INMEDIATO)
+      const usuarioCompleto = {
+        id: perfilData.id,
+        nombre: perfilData.nombre,
+        apellido: perfilData.apellido,
+        rol: perfilData.rol,
+        correo_electronico: perfilData.correo_electronico
+      };
+      
+      setUsuario(usuarioCompleto);
+      console.log('✅ [LOGIN] Usuario guardado en store');
+      
+      // 4️⃣ REDIRECCIÓN INMEDIATA (SIN ESPERAR OPERACIONES LENTAS)
       cerrarModal();
-      // Redirección explícita según el rol
-      if (perfil.rol && perfil.rol.toLowerCase() === 'admin') {
+      cargando = false;
+      
+      // 🚀 REDIRECCIÓN INMEDIATA SEGÚN ROL
+      if (perfilData.rol && perfilData.rol.toLowerCase() === 'admin') {
+        console.log('🚀 [LOGIN] Redirigiendo a panel admin INMEDIATAMENTE');
         goto('/panel-administracion');
       } else {
+        console.log('🚀 [LOGIN] Redirigiendo a panel estudiante INMEDIATAMENTE');
         goto('/panel-estudiante');
       }
+      
+      // 5️⃣ CARGAR DATOS EN SEGUNDO PLANO (SIN BLOQUEAR)
+      setTimeout(async () => {
+        try {
+          console.log('📊 [LOGIN-BG] Cargando datos en segundo plano...');
+          
+          // Actualizar timestamp de actividad
+          const ahora = new Date().toISOString();
+          await supabase
+            .from('perfiles')
+            .update({ updated_at: ahora })
+            .eq('id', perfilData.id);
+          
+          // Inicializar tracking de actividad
+          await actividadService.inicializarTracking(perfilData.id, window.location.pathname);
+          
+          // Tracking de geolocalización
+          try {
+            const datosGeo = await trackearUbicacionUsuario(perfilData.id);
+            if (datosGeo) {
+              console.log(`🌍 [LOGIN-BG] Ubicación detectada: ${datosGeo.ciudad}, ${datosGeo.pais}`);
+            }
+          } catch (geoError) {
+            console.warn('⚠️ [LOGIN-BG] Error en geolocalización (no crítico):', geoError);
+          }
+          
+          console.log('✅ [LOGIN-BG] Datos cargados en segundo plano');
+          
+        } catch (error) {
+          console.warn('⚠️ [LOGIN-BG] Error cargando datos en segundo plano:', error);
+        }
+      }, 100); // 100ms después de la redirección
+      
+    } catch (error) {
+      console.error('❌ [LOGIN] Error general:', error);
+      errorLogin = 'Error inesperado durante el login';
+      cargando = false;
     }
   }
 

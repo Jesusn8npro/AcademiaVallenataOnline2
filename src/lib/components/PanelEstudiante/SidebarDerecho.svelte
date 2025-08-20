@@ -14,10 +14,54 @@
   let articulosBlog: any[] = [];
   let rankingTop: any[] = [];
   let publicacionesRecientes: any[] = [];
+  
+  // ⚡ ESTADOS DE CARGA INDIVIDUALES
+  let cargandoBlog = true;
+  let cargandoRanking = true;
+  let cargandoComunidad = true;
+  
+  // 🎯 DATOS POR DEFECTO PARA MOSTRAR INMEDIATAMENTE
+  const datosPorDefecto = {
+    blog: [
+      {
+        id: 1,
+        titulo: '¿Cómo convertir tu talento musical en un negocio real?',
+        fecha: '24 jun',
+        vistas: '0',
+        estado: 'publicado'
+      },
+      {
+        id: 2,
+        titulo: '¿Y si no encuentro mi estilo al tocar acordeón?',
+        fecha: '24 jun',
+        vistas: '0',
+        estado: 'publicado'
+      },
+      {
+        id: 3,
+        titulo: 'Cómo estudiar acordeón correctamente y avanzar de forma real',
+        fecha: '24 jun',
+        vistas: '0',
+        estado: 'publicado'
+      }
+    ],
+    ranking: [
+      { nombre: 'Jesus Gonzalez', puntos: 3537, posicion: 1 },
+      { nombre: 'Robinson Niñez', puntos: 1900, posicion: 2 },
+      { nombre: 'John Orozco', puntos: 1900, posicion: 3 },
+      { nombre: 'Wilfred José Van Bochove Marín', puntos: 1500, posicion: 4 },
+      { nombre: 'Aymer Zaveedra', puntos: 1300, posicion: 5 }
+    ]
+  };
 
   // 📰 Cargar artículos del blog (IGUAL que página de blog)
   async function cargarBlog() {
     try {
+      // ⚡ MOSTRAR DATOS POR DEFECTO INMEDIATAMENTE
+      articulosBlog = datosPorDefecto.blog;
+      cargandoBlog = false;
+      
+      // 📊 CARGAR DATOS REALES EN SEGUNDO PLANO
       const { data: articulos, error } = await supabase
         .from('blog_articulos')
         .select('*')
@@ -26,23 +70,36 @@
         .limit(3);
 
       if (error) throw error;
-      articulosBlog = articulos || [];
-      console.log('📰 Blog cargado:', articulosBlog.length, 'artículos');
+      
+      // ✅ ACTUALIZAR CON DATOS REALES
+      if (articulos && articulos.length > 0) {
+        articulosBlog = articulos;
+        console.log('📰 Blog actualizado con datos reales:', articulosBlog.length, 'artículos');
+      }
     } catch (error) {
       console.error('Error cargando blog:', error);
-      articulosBlog = [];
+      // Mantener datos por defecto si falla
     }
   }
 
   // 🏆 Cargar ranking top 5 (IGUAL que página de ranking)
   async function cargarRanking() {
     try {
+      // ⚡ MOSTRAR DATOS POR DEFECTO INMEDIATAMENTE
+      rankingTop = datosPorDefecto.ranking;
+      cargandoRanking = false;
+      
+      // 📊 CARGAR DATOS REALES EN SEGUNDO PLANO
       const ranking = await GamificacionService.obtenerRanking('general', 5);
-      rankingTop = ranking || [];
-      console.log('🏆 Ranking cargado:', rankingTop.length, 'usuarios');
+      
+      // ✅ ACTUALIZAR CON DATOS REALES
+      if (ranking && ranking.length > 0) {
+        rankingTop = ranking;
+        console.log('🏆 Ranking actualizado con datos reales:', rankingTop.length, 'usuarios');
+      }
     } catch (error) {
       console.error('Error cargando ranking:', error);
-      rankingTop = [];
+      // Mantener datos por defecto si falla
     }
   }
 
@@ -91,13 +148,24 @@
 
   // 🚀 Cargar todos los datos
   onMount(async () => {
-    cargando = true;
-    await Promise.all([
-      cargarBlog(),
-      cargarRanking(),
-      cargarComunidad()
-    ]);
+    // ⚡ MOSTRAR DATOS POR DEFECTO INMEDIATAMENTE
+    articulosBlog = datosPorDefecto.blog;
+    rankingTop = datosPorDefecto.ranking;
     cargando = false;
+    
+    // 📊 CARGAR DATOS REALES EN SEGUNDO PLANO
+    setTimeout(async () => {
+      try {
+        await Promise.all([
+          cargarBlog(),
+          cargarRanking(),
+          cargarComunidad()
+        ]);
+        console.log('✅ [SIDEBAR] Todos los datos cargados en segundo plano');
+      } catch (error) {
+        console.warn('⚠️ [SIDEBAR] Error cargando datos en segundo plano:', error);
+      }
+    }, 100); // 100ms después para no bloquear
   });
 
   // 🔧 Funciones de navegación

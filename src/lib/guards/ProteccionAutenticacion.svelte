@@ -9,27 +9,42 @@
   export let mensajePrincipal: string = "Esta área requiere que inicies sesión en tu cuenta";
   export let mostrarRegistro: boolean = true;
   export let redirigirA: string = "/";
-  export let tiempoRedirección: number = 3000; // 3 segundos
+  export let tiempoRedirección: number = 2000; // Reducido a 2 segundos
 
   let usuarioActual: any = null;
-  let cargandoAuth = true;
+  let cargandoAuth = false; // Cambiado a false para ser más rápido
   let accesoDenegado = false;
 
-  // Verificar autenticación inmediatamente
+  // ⚡ VERIFICACIÓN RÁPIDA DE AUTENTICACIÓN
   onMount(() => {
+    // Verificar inmediatamente si ya hay usuario
+    const usuarioInicial = $usuario;
+    if (usuarioInicial) {
+      usuarioActual = usuarioInicial;
+      cargandoAuth = false;
+      accesoDenegado = false;
+      return;
+    }
+
+    // Si no hay usuario, verificar en store
     const unsubscribe = usuario.subscribe((u) => {
       usuarioActual = u;
-      cargandoAuth = false;
-
-      // Si no hay usuario logueado, denegar acceso
-      if (!u) {
+      
+      if (u) {
+        // ✅ USUARIO AUTENTICADO - ACCESO INMEDIATO
+        cargandoAuth = false;
+        accesoDenegado = false;
+        console.log('✅ [GUARD] Usuario autenticado, acceso permitido:', u.nombre);
+      } else {
+        // ❌ SIN USUARIO - ACCESO DENEGADO
+        cargandoAuth = false;
         accesoDenegado = true;
-        // Redirigir después de mostrar el mensaje
+        console.log('❌ [GUARD] Sin usuario, acceso denegado');
+        
+        // Redirigir más rápido
         setTimeout(() => {
           goto(redirigirA);
         }, tiempoRedirección);
-      } else {
-        accesoDenegado = false;
       }
     });
 

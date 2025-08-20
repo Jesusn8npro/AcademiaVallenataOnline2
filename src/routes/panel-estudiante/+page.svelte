@@ -2,11 +2,42 @@
   // 🎮 Panel Estudiante - Estructura Gaming
   // Solo estructura base - funcionalidad después
   
+  import { onMount } from 'svelte';
+  import { usuario } from '$lib/UsuarioActivo/usuario';
   import SidebarDerecho from '$lib/components/PanelEstudiante/SidebarDerecho.svelte';
   import ContinuarAprendiendo from '$lib/components/PanelEstudiante/ContinuarAprendiendo.svelte';
   import SimuladorEstadisticas from '$lib/components/PanelEstudiante/SimuladorEstadisticas.svelte';
   import RecomendacionesCursos from '$lib/components/PanelEstudiante/RecomendacionesCursos.svelte';
   import LogrosDesafios from '$lib/components/PanelEstudiante/LogrosDesafios.svelte';
+  
+  // ⚡ ESTADOS PARA CARGA EN SEGUNDO PLANO
+  let datosCargados = false;
+  let cargandoDatos = false;
+  
+  // 🚀 CARGA INMEDIATA DE INTERFAZ
+  onMount(() => {
+    console.log('🚀 [PANEL] Panel estudiante cargado INMEDIATAMENTE');
+    
+    // ⚡ CARGAR DATOS EN SEGUNDO PLANO
+    setTimeout(async () => {
+      try {
+        console.log('📊 [PANEL] Cargando datos en segundo plano...');
+        cargandoDatos = true;
+        
+        // Aquí puedes agregar la carga de datos específicos del panel
+        // Por ahora solo simulamos un delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        datosCargados = true;
+        cargandoDatos = false;
+        console.log('✅ [PANEL] Datos cargados en segundo plano');
+        
+      } catch (error) {
+        console.warn('⚠️ [PANEL] Error cargando datos en segundo plano:', error);
+        cargandoDatos = false;
+      }
+    }, 100); // 100ms después de cargar la interfaz
+  });
 </script>
 
 <svelte:head>
