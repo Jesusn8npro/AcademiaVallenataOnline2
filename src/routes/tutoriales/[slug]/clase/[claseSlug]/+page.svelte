@@ -87,12 +87,18 @@ function cambiarLeccion(event: any) {
         const { data } = await import('$lib/services/progresoService').then(m => m.obtenerProgresoLeccion(clase.id));
         completada = !!(data && data.completada);
       } else {
-        const { data } = await import('$lib/services/progresoTutorialService').then(m => m.obtenerProgresoTutorialDeParte(clase.id));
-        completada = !!(data && data.completada);
+        try {
+          const { data } = await import('$lib/services/progresoTutorialService').then(m => m.obtenerProgresoTutorialDeParte(clase.id));
+          completada = !!(data && data.completada);
+        } catch (error) {
+          console.warn('[TUTORIAL] Error al obtener progreso de parte, usando valor por defecto:', error);
+          completada = false; // Valor por defecto si falla
+        }
       }
       // Refresca el progreso general
       await refrescarProgresoLecciones();
     } catch (e) {
+      console.warn('[TUTORIAL] Error general en verificarCompletadaYProgreso:', e);
       completada = false;
     }
   }
@@ -137,7 +143,7 @@ function cambiarLeccion(event: any) {
         progresoLecciones.set(progresoMap);
       }
     } catch (e: any) {
-      console.error('Error al refrescar progreso de tutorial:', e);
+      console.warn('[TUTORIAL] Error al refrescar progreso de tutorial, usando valores por defecto:', e);
       // En caso de error, inicializar con valores por defecto
       const progresoMap: any = {};
       progresoMap[tutorial.id] = {
@@ -227,27 +233,16 @@ function cambiarLeccion(event: any) {
 
     <LeccionTabs
       contenido={clase?.contenido}
-      objetivos={clase?.objetivos}
       recursos={clase?.recursos}
       comentarios={data.comentarios}
-      cursoDescripcionCorta={tutorial?.descripcion_corta}
       cursoId={tutorial?.id}
       usuarioActual={usuarioActual}
       leccionId={clase?.id}
       tipo={tipo}
-      cursoTitulo={tutorial?.titulo}
-      cursoImagenUrl={tutorial?.imagen_url}
-      cursoCategoria={tutorial?.categoria}
-      cursoNivel={tutorial?.nivel}
-      cursoDuracion={tutorial?.duracion_estimada || tutorial?.duracion}
-      cursoArtista={tutorial?.artista}
-      cursoAcordeonista={tutorial?.acordeonista}
       clases={data.clases}
-      leccionActiva={clase?.id}
       progreso={$progresoLecciones}
       mostrarSidebar={mostrarSidebar}
       curso={tutorial}
-      on:cambiar-leccion={cambiarLeccion}
     />
 
   </div>
@@ -305,6 +300,16 @@ function cambiarLeccion(event: any) {
       height: 100vh; /* FORZAR altura fija de viewport */
       max-height: 100vh; /* NO puede ser más alto */
       overflow: hidden; /* SIN SCROLL en el contenedor principal */
+      padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px para ser más sutil */
+      margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
+    }
+    
+    .contenido-principal {
+      height: calc(100vh - 90px) !important; /* ✅ ALTURA AJUSTADA PARA EL MENÚ */
+      max-height: calc(100vh - 90px) !important; /* NO puede crecer más */
+      overflow: hidden; /* SIN SCROLL aquí */
+      padding-bottom: 0 !important; /* SIN PADDING ADICIONAL */
+      margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
     }
   }
   
@@ -313,6 +318,7 @@ function cambiarLeccion(event: any) {
     .contenido-container {
       min-height: 100vh; /* MÍNIMO una pantalla, pero puede crecer */
       overflow: visible; /* PERMITIR SCROLL NATURAL */
+      padding-bottom: 0 !important; /* SIN PADDING EN ESCRITORIO */
     }
   }
   .contenido-principal {
@@ -328,9 +334,11 @@ function cambiarLeccion(event: any) {
   /* ✅ MÓVILES: Contenido principal fijo */
   @media (max-width: 900px) {
     .contenido-principal {
-      height: 100vh; /* ALTURA FIJA = tamaño de pantalla */
-      max-height: 100vh; /* NO puede crecer más */
+      height: calc(100vh - 80px) !important; /* ✅ ALTURA AJUSTADA PARA EL MENÚ */
+      max-height: calc(100vh - 80px) !important; /* NO puede crecer más */
       overflow: hidden; /* SIN SCROLL aquí */
+      padding-bottom: 0 !important; /* SIN PADDING ADICIONAL */
+      margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
     }
   }
   
@@ -339,6 +347,7 @@ function cambiarLeccion(event: any) {
     .contenido-principal {
       min-height: 100vh; /* MÍNIMO una pantalla */
       overflow: visible; /* PERMITIR SCROLL */
+      padding-bottom: 0 !important; /* SIN PADDING */
     }
   }
 
@@ -461,11 +470,32 @@ function cambiarLeccion(event: any) {
     height: 100vh !important;
     position: fixed !important;
     width: 100% !important;
+    padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px */
+    margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
   }
 
   :global(html) {
     overflow: hidden !important; /* SIN SCROLL en HTML móviles */
     height: 100vh !important;
+    padding-bottom: 0 !important; /* ✅ SIN PADDING ADICIONAL */
+    margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
+  }
+  
+  /* ✅ IMPORTANTE: Asegurar que el menú esté visible */
+  :global(.menu-inferior-responsivo) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 999999 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: translateY(0) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
   }
 }
 
@@ -475,6 +505,7 @@ function cambiarLeccion(event: any) {
     overflow: auto !important;
     height: auto !important;
     position: relative !important;
+    padding-bottom: 0 !important; /* SIN PADDING EN ESCRITORIO */
   }
 
   :global(html) {
@@ -488,6 +519,63 @@ function cambiarLeccion(event: any) {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch !important;
+}
+
+/* ✅ PADDING ESPECÍFICO PARA ELEMENTOS QUE NO DEBEN SER TAPADOS */
+@media (max-width: 900px) {
+  /* ✅ BOTONES Y CAMPOS DE TEXTO */
+  :global(.boton-agregar-nota),
+  :global(.campo-nota),
+  :global(.area-texto),
+  :global(.boton-marcar-completada),
+  :global(.boton-anterior),
+  :global(.boton-siguiente) {
+    margin-bottom: 15px !important; /* ✅ MARGIN SUTIL: de 20px a 15px */
+  }
+  
+  /* ✅ SECCIÓN DE NOTAS */
+  :global(.seccion-notas),
+  :global(.mis-notas-personales) {
+    margin-bottom: 20px !important; /* ✅ MARGIN SUTIL: solo margin, sin padding */
+  }
+  
+  /* ✅ TABS Y CONTENIDO */
+  :global(.tabs-container),
+  :global(.contenido-tab) {
+    margin-bottom: 18px !important; /* ✅ MARGIN SUTIL: de 25px a 18px */
+  }
+  
+  /* ✅ SECCIÓN DE REQUISITOS - MARGIN SUTIL */
+  :global(.requisitos),
+  :global(.seccion-requisitos),
+  :global([class*="requisito"]),
+  :global([class*="Requisito"]) {
+    margin-bottom: 25px !important; /* ✅ MARGIN SUTIL: de 30px a 25px */
+  }
+  
+  /* ✅ BOTONES "+1 más..." Y SIMILARES */
+  :global(.boton-mas),
+  :global([class*="mas"]),
+  :global([class*="Mas"]),
+  :global(.boton-expandir) {
+    margin-bottom: 20px !important; /* ✅ MARGIN SUTIL: de 35px a 20px */
+  }
+  
+  /* ✅ TODAS LAS SECCIONES DE CONTENIDO */
+  :global(.contenido-seccion),
+  :global(.seccion-contenido),
+  :global([class*="contenido"]),
+  :global([class*="Contenido"]) {
+    margin-bottom: 15px !important; /* ✅ MARGIN SUTIL: de 20px a 15px */
+  }
+  
+  /* ✅ PESTAÑA DE CONTENIDO - MARGIN SUTIL */
+  :global(.tab-contenido),
+  :global(.contenido-tutorial),
+  :global([class*="clases-tutorial"]),
+  :global([class*="lista-clases"]) {
+    margin-bottom: 20px !important; /* ✅ MARGIN SUTIL PARA LA PESTAÑA DE CONTENIDO */
+  }
 }
 
 </style>

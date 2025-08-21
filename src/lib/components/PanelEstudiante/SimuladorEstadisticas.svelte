@@ -793,7 +793,7 @@
       grid-template-columns: 1fr;
       gap: 4px;
     }
-
+    
     /* 🚀 NUEVO: Asegurar que las características se muestren completas en móvil */
     .caracteristica-info h4 {
       font-size: 0.8rem;

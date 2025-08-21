@@ -11,6 +11,9 @@
   $: esClaseOLeccion = $page.url.pathname.includes('/clase/') || $page.url.pathname.includes('/leccion/');
 
   onMount(() => {
+    // ✅ TEMPORALMENTE DESHABILITADO PARA DEBUGGING DEL MENÚ
+    console.log('🚫 [DEBUG] Layout de cursos DESHABILITADO temporalmente');
+    /*
     // 🚫 FORZAR ESTILOS PARA ELIMINAR NAVEGACIÓN - VERSIÓN LIMPIA
     if (typeof document !== 'undefined') {
       // 🚨 SOLO OCULTAR ELEMENTOS DE NAVEGACIÓN GENERAL - NO TOCAR HEADERS NI MENUS
@@ -69,6 +72,7 @@
       document.documentElement.style.width = '100%';
       document.documentElement.style.maxWidth = '100%';
     }
+    */
   });
 
   onDestroy(() => {
@@ -118,201 +122,27 @@
   });
 </script>
 
-<!-- 🚫 LAYOUT COMPLETAMENTE LIMPIO - SIN NADA DE NAVEGACIÓN -->
-{#if !esClaseOLeccion}
-  <!-- Solo para páginas de detalle de curso, NO para clases o lecciones -->
-  <div class="curso-pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
-    <slot />
-  </div>
-{:else}
-  <!-- Para clases y lecciones, usar layout normal -->
+<!-- 🚫 LAYOUT TEMPORALMENTE DESHABILITADO PARA DEBUGGING DEL MENÚ -->
+<!-- 
+<div class="curso-pantalla-completa" transition:fly={{ x: 30, opacity: 0, duration: 220 }}>
   <slot />
-{/if}
+</div>
+-->
+
+<!-- ✅ LAYOUT SIMPLE TEMPORAL -->
+<div class="curso-layout-simple">
+  <slot />
+</div>
 
 <style>
-  /* 🚫 PANTALLA COMPLETA TOTAL - ABSOLUTAMENTE SIN NADA */
-  .curso-pantalla-completa {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent;
-    z-index: 9999;
-    overflow: auto;
-    box-sizing: border-box;
+  /* ✅ LAYOUT SIMPLE TEMPORAL */
+  .curso-layout-simple {
+    min-height: 100vh;
+    background: #000;
   }
   
-  /* 🚨 PROTECCIÓN CSS PARA HEADERS DE LECCIONES - VERSIÓN AGRESIVA */
-  .curso-pantalla-completa .lesson-header,
-  .curso-pantalla-completa header[class*="lesson"],
-  .curso-pantalla-completa header[class*="leccion"],
-  .lesson-header,
-  header[class*="lesson"],
-  header[class*="leccion"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    height: auto !important;
-    width: auto !important;
-    /* PRESERVAR ESTILOS ORIGINALES */
-    background-color: inherit !important;
-    color: inherit !important;
-    border: inherit !important;
-    padding: inherit !important;
-    margin: inherit !important;
-    font-size: inherit !important;
-    font-weight: inherit !important;
-    text-align: inherit !important;
-    box-shadow: inherit !important;
-    border-radius: inherit !important;
-    transition: inherit !important;
-    transform: inherit !important;
-    z-index: inherit !important;
-  }
-  
-  /* 🚨 PROTECCIÓN EXTREMA PARA HEADERS - SOBRESCRIBIR CUALQUIER ESTILO */
-  .lesson-header[style*="display: none"],
-  .lesson-header[style*="visibility: hidden"],
-  header[class*="lesson"][style*="display: none"],
-  header[class*="lesson"][style*="visibility: hidden"],
-  header[class*="leccion"][style*="display: none"],
-  header[class*="leccion"][style*="visibility: hidden"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-  
-  /* 🚨 PROTECCIÓN CSS PARA MENU INFERIOR RESPONSIVO - VERSIÓN AGRESIVA */
-  .curso-pantalla-completa .menu-inferior-responsivo,
-  .curso-pantalla-completa nav[class*="menu-inferior"],
-  .curso-pantalla-completa .menu-inferior-responsivo[data-protected="true"],
-  .menu-inferior-responsivo,
-  nav[class*="menu-inferior"],
-  .menu-inferior-responsivo[data-protected="true"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 999999 !important;
-    transform: translateY(0) !important;
-    height: auto !important;
-    width: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    /* 🚨 SOBRESCRIBIR CUALQUIER ESTILO INLINE */
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-  
-  /* 🚨 PROTECCIÓN GLOBAL PARA MENU INFERIOR - VERSIÓN AGRESIVA */
-  .menu-inferior-responsivo,
-  nav[class*="menu-inferior"],
-  .menu-inferior-responsivo[data-protected="true"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    /* 🚨 SOBRESCRIBIR CUALQUIER ESTILO INLINE */
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-  
-  /* 🚨 PROTECCIÓN EXTREMA - SOBRESCRIBIR CUALQUIER ESTILO */
-  .menu-inferior-responsivo[style*="display: none"],
-  .menu-inferior-responsivo[style*="visibility: hidden"],
-  .menu-inferior-responsivo[style*="opacity: 0"],
-  .menu-inferior-responsivo[style*="transform: translateY(100%)"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-  
-  /* 🚨 CSS DE EMERGENCIA GLOBAL - FORZAR VISIBILIDAD SIEMPRE */
-  .menu-inferior-responsivo,
-  .lesson-header,
-  header[class*="lesson"],
-  header[class*="leccion"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-  
-  /* 🚨 SOBRESCRIBIR CUALQUIER ESTILO DEL LAYOUT */
-  .menu-inferior-responsivo[data-protected="true"],
-  .lesson-header[data-protected="true"],
-  header[data-protected="true"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-
-  /* 🚫 FORZAR QUE TODOS LOS ELEMENTOS HIJOS NO DESBORDEN */
-  .curso-pantalla-completa * {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* 🚫 OCULTAR SCROLL HORIZONTAL GLOBALMENTE */
-  .curso-pantalla-completa ::-webkit-scrollbar:horizontal {
-    display: none !important;
-  }
-  
-  /* 🚫 OCULTAR SCROLL VERTICAL GLOBALMENTE */
-  .curso-pantalla-completa ::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    background: transparent !important;
-  }
-  
-  .curso-pantalla-completa ::-webkit-scrollbar-track {
-    display: none !important;
-  }
-  
-  .curso-pantalla-completa ::-webkit-scrollbar-thumb {
-    display: none !important;
-  }
-  
-  .curso-pantalla-completa ::-webkit-scrollbar-corner {
-    display: none !important;
-  }
-  
-  /* 🚫 REGLAS ESPECÍFICAS PARA PLANTILLAS DE CURSOS */
-  .curso-pantalla-completa .container,
-  .curso-pantalla-completa .contenedor,
-  .curso-pantalla-completa .layout-container,
-  .curso-pantalla-completa .main-container,
-  .curso-pantalla-completa .curso-container,
-  .curso-pantalla-completa .tutorial-container {
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: hidden !important;
-  }
-
-  /* 🚫 ASEGURAR QUE NO HAYA ESPACIOS EXTRA */
-  .curso-pantalla-completa > *:first-child {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-  }
-  
-  .curso-pantalla-completa > *:last-child {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
+  /* ✅ IMPORTANTE: Permitir que el menú funcione normalmente */
+  :global(.menu-inferior-responsivo) {
+    /* NO INTERFERIR con el menú */
   }
 </style> 

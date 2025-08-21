@@ -75,6 +75,8 @@
       console.log('🔍 [ENCABEZADO] Cambio desktop:', wasDesktop, '→', isDesktop);
     }
     
+    // ✅ IMPORTANTE: NO OCULTAR PERMANENTEMENTE EL ENCABEZADO
+    // Solo cambiar el estado de scrolled para el shadow, pero mantener visible
     console.log('🔍 [ENCABEZADO] Estado actual:', { isFullscreen, isScrolled, isDesktop });
   }
 
@@ -130,25 +132,11 @@
     
     document.addEventListener('click', handleClickOutside);
     
-    // 🚨 VERIFICAR VISIBILIDAD DEL ENCABEZADO CADA 2 SEGUNDOS
-    const visibilityCheck = setInterval(() => {
-      const headerElement = document.querySelector('.lesson-header') as HTMLElement;
-      if (headerElement) {
-        const isVisible = headerElement.offsetHeight > 0 && 
-                         window.getComputedStyle(headerElement).display !== 'none' &&
-                         window.getComputedStyle(headerElement).visibility !== 'hidden';
-        console.log('🔍 [ENCABEZADO] Verificación de visibilidad:', {
-          offsetHeight: headerElement.offsetHeight,
-          display: window.getComputedStyle(headerElement).display,
-          visibility: window.getComputedStyle(headerElement).visibility,
-          isVisible
-        });
-      }
-    }, 2000);
+    // ✅ ELIMINADO: Verificación de visibilidad que causaba el problema
+    // El encabezado debe mantenerse visible siempre
     
     return () => {
       console.log('❌ [ENCABEZADO] Componente desmontando');
-      clearInterval(visibilityCheck);
       events.forEach(event => {
         document.removeEventListener(event, actualizarEstado);
         window.removeEventListener(event, actualizarEstado);
@@ -521,7 +509,7 @@
   .lesson-header {
     width: 100%;
     min-height: 50px;
-    display: flex;
+    display: flex !important; /* ✅ FORZAR VISIBILIDAD */
     justify-content: space-between;
     align-items: center;
     padding: 6px 20px;
@@ -530,6 +518,8 @@
     border-bottom: 0.5px solid #fff;
     transition: box-shadow 0.3s ease;
     z-index: 1000;
+    visibility: visible !important; /* ✅ FORZAR VISIBILIDAD */
+    opacity: 1 !important; /* ✅ FORZAR VISIBILIDAD */
   }
   
   .scrolled {

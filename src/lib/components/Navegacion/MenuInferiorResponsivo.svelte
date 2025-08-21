@@ -4,15 +4,27 @@
   import { goto } from '$app/navigation';
   import { onMount, onDestroy } from 'svelte';
   
-  // 🚨 COMPORTAMIENTO INTELIGENTE DEL MENU
-  let menuVisible = false; // 🚨 OCULTO POR DEFECTO
+  // 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES
+  let menuVisible = true; // ✅ VISIBLE POR DEFECTO
   let timeoutInactividad: NodeJS.Timeout;
   let ultimaActividad = Date.now();
-  const TIEMPO_INACTIVIDAD = 2000; // 2 segundos de inactividad (más rápido)
+  const TIEMPO_INACTIVIDAD = 2000; // 2 segundos de inactividad
 
   // Determinar el tipo de usuario y ruta actual
   $: tipoUsuario = $usuario?.rol === 'admin' ? 'admin' : 'estudiante';
   $: rutaActual = $page.url.pathname;
+
+  // 🎯 DETECTAR SI ESTAMOS EN PÁGINA DE CLASE/LECCIÓN
+  $: esPaginaClase = rutaActual.includes('/clase/') || rutaActual.includes('/leccion/');
+  
+  // 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES
+  $: if (esPaginaClase) {
+    // En páginas de clases: oculto por defecto, pero se muestra con actividad
+    menuVisible = false; // Oculto por defecto en páginas de clases
+  } else {
+    // En resto del sitio: siempre visible
+    menuVisible = true;
+  }
 
   // Función para verificar si una ruta está activa
   function esRutaActiva(ruta: string): boolean {
@@ -28,7 +40,7 @@
       id: 'dashboard',
       icono: 'dashboard',
       texto: 'Panel',
-      		ruta: '/panel-administracion',
+      ruta: '/panel-administracion',
       badge: '3'
     },
     {
@@ -106,87 +118,66 @@
     goto(ruta);
   }
   
-  // 🚨 FUNCIONES PARA COMPORTAMIENTO INTELIGENTE
+  // 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES
   function detectarActividad() {
+    if (!esPaginaClase) return; // Solo en páginas de clases
+    
     ultimaActividad = Date.now();
     if (!menuVisible) {
-      mostrarMenu(); // 🚨 MOSTRAR MENU AL TOCAR
+      mostrarMenu();
     }
     reiniciarTimeoutInactividad();
   }
   
-  // 🚨 FUNCIÓN MEJORADA PARA DETECTAR ACTIVIDAD
-  function detectarActividadMejorada(evento: string, elemento: string = '') {
-    console.log(`🎯 [MENU] Actividad detectada: ${evento} ${elemento}`);
-    detectarActividad();
-  }
-  
   function ocultarMenu() {
+    if (!esPaginaClase) return; // Solo en páginas de clases
+    
     menuVisible = false;
-    console.log('📱 [MENU] Ocultando menu por actividad del usuario');
+    console.log('📱 [MENU] Ocultando menu por inactividad');
   }
   
   function mostrarMenu() {
+    if (!esPaginaClase) return; // Solo en páginas de clases
+    
     menuVisible = true;
-    console.log('📱 [MENU] Mostrando menu por inactividad');
+    console.log('📱 [MENU] Mostrando menu por actividad');
   }
   
   function reiniciarTimeoutInactividad() {
+    if (!esPaginaClase) return; // Solo en páginas de clases
+    
     if (timeoutInactividad) {
       clearTimeout(timeoutInactividad);
     }
     
     timeoutInactividad = setTimeout(() => {
       if (Date.now() - ultimaActividad >= TIEMPO_INACTIVIDAD) {
-        ocultarMenu(); // 🚨 OCULTAR MENU POR INACTIVIDAD
+        ocultarMenu();
       }
     }, TIEMPO_INACTIVIDAD);
   }
   
-  // 🚨 DETECTAR ACTIVIDAD DEL USUARIO - VERSIÓN SIMPLIFICADA
+  // 🎯 CONFIGURAR DETECTORES SOLO EN PÁGINAS DE CLASES
   function configurarDetectoresActividad() {
-    console.log('🚀 [MENU] Configurando detectores de actividad...');
+    if (!esPaginaClase) return; // Solo en páginas de clases
     
-    // 🚨 EVENTOS BÁSICOS DEL USUARIO
+    console.log('🚀 [MENU] Configurando detectores de actividad para página de clase...');
+    
+    // Eventos básicos del usuario
     const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     eventos.forEach(evento => {
       document.addEventListener(evento, detectarActividad, { passive: true });
     });
     
-    // 🚨 DETECCIÓN DE VIDEO - VERSIÓN SIMPLE
+    // Detección de video
     setTimeout(() => {
       const videos = document.querySelectorAll('video, iframe');
-      console.log(`🎥 [MENU] Videos encontrados: ${videos.length}`);
-      
       videos.forEach((video, index) => {
-        video.addEventListener('play', () => detectarActividadMejorada('play', `video-${index}`));
-        video.addEventListener('pause', () => detectarActividadMejorada('pause', `video-${index}`));
-        video.addEventListener('seeking', () => detectarActividadMejorada('seeking', `video-${index}`));
+        video.addEventListener('play', detectarActividad);
+        video.addEventListener('pause', detectarActividad);
+        video.addEventListener('seeking', detectarActividad);
       });
-    }, 1000); // Esperar 1 segundo para que se carguen los videos
-    
-    // 🚨 DETECCIÓN DE TABS - VERSIÓN SIMPLE
-    setTimeout(() => {
-      const tabs = document.querySelectorAll('[role="tab"], .tab, .tab-button');
-      console.log(`📑 [MENU] Tabs encontrados: ${tabs.length}`);
-      
-      tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => detectarActividadMejorada('click', `tab-${index}`));
-      });
-    }, 1000); // Esperar 1 segundo para que se carguen los tabs
-    
-    // 🚨 DETECCIÓN DE BOTONES DE NAVEGACIÓN - VERSIÓN SIMPLE
-    setTimeout(() => {
-      const botones = document.querySelectorAll('button');
-      console.log(`🔄 [MENU] Botones encontrados: ${botones.length}`);
-      
-      botones.forEach((boton, index) => {
-        const texto = boton.textContent || '';
-        if (texto.includes('Anterior') || texto.includes('Siguiente') || texto.includes('Marcar como completada')) {
-          boton.addEventListener('click', () => detectarActividadMejorada('click', `boton-${texto.trim()}`));
-        }
-      });
-    }, 1000); // Esperar 1 segundo para que se carguen los botones
+    }, 1000);
   }
 
   function obtenerIcono(tipo: string) {
@@ -203,19 +194,9 @@
         <line x1="16" y1="13" x2="8" y2="13"/>
         <line x1="16" y1="17" x2="8" y2="17"/>
       </svg>`,
-      crear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-        <polyline points="14,2 14,8 20,8"/>
-        <line x1="12" y1="18" x2="12" y2="12"/>
-        <line x1="9" y1="15" x2="15" y2="15"/>
-      </svg>`,
       cursos: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-      </svg>`,
-      tutoriales: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="23 7 16 12 23 17 23 7"/>
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
       </svg>`,
       comunidad: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -241,26 +222,18 @@
     return iconos[tipo] || iconos.dashboard;
   }
   
-  // 🚨 INICIALIZAR COMPORTAMIENTO INTELIGENTE
+  // 🎯 INICIALIZAR COMPORTAMIENTO INTELIGENTE
   onMount(() => {
-    try {
-      console.log('🚀 [MENU] Menu inferior responsivo montado');
-      
+    console.log('🚀 [MENU] MenuInferiorResponsivo montado');
+    console.log('🚀 [MENU] Usuario:', $usuario);
+    console.log('🚀 [MENU] Es página de clase:', esPaginaClase);
+    console.log('🚀 [MENU] Menu visible:', menuVisible);
+    
+    // Configurar detectores de actividad solo si es necesario
+    if (esPaginaClase) {
       configurarDetectoresActividad();
-      reiniciarTimeoutInactividad();
-      
-    } catch (error) {
-      console.error('❌ [MENU] Error al inicializar:', error);
-      // Fallback: mostrar menu siempre
-      menuVisible = true;
     }
   });
-  
-  // 🚨 FUNCIÓN SIMPLE: MOSTRAR/OCULTAR MENU
-  function toggleMenu() {
-    menuVisible = !menuVisible;
-    console.log(`📱 [MENU] Menu ${menuVisible ? 'mostrado' : 'oculto'}`);
-  }
   
   onDestroy(() => {
     console.log('❌ [MENU] Menu inferior responsivo desmontando');
@@ -268,11 +241,13 @@
       clearTimeout(timeoutInactividad);
     }
     
-    // Limpiar event listeners
-    const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    eventos.forEach(evento => {
-      document.removeEventListener(evento, detectarActividad);
-    });
+    // Limpiar event listeners solo si estaban configurados
+    if (esPaginaClase) {
+      const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+      eventos.forEach(evento => {
+        document.removeEventListener(evento, detectarActividad);
+      });
+    }
   });
 </script>
 
@@ -313,54 +288,44 @@
     border-top: 1px solid #e2e8f0 !important;
     z-index: 999999 !important;
     padding: 0 !important;
-    /* 🚨 ESTADO BASE - SE CONTROLA CON MEDIA QUERIES */
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    transform: translateY(100%) !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
-  /* 🚨 CLASE PARA MOSTRAR EL MENU - SOLO EN MÓVIL */
+  /* 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES */
   @media (max-width: 900px) {
-    .menu-inferior-responsivo.visible {
-      transform: translateY(0) !important; /* Visible */
+    .menu-inferior-responsivo {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
+      transform: translateY(0) !important; /* Visible por defecto */
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 999999 !important;
+      background: rgba(255, 255, 255, 0.95) !important; /* ✅ FONDO NORMAL */
+      backdrop-filter: blur(20px) !important;
+      border-top: 1px solid #e2e8f0 !important; /* ✅ BORDE NORMAL */
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important; /* ✅ SOMBRA NORMAL */
+      min-height: 60px !important; /* ✅ REDUCIDO: de 80px a 60px */
+      /* ✅ COMPORTAMIENTO INTELIGENTE RESTAURADO */
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
-    /* 🚨 CLASE PARA OCULTAR EL MENU - SOLO EN MÓVIL */
+    /* ✅ COMPORTAMIENTO INTELIGENTE: Mostrar/ocultar con transform */
+    .menu-inferior-responsivo.visible {
+      transform: translateY(0) !important; /* Visible */
+      opacity: 1 !important;
+    }
+    
     .menu-inferior-responsivo:not(.visible) {
       transform: translateY(100%) !important; /* Oculto */
       opacity: 0 !important;
     }
   }
   
-  /* 🚨 EN ESCRITORIO - SIEMPRE OCULTO */
-  @media (min-width: 901px) {
-    .menu-inferior-responsivo.visible,
-    .menu-inferior-responsivo:not(.visible) {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      transform: translateY(100%) !important;
-      pointer-events: none !important;
-    }
-  }
-
-  /* 🚨 MOSTRAR SOLO EN PANTALLAS MÓVILES - OCULTAR EN ESCRITORIO */
-  @media (max-width: 900px) {
-    .menu-inferior-responsivo {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      transform: translateY(100%) !important; /* Oculto por defecto en móvil */
-    }
-  }
-  
-  /* 🚨 OCULTAR COMPLETAMENTE EN ESCRITORIO */
+  /* 🎯 EN ESCRITORIO - SIEMPRE OCULTO */
   @media (min-width: 901px) {
     .menu-inferior-responsivo {
       display: none !important;
@@ -375,10 +340,10 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 8px 16px;
+    padding: 4px 8px; /* ✅ REDUCIDO: de 8px 16px a 4px 8px */
     max-width: 100%;
     margin: 0 auto;
-    gap: 4px;
+    gap: 2px; /* ✅ REDUCIDO: de 4px a 2px */
   }
 
   .menu-item {
@@ -386,16 +351,16 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 4px 6px; /* ✅ REDUCIDO: de 8px 12px a 4px 6px */
     background: none;
     border: none;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 16px;
+    border-radius: 12px; /* ✅ REDUCIDO: de 16px a 12px */
     position: relative;
-    min-width: 60px;
+    min-width: 50px; /* ✅ REDUCIDO: de 60px a 50px */
     flex: 1;
-    max-width: 80px;
+    max-width: 70px; /* ✅ REDUCIDO: de 80px a 70px */
   }
 
   .menu-item:hover {
@@ -415,9 +380,9 @@
   }
 
   .item-icon {
-    width: 24px;
-    height: 24px;
-    margin-bottom: 4px;
+    width: 20px; /* ✅ REDUCIDO: de 24px a 20px */
+    height: 20px; /* ✅ REDUCIDO: de 24px a 20px */
+    margin-bottom: 2px; /* ✅ REDUCIDO: de 4px a 2px */
     color: #64748b;
     transition: color 0.3s ease;
   }
@@ -435,11 +400,11 @@
   }
 
   .item-text {
-    font-size: 11px;
+    font-size: 10px; /* ✅ REDUCIDO: de 11px a 10px */
     font-weight: 600;
     color: #64748b;
     text-align: center;
-    line-height: 1.2;
+    line-height: 1.1; /* ✅ REDUCIDO: de 1.2 a 1.1 */
     transition: color 0.3s ease;
     white-space: nowrap;
     overflow: hidden;
@@ -534,10 +499,10 @@
     }
   }
 
-  /* ✅ PADDING EFECTIVO para evitar que el contenido se oculte detrás del menú - SOLO EN MÓVIL */
+  /* 🎯 PADDING EFECTIVO para evitar que el contenido se oculte detrás del menú - SOLO EN MÓVIL */
   @media (max-width: 900px) {
     :global(body) {
-      padding-bottom: 130px !important;
+      padding-bottom: 80px !important; /* REDUCIDO de 130px a 80px */
     }
     
     /* Asegurar padding en containers principales */
@@ -545,16 +510,16 @@
     :global(.main-content),
     :global(main),
     :global(.contenido-principal) {
-      padding-bottom: 110px !important;
+      padding-bottom: 60px !important; /* REDUCIDO de 110px a 60px */
     }
     
     /* Específico para páginas de clases y lecciones */
     :global(.pantalla-completa) {
-      min-height: calc(100vh - 110px) !important;
+      min-height: calc(100vh - 60px) !important; /* AJUSTADO */
     }
   }
   
-  /* 🚨 EN ESCRITORIO - SIN PADDING ADICIONAL */
+  /* 🎯 EN ESCRITORIO - SIN PADDING ADICIONAL */
   @media (min-width: 901px) {
     :global(body) {
       padding-bottom: 0 !important;
@@ -567,7 +532,4 @@
       padding-bottom: 0 !important;
     }
   }
-  
-  /* 🚨 CSS LIMPIO - SIN EMERGENCIA */
-  /* El menu se controla completamente con media queries */
 </style> 

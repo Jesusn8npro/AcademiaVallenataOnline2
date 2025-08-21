@@ -914,4 +914,36 @@
       border: none;
     }
   }
+
+  /* ✅ IMPORTANTE: Asegurar que el menú inferior esté siempre visible */
+  :global(.menu-inferior-responsivo) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 999999 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: translateY(0) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  /* ✅ PADDING GLOBAL PARA EL MENÚ EN PÁGINAS DE CLASES */
+  @media (max-width: 900px) {
+    :global(body) {
+      padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px */
+    }
+    
+    :global(main) {
+      padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px */
+    }
+    
+    :global(.contenido-principal) {
+      padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px */
+    }
+  }
 </style>

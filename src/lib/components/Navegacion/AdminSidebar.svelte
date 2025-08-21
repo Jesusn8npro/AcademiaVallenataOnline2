@@ -48,8 +48,35 @@
     cursosCompletados: 0,
     cursosEnProgreso: 0,
     porcentajeProgreso: 0,
-    miembrosComunidad: 0
+    miembrosComunidad: 0, // No es relevante para el sidebar
+    // 🆕 NUEVOS DATOS MÁS ÚTILES
+    leccionesCompletadas: 0,
+    tutorialesCompletados: 0,
+    totalTutoriales: 0,
+    puntos: 0,
+    racha: 0
   };
+
+  // 🎯 MENSAJES MOTIVACIONALES ALEATORIOS
+  let mensajeMotivacional = '';
+  const mensajesMotivacionales = [
+    "¡Sigue así! Cada día es un paso hacia el éxito 🎵",
+    "Tu dedicación te llevará lejos ⭐",
+    "El acordeón es tu pasión, ¡persíguela! 🎶",
+    "Cada nota que aprendes te hace mejor músico 🎼",
+    "La práctica hace al maestro 🎯",
+    "¡Tu talento brilla cada día más! ✨",
+    "Cada lección te acerca a tu sueño 🚀",
+    "El ritmo está en tu sangre 💪",
+    "¡Eres capaz de grandes cosas! 🌟",
+    "Tu esfuerzo hoy será tu éxito mañana 🎉"
+  ];
+
+  // 🎯 FUNCIÓN PARA SELECCIONAR MENSAJE MOTIVACIONAL ALEATORIO
+  function seleccionarMensajeMotivacional() {
+    const indiceAleatorio = Math.floor(Math.random() * mensajesMotivacionales.length);
+    mensajeMotivacional = mensajesMotivacionales[indiceAleatorio];
+  }
 
   // Cargar datos reales
   async function cargarEstadisticasAdmin() {
@@ -91,32 +118,122 @@
     if (!$usuario || tipoUsuario !== 'estudiante') return;
     
     try {
-      // Obtener inscripciones del estudiante
-      const { data: inscripciones } = await supabase
-        .from('inscripciones')
-        .select('*, cursos(titulo)')
-        .eq('usuario_id', $usuario.id);
+      // 🚀 EJECUTAR TODAS LAS CONSULTAS EN PARALELO
+      const [
+        inscripcionesResult,
+        progresoLeccionesResult,
+        progresoTutorialesResult,
+        rankingResult,
+        sesionesResult
+      ] = await Promise.all([
+        // 1. Inscripciones del estudiante
+        supabase
+          .from('inscripciones')
+          .select('*, cursos(titulo)')
+          .eq('usuario_id', $usuario.id),
+          
+        // 2. Progreso de lecciones (TODAS las lecciones, no solo últimos 30 días)
+        supabase
+          .from('progreso_lecciones')
+          .select('porcentaje_completado, estado')
+          .eq('usuario_id', $usuario.id),
+          
+        // 3. Progreso de tutoriales
+        supabase
+          .from('progreso_tutorial')
+          .select('completado, ultimo_acceso')
+          .eq('usuario_id', $usuario.id),
+          
+        // 4. Ranking del usuario
+        supabase
+          .from('ranking_global')
+          .select('puntuacion, posicion')
+          .eq('usuario_id', $usuario.id)
+          .single(),
+          
+        // 5. Sesiones de usuario para calcular racha
+        supabase
+          .from('sesiones_usuario')
+          .select('created_at')
+          .eq('usuario_id', $usuario.id)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+      ]);
 
-      if (inscripciones) {
-        const completados = inscripciones.filter(i => i.completado).length;
-        const enProgreso = inscripciones.filter(i => !i.completado).length;
-        const total = inscripciones.length;
+      // 📊 PROCESAR DATOS
+      const inscripciones = inscripcionesResult.data || [];
+      const progresoLecciones = progresoLeccionesResult.data || [];
+      const progresoTutoriales = progresoTutorialesResult.data || [];
+      const ranking = rankingResult.data;
+      const sesiones = sesionesResult.data || [];
 
-        // Obtener conteo de miembros activos en comunidad
-        const { count: miembrosActivos } = await supabase
-          .from('perfiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-        progresoEstudiante = {
-          cursosCompletados: completados,
-          cursosEnProgreso: enProgreso,
-          porcentajeProgreso: total > 0 ? Math.round((completados / total) * 100) : 0,
-          miembrosComunidad: miembrosActivos || 0
-        };
+      // 🎯 CALCULAR ESTADÍSTICAS REALES
+      const cursosActivos = inscripciones.filter((i: any) => !i.completado).length;
+      const cursosCompletados = inscripciones.filter((i: any) => i.completado).length;
+      const totalCursos = inscripciones.length;
+      
+      // Lecciones completadas (TODAS las lecciones, no solo últimos 30 días)
+      const leccionesCompletadas = progresoLecciones.filter((p: any) => 
+        p.estado === 'completado' || p.porcentaje_completado === 100
+      ).length;
+      
+      // Tutoriales completados
+      const tutorialesCompletados = progresoTutoriales.filter((t: any) => t.completado).length;
+      const totalTutoriales = progresoTutoriales.length;
+      
+      // 🆕 TOTAL DE ACTIVIDADES COMPLETADAS (lecciones + tutoriales)
+      const totalActividadesCompletadas = leccionesCompletadas + tutorialesCompletados;
+      
+      // Puntos del ranking
+      const puntos = ranking?.puntuacion || 0;
+      
+      // Calcular racha (días consecutivos con actividad)
+      let racha = 0;
+      if (sesiones.length > 0) {
+        const hoy = new Date();
+        const ayer = new Date(hoy);
+        ayer.setDate(hoy.getDate() - 1);
+        
+        let diasConsecutivos = 0;
+        let fechaActual = new Date(hoy);
+        
+        for (let i = 0; i < 7; i++) {
+          const fechaStr = fechaActual.toISOString().split('T')[0];
+          const tieneActividad = sesiones.some((s: any) => 
+            s.created_at.startsWith(fechaStr)
+          );
+          
+          if (tieneActividad) {
+            diasConsecutivos++;
+            fechaActual.setDate(fechaActual.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+        racha = diasConsecutivos;
       }
+      
+      // Porcentaje de progreso general
+      const porcentajeProgreso = totalCursos > 0 ? 
+        Math.round((cursosCompletados / totalCursos) * 100) : 0;
+
+      progresoEstudiante = {
+        cursosCompletados,
+        cursosEnProgreso: cursosActivos,
+        porcentajeProgreso,
+        miembrosComunidad: 0, // No es relevante para el sidebar
+        // 🆕 NUEVOS DATOS MÁS ÚTILES
+        leccionesCompletadas: totalActividadesCompletadas, // 🚀 TOTAL CORRECTO: lecciones + tutoriales
+        tutorialesCompletados,
+        totalTutoriales,
+        puntos,
+        racha
+      };
+      
+      console.log('✅ [SIDEBAR] Datos del estudiante cargados:', progresoEstudiante);
+      
     } catch (error) {
-      console.warn('Error cargando progreso estudiante:', error);
+      console.warn('⚠️ Error cargando progreso estudiante:', error);
     }
   }
 
@@ -169,6 +286,7 @@
       cargarEstadisticasAdmin();
     } else if (tipoUsuario === 'estudiante') {
       cargarProgresoEstudiante();
+      seleccionarMensajeMotivacional(); // Llamar la función para seleccionar un mensaje al montar
     }
     
     return () => document.removeEventListener('click', manejarClicFuera);
@@ -464,6 +582,52 @@
           {/if}
         </a>
       </div>
+
+      <!-- 🆕 NUEVA SECCIÓN: CONFIGURACIÓN Y PERFIL -->
+      <div class="nav-section">
+        {#if !colapsado}
+          <div class="section-title">Configuración</div>
+        {/if}
+        
+        <a href="/mi-perfil" class="nav-item" class:destacado={esRutaActiva('/mi-perfil')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Mi Perfil</span>
+          {/if}
+        </a>
+
+        <a href="/configuracion" class="nav-item" class:destacado={esRutaActiva('/configuracion')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Configuración</span>
+          {/if}
+        </a>
+
+        <a href="/grabaciones" class="nav-item" class:destacado={esRutaActiva('/grabaciones')}>
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="23"/>
+              <line x1="8" x2="8" y1="23" y2="23"/>
+              <line x1="16" x2="16" y1="23" y2="23"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Grabaciones</span>
+          {/if}
+        </a>
+      </div>
     {/if}
   </nav>
 
@@ -500,34 +664,71 @@
 
   <!-- Progress Card - Solo para estudiantes cuando no está colapsado -->
   {#if !colapsado && tipoUsuario === 'estudiante'}
-    <div class="progress-card">
-      <div class="progress-header">
-        <div class="progress-icon">
+    <div class="motivational-card">
+      <div class="motivational-header">
+        <div class="motivational-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22,4 12,14.01 9,11.01"/>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
           </svg>
         </div>
-        <div class="progress-title">Mi Progreso</div>
+        <div class="motivational-title">¡Motivación Diaria!</div>
       </div>
-      <div class="progress-content">
-        <div class="progress-circle">
-          <svg class="progress-svg" viewBox="0 0 36 36">
-            <path class="progress-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <path class="progress-meter" stroke-dasharray="{progresoEstudiante.porcentajeProgreso}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+      <div class="motivational-content">
+        <p class="motivational-message">{mensajeMotivacional}</p>
+      </div>
+    </div>
+
+    <!-- 🆕 TARJETA DE ESTADÍSTICAS CLAVE -->
+    <div class="stats-card-student">
+      <div class="stats-header-student">
+        <div class="stats-icon-student">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
           </svg>
-          <div class="progress-percentage">{progresoEstudiante.porcentajeProgreso}%</div>
         </div>
-        <div class="progress-stats">
-          <div class="progress-stat">
-            <span class="stat-number">{progresoEstudiante.cursosCompletados}</span>
-            <span class="stat-text">Completados</span>
-          </div>
-          <div class="progress-stat">
-            <span class="stat-number">{progresoEstudiante.cursosEnProgreso}</span>
-            <span class="stat-text">En progreso</span>
+        <div class="stats-title-student">⭐ Estadísticas Clave</div>
+      </div>
+      <div class="stats-content-student">
+        <div class="stat-item-student">
+          <span class="stat-icon">💎</span>
+          <div class="stat-info">
+            <div class="stat-value-student">{progresoEstudiante.puntos}</div>
+            <div class="stat-label-student">Puntos</div>
           </div>
         </div>
+        <div class="stat-item-student">
+          <span class="stat-icon">📚</span>
+          <div class="stat-info">
+            <div class="stat-value-student">{progresoEstudiante.leccionesCompletadas}</div>
+            <div class="stat-label-student">Lecciones</div>
+          </div>
+        </div>
+        <div class="stat-item-student">
+          <span class="stat-icon">🔥</span>
+          <div class="stat-info">
+            <div class="stat-value-student">{progresoEstudiante.racha}</div>
+            <div class="stat-label-student">Días</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 🆕 DOS BOTONES FUNCIONALES -->
+      <div class="stats-buttons">
+        <button class="stats-btn-left" on:click={() => goto('/mi-perfil')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Mi Perfil
+        </button>
+        <button class="stats-btn-right" on:click={() => goto('/mis-cursos')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          Mis Cursos
+        </button>
       </div>
     </div>
   {/if}
@@ -661,7 +862,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30px 10px 0px 24px;
+  padding: 16px 10px 0px 24px;
   border-bottom: 1px solid #f0f2f5;
   background: #fff;
 }
@@ -727,11 +928,11 @@
 
 /* Search */
 .search-container {
-  padding: 16px 24px;
+  padding: 10px 24px;
 }
 
 .sidebar-moderno.colapsado .search-container {
-  padding: 16px 20px;
+  padding: 10px 20px;
 }
 
 .search-btn-moderno {
@@ -783,12 +984,12 @@
 /* Navigation */
 .navegacion-principal {
   flex: 1;
-  padding: 8px 0;
+  padding: 2px 0;
   overflow-y: auto;
 }
 
 .nav-section {
-  margin-bottom: 32px;
+  margin-bottom: 12px;
 }
 
 .section-title {
@@ -797,20 +998,20 @@
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 24px 12px;
+  padding: 0 24px 6px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 24px;
-  margin: 2px 16px;
+  gap: 10px;
+  padding: 6px 18px;
+  margin: 1px 16px;
   text-decoration: none;
   color: #475569;
   font-weight: 500;
   font-size: 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
   position: relative;
 }
@@ -834,7 +1035,7 @@
 
 .sidebar-moderno.colapsado .nav-item {
   justify-content: center;
-  padding: 12px 20px;
+  padding: 8px 16px;
 }
 
 .nav-icon {
@@ -1049,23 +1250,263 @@
   color: #64748b;
 }
 
+/* Progress Extra Stats */
+.progress-extra-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.extra-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.extra-icon {
+  font-size: 18px;
+}
+
+.extra-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.extra-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Modo Oscuro para estadísticas extra */
+:global(.dark) .extra-value {
+  color: #f1f5f9;
+}
+
+:global(.dark) .extra-label {
+  color: #94a3b8;
+}
+
+:global(.dark) .progress-extra-stats {
+  border-top-color: #374151;
+}
+
+/* Motivational Card */
+.motivational-card {
+  margin: 0 16px 8px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.motivational-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.motivational-icon {
+  width: 18px;
+  height: 18px;
+  color: #1a1a1a;
+}
+
+.motivational-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.motivational-content {
+  text-align: center;
+}
+
+.motivational-message {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #1a1a1a;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Modo Oscuro para tarjeta motivacional */
+:global(.dark) .motivational-card {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #1a1a1a;
+}
+
+:global(.dark) .motivational-title {
+  color: #1a1a1a;
+}
+
+:global(.dark) .motivational-message {
+  color: #1a1a1a;
+}
+
+/* 🆕 TARJETA DE ESTADÍSTICAS DEL ESTUDIANTE */
+.stats-card-student {
+  margin: 0 16px 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.stats-header-student {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.stats-icon-student {
+  width: 14px;
+  height: 14px;
+  color: #8b5cf6;
+}
+
+.stats-title-student {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.stats-content-student {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.stat-item-student {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.stat-icon {
+  font-size: 14px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value-student {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.stat-label-student {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* 🆕 BOTONES FUNCIONALES */
+.stats-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.stats-btn-left,
+.stats-btn-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: white;
+}
+
+.stats-btn-left {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+}
+
+.stats-btn-left:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+.stats-btn-right {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
+}
+
+.stats-btn-right:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+}
+
+.stats-btn-left svg,
+.stats-btn-right svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Modo Oscuro para estadísticas del estudiante */
+:global(.dark) .stats-card-student {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global(.dark) .stats-title-student {
+  color: #f1f5f9;
+}
+
+:global(.dark) .stat-value-student {
+  color: #f1f5f9;
+}
+
+:global(.dark) .stat-label-student {
+  color: #94a3b8;
+}
+
 /* Perfil Usuario */
 .perfil-usuario-moderno {
   margin-top: auto;
   position: relative;
-  padding: 16px;
+  padding: 12px;
   border-top: 1px solid #f0f2f5;
 }
 
 .perfil-btn-moderno {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1073,12 +1514,12 @@
 .perfil-btn-moderno:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .perfil-btn-moderno.colapsado {
   justify-content: center;
-  padding: 12px;
+  padding: 10px;
 }
 
 .avatar-container-sidebar {
