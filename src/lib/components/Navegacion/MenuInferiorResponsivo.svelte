@@ -3,6 +3,8 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { onMount, onDestroy } from 'svelte';
+  // ✅ NUEVO: Importar sistema de routing inteligente
+  import { navegarInteligente, esRutaActiva, logRouting } from '$lib/utils/routingUtils';
   
   // 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES
   let menuVisible = true; // ✅ VISIBLE POR DEFECTO
@@ -26,12 +28,9 @@
     menuVisible = true;
   }
 
-  // Función para verificar si una ruta está activa
-  function esRutaActiva(ruta: string): boolean {
-    if (ruta === '/panel-administracion' || ruta === '/estudiante') {
-      return rutaActual === ruta;
-    }
-    return rutaActual.startsWith(ruta);
+  // ✅ NUEVO: Función de verificación de ruta activa usando utilidades
+  function verificarRutaActiva(ruta: string): boolean {
+    return esRutaActiva(ruta);
   }
 
   // Navegación para administradores
@@ -114,8 +113,16 @@
 
   $: menuItems = tipoUsuario === 'admin' ? menuAdmin : menuEstudiante;
 
-  function navegarA(ruta: string) {
-    goto(ruta);
+  // ✅ NUEVO: Función de navegación inteligente
+  async function navegarA(ruta: string) {
+    try {
+      logRouting('Iniciando navegación desde menú inferior a:', ruta);
+      await navegarInteligente(ruta);
+    } catch (error) {
+      console.warn('⚠️ [MENU] Error en navegación inteligente, usando fallback:', error);
+      // ✅ SOLUCIÓN: Fallback a navegación estándar
+      goto(ruta);
+    }
   }
   
   // 🎯 COMPORTAMIENTO INTELIGENTE SOLO EN PÁGINAS DE CLASES
@@ -163,13 +170,13 @@
     
     console.log('🚀 [MENU] Configurando detectores de actividad para página de clase...');
     
-    // Eventos básicos del usuario
+    // ✅ SOLUCIÓN: Eventos básicos del usuario con manejo seguro
     const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     eventos.forEach(evento => {
       document.addEventListener(evento, detectarActividad, { passive: true });
     });
     
-    // Detección de video
+    // ✅ SOLUCIÓN: Detección de video con delay seguro
     setTimeout(() => {
       const videos = document.querySelectorAll('video, iframe');
       videos.forEach((video, index) => {

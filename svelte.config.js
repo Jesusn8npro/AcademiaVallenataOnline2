@@ -6,20 +6,17 @@ const config = {
 	kit: { 
 		adapter: adapter({
 			out: 'build',
-			// 🗜️ HABILITAR PRECOMPRESIÓN PARA PRODUCCIÓN
 			precompress: true, 
 			envPrefix: ''
 		}),
 		alias: {
 			'$lib': 'src/lib'
 		},
-		// 🔧 CONFIGURACIÓN OPTIMIZADA PARA PRODUCCIÓN
 		env: {
 			privatePrefix: 'PRIVATE_',
 			publicPrefix: 'VITE_'
 		},
-		
-		// 🛡️ CSP OPTIMIZADO PARA SEGURIDAD Y PERFORMANCE
+		appDir: 'app',
 		csp: {
 			mode: 'auto',
 			directives: {
@@ -76,22 +73,6 @@ const config = {
 				'base-uri': ['self'],
 				'form-action': ['self'],
 				'media-src': ['self', 'https:', 'blob:', 'data:']
-			}
-		},
-		
-		// 📱 PWA Y PERFORMANCE OPTIMIZATIONS
-		serviceWorker: {
-			register: false // Deshabilitar por ahora hasta implementar correctamente
-		},
-		
-		// 🎯 OPTIMIZACIONES DE ROUTING (removido trailingSlash por compatibilidad)
-		
-		// 🔧 CONFIGURACIÓN DE TYPESCRIPT
-		typescript: {
-			config: (config) => {
-				// Optimizaciones para build de producción
-				config.compilerOptions.sourceMap = false;
-				return config;
 			}
 		}
 	}

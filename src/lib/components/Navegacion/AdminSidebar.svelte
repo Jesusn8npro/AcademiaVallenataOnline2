@@ -5,14 +5,21 @@
   import ModalBusqueda from '$lib/components/Busqueda/ModalBusqueda.svelte';
   import ToggleModoOscuro from '$lib/components/ui/ToggleModoOscuro.svelte';
   import Avatar from '$lib/components/ui/Avatar.svelte';
-  import { onMount } from 'svelte';
+  // ✅ NUEVO: Importar Dashboard de Métricas
+  import DashboardMetricas from '$lib/components/Monitoreo/DashboardMetricas.svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { supabase } from '$lib/supabase/clienteSupabase';
+  // ✅ NUEVO: Importar sistema de routing inteligente
+  import { navegarInteligente, logRouting } from '$lib/utils/routingUtils';
 
   let colapsado = false;
   let menuPerfilAbierto = false;
   let modalBusquedaAbierto = false;
+  
+  // ✅ NUEVO: ESTADO DEL DASHBOARD DE MÉTRICAS
+  let dashboardMetricasAbierto = false;
 
   // Determinar el tipo de usuario
   $: tipoUsuario = $usuario?.rol === 'admin' ? 'admin' : 'estudiante';
@@ -271,6 +278,12 @@
     modalBusquedaAbierto = false;
   }
 
+  // ✅ NUEVO: FUNCIÓN PARA TOGGLE DEL DASHBOARD DE MÉTRICAS
+  function toggleDashboardMetricas() {
+    dashboardMetricasAbierto = !dashboardMetricasAbierto;
+    console.log('🔧 [ADMIN] Dashboard de métricas:', dashboardMetricasAbierto ? 'abierto' : 'cerrado');
+  }
+
   onMount(() => {
     const manejarClicFuera = (evento: Event) => {
       const elementoPerfil = document.querySelector('.perfil-usuario');
@@ -471,6 +484,25 @@
             <div class="nav-badge">{estadisticasAdmin.usuariosComunidad}</div>
           {/if}
         </a>
+
+        <!-- ✅ NUEVO: DASHBOARD DE MÉTRICAS PARA ADMINISTRADOR -->
+        <button 
+          class="nav-item metricas-btn" 
+          class:destacado={false}
+          on:click={toggleDashboardMetricas}
+          title="Dashboard de Métricas del Sistema"
+        >
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3v18h18"/>
+              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+            </svg>
+          </div>
+          {#if !colapsado}
+            <span class="nav-text">Métricas Sistema</span>
+            <div class="nav-badge monitoreo">📊</div>
+          {/if}
+        </button>
       </div>
 
     {:else}
@@ -630,6 +662,13 @@
       </div>
     {/if}
   </nav>
+
+  <!-- ✅ NUEVO: DASHBOARD DE MÉTRICAS PARA ADMINISTRADOR -->
+  {#if tipoUsuario === 'admin' && dashboardMetricasAbierto}
+    <div class="dashboard-metricas-container">
+      <DashboardMetricas />
+    </div>
+  {/if}
 
   <!-- Stats Card - Solo para admins cuando no está colapsado -->
   {#if !colapsado && tipoUsuario === 'admin'}
@@ -1850,6 +1889,65 @@
 @media (max-width: 768px) {
   .sidebar-moderno {
     display: none !important;
+  }
+}
+
+/* ✅ NUEVO: ESTILOS PARA EL DASHBOARD DE MÉTRICAS */
+.dashboard-metricas-container {
+  position: fixed;
+  top: 63px;
+  left: 280px;
+  width: 400px;
+  height: calc(100vh - 63px);
+  z-index: 1000;
+  background: transparent;
+  pointer-events: none;
+}
+
+.dashboard-metricas-container :global(.dashboard-metricas) {
+  pointer-events: auto;
+}
+
+/* ✅ ESTILOS PARA EL BOTÓN DE MÉTRICAS */
+.metricas-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  color: inherit;
+}
+
+.metricas-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.nav-badge.monitoreo {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  animation: pulse-badge 2s infinite;
+}
+
+/* ✅ RESPONSIVE PARA EL DASHBOARD */
+@media (max-width: 1200px) {
+  .dashboard-metricas-container {
+    left: 80px;
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-metricas-container {
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    top: 0;
   }
 }
 </style>

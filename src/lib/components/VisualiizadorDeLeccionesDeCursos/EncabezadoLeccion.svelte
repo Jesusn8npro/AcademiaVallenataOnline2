@@ -30,14 +30,20 @@
   
   const dispatch = createEventDispatcher();
   
-  // Funciones simplificadas
+  // ✅ NUEVO: Funciones seguras con browser check
   function toggleFullscreen() {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen?.() || 
-      (document.documentElement as any).webkitRequestFullscreen?.();
-    } else {
-      document.exitFullscreen?.() || 
-      (document as any).webkitExitFullscreen?.();
+    if (typeof document === 'undefined') return;
+    
+    try {
+      if (!isFullscreen) {
+        document.documentElement.requestFullscreen?.() || 
+        (document.documentElement as any).webkitRequestFullscreen?.();
+      } else {
+        document.exitFullscreen?.() || 
+        (document as any).webkitExitFullscreen?.();
+      }
+    } catch (error) {
+      console.warn('⚠️ [ENCABEZADO] Error en fullscreen:', error);
     }
   }
 
@@ -55,29 +61,26 @@
     }
   }
 
+  // ✅ NUEVO: Función segura de actualización de estado
   function actualizarEstado() {
-    const wasFullscreen = isFullscreen;
-    const wasScrolled = isScrolled;
-    const wasDesktop = isDesktop;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
     
-    isFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    isScrolled = window.scrollY > 10;
-    isDesktop = window.innerWidth > 1024;
-    
-    // 🚨 LOGGING AGRESIVO para identificar cuándo se esconde el encabezado
-    if (wasFullscreen !== isFullscreen) {
-      console.log('🔍 [ENCABEZADO] Cambio fullscreen:', wasFullscreen, '→', isFullscreen);
+    try {
+      const wasFullscreen = isFullscreen;
+      const wasScrolled = isScrolled;
+      const wasDesktop = isDesktop;
+      
+      isFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      isScrolled = window.scrollY > 10;
+      isDesktop = window.innerWidth > 1024;
+      
+      // ✅ SOLUCIÓN: Logging reducido para mejor rendimiento
+      if (wasFullscreen !== isFullscreen || wasScrolled !== isScrolled || wasDesktop !== isDesktop) {
+        console.log('🔍 [ENCABEZADO] Estado actualizado:', { isFullscreen, isScrolled, isDesktop });
+      }
+    } catch (error) {
+      console.warn('⚠️ [ENCABEZADO] Error actualizando estado:', error);
     }
-    if (wasScrolled !== isScrolled) {
-      console.log('🔍 [ENCABEZADO] Cambio scroll:', wasScrolled, '→', isScrolled);
-    }
-    if (wasDesktop !== isDesktop) {
-      console.log('🔍 [ENCABEZADO] Cambio desktop:', wasDesktop, '→', isDesktop);
-    }
-    
-    // ✅ IMPORTANTE: NO OCULTAR PERMANENTEMENTE EL ENCABEZADO
-    // Solo cambiar el estado de scrolled para el shadow, pero mantener visible
-    console.log('🔍 [ENCABEZADO] Estado actual:', { isFullscreen, isScrolled, isDesktop });
   }
 
   function toggleMenuOpciones() {
