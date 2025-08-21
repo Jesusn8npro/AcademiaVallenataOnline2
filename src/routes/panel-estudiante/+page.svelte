@@ -79,14 +79,15 @@
   /* 🎮 LAYOUT GAMING PRINCIPAL */
   .panel-gaming-container {
     display: grid;
-    grid-template-columns: 1fr 300px;
-    grid-template-areas: "main widgets";
-    height: 100vh; /* Altura fija para fijar sidebars */
+    grid-template-columns: 1fr; /* 🚀 Cambiar a una sola columna ya que el sidebar es fixed */
+    grid-template-areas: "main"; /* 🚀 Solo el contenido principal */
+    min-height: 100vh; /* 🚀 Cambiar a min-height para permitir crecimiento */
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
     color: white;
     gap: 20px;
     padding: 20px;
-    overflow: hidden; /* Evitar scroll en el contenedor principal */
+    padding-right: 340px; /* 🚀 Agregar padding derecho para el sidebar fijo */
+    overflow: visible; /* 🚀 Permitir overflow natural */
     max-width: 100vw; /* Evitar que se extienda más allá del viewport */
     box-sizing: border-box; /* Incluir padding en el width total */
   }
@@ -99,32 +100,10 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    overflow-y: auto; /* Solo el contenido central tiene scroll */
-    overflow-x: hidden;
-    height: 100%; /* Tomar toda la altura disponible */
-    padding-right: 8px; /* Espacio para el scrollbar */
+    overflow: visible; /* 🚀 Eliminar scroll del contenido central */
+    height: auto; /* 🚀 Altura automática en lugar de 100% */
+    padding-right: 0; /* 🚀 Eliminar padding para scrollbar */
   }
-
-  /* 🎨 Estilizar scrollbar del contenido principal */
-  .contenido-principal::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .contenido-principal::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-  }
-
-  .contenido-principal::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-
-  .contenido-principal::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-  }
-
-
 
   /* 🏆 LOGROS Y DESAFÍOS - Estilos manejados en el componente */
 
@@ -137,28 +116,22 @@
 
   .simulador-card, .estadisticas-card {
     /* Contenedores para los componentes - sin padding ni background */
-    height: 450px; /* Altura fija para consistencia */
+    height: 480px; /* 🚀 Altura fija ajustada para consistencia */
     position: relative;
   }
 
 
 
-  /* 📱 RESPONSIVE */
-  @media (max-width: 1200px) {
-    .panel-gaming-container {
-      grid-template-columns: 1fr 250px;
-    }
-  }
 
-  @media (max-width: 900px) {
+
+  @media (max-width: 1300px) {
     .panel-gaming-container {
       height: auto; /* Permitir altura automática en móvil */
       min-height: 100vh;
       overflow: visible;
       grid-template-columns: 1fr;
       grid-template-areas: 
-        "main"
-        "widgets";
+        "main";
       gap: 16px;
       padding: 16px;
     }
@@ -172,12 +145,42 @@
     .simulador-stats {
       grid-template-columns: 1fr;
     }
+
+    /* 🚀 NUEVO: Ajustar altura de las tarjetas en móvil */
+    .simulador-card, .estadisticas-card {
+      height: auto; /* Altura automática en móvil */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual para consistencia */
+    }
+
+    /* 🚀 NUEVO: Asegurar que las recomendaciones se muestren completas */
+    .simulador-card {
+      height: auto !important; /* Forzar altura automática */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual */
+    }
+
+    /* 🚀 OCULTAR SIDEBAR DERECHO EN MÓVIL */
+    :global(.sidebar-derecho) {
+      display: none !important;
+    }
+  }
+
+  /* 🚀 MEDIA QUERY PARA PANTALLAS MEDIANAS */
+  @media (max-width: 1400px) and (min-width: 1301px) {
+    .panel-gaming-container {
+      padding-right: 320px; /* 🚀 Reducir padding para pantallas medianas */
+    }
   }
 
   /* 🚫 PREVENIR SCROLL HORIZONTAL GLOBAL EN ESTA PÁGINA */
   :global(html, body) {
     max-width: 100vw;
     overflow-x: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important; /* 🚀 Sobrescribir fondo blanco */
+  }
+
+  /* 🚀 SOBRESCRIBIR FONDO BLANCO DEL CSS GLOBAL */
+  :global(#svelte) {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
   }
 
   /* Asegurar que todos los elementos dentro del panel no causen overflow */

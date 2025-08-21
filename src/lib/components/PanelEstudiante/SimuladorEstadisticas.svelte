@@ -318,6 +318,21 @@
     </div>
   </div>
 
+  <!-- 🚀 TÍTULO ANIMADO DEL LANZAMIENTO -->
+  <div class="lanzamiento-anuncio">
+    <div class="lanzamiento-header">
+      <span class="lanzamiento-icon">🚀</span>
+      <h4 class="lanzamiento-titulo">GRAN LANZAMIENTO</h4>
+    </div>
+    <div class="lanzamiento-fecha">
+      <span class="fecha-destacada">10 de Septiembre</span>
+      <span class="fecha-ano">2025</span>
+    </div>
+    <div class="lanzamiento-subtitulo">
+      ¡Prepárate para la revolución del acordeón!
+    </div>
+  </div>
+
   <!-- ✨ Característica destacada (rotativa) -->
   <div class="caracteristica-destacada">
     <div 
@@ -383,31 +398,6 @@
     {/if}
   </div>
 
-  <!-- 📋 Resumen de beneficios -->
-  <div class="beneficios-resumen">
-    <div class="beneficio">
-      <span class="beneficio-icon">🎯</span>
-      <span class="beneficio-texto">Retos personalizados</span>
-    </div>
-    <div class="beneficio">
-      <span class="beneficio-icon">📚</span>
-      <span class="beneficio-texto">Clases pendientes</span>
-    </div>
-    <div class="beneficio">
-      <span class="beneficio-icon">🏋️</span>
-      <span class="beneficio-texto">Ejercicios prácticos</span>
-    </div>
-  </div>
-
-  <!-- 🎮 Botón de exploración -->
-  <button class="btn-explorar" on:click={explorarSimulador}>
-    <span class="btn-icon">🔍</span>
-    <span class="btn-texto">Explorar Simulador Actual</span>
-    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  </button>
-
 </div>
 
 <style>
@@ -418,11 +408,12 @@
     padding: 16px;
     color: white;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 🚀 Cambiar de hidden a visible */
     box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    height: 100%;
+    height: auto; /* 🚀 Cambiar de 100% a auto */
+    min-height: 480px; /* 🚀 Altura mínima ajustada para balancear con recomendaciones */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -596,34 +587,80 @@
     opacity: 0.9;
   }
 
-  /* 📋 BENEFICIOS RESUMEN */
-  .beneficios-resumen {
+  /* 🚀 NUEVO: TÍTULO ANIMADO DEL LANZAMIENTO */
+  .lanzamiento-anuncio {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    color: #1a1a1a;
+    margin-top: auto;
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3); }
+    to { box-shadow: 0 6px 24px rgba(255, 215, 0, 0.6); }
+  }
+
+  .lanzamiento-header {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
     margin-bottom: 8px;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
   }
 
-  .beneficio {
+  .lanzamiento-icon {
+    font-size: 1.2rem;
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    60% { transform: translateY(-3px); }
+  }
+
+  .lanzamiento-titulo {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .lanzamiento-fecha {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 4px;
-    flex: 1;
-    text-align: center;
+    margin-bottom: 8px;
   }
 
-  .beneficio-icon {
-    font-size: 1rem;
+  .fecha-destacada {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
   }
 
-  .beneficio-texto {
-    font-size: 0.6rem;
+  .fecha-ano {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #ff6b6b;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    animation: pulse 2s infinite;
+  }
+
+  .lanzamiento-subtitulo {
+    font-size: 0.75rem;
     font-weight: 600;
-    opacity: 0.8;
+    color: #1a1a1a;
+    opacity: 0.9;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
   }
 
   /* 📊 SKELETON LOADER */
@@ -718,49 +755,13 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
-  /* 🎮 BOTÓN DE EXPLORACIÓN */
-  .btn-explorar {
-    background: linear-gradient(45deg, #ffd700, #ffa500);
-    color: #1a1a1a;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
-    margin-top: auto;
-  }
-
-  .btn-explorar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-  }
-
-  .btn-icon {
-    font-size: 0.9rem;
-  }
-
-  .btn-arrow {
-    width: 14px;
-    height: 14px;
-    transition: transform 0.3s ease;
-  }
-
-  .btn-explorar:hover .btn-arrow {
-    transform: translateX(3px);
-  }
-
   /* 📱 RESPONSIVE */
   @media (max-width: 900px) {
     .simulador-preview {
       padding: 12px;
       gap: 10px;
+      height: auto; /* 🚀 Asegurar altura automática en móvil */
+      min-height: auto; /* 🚀 Sin altura mínima fija en móvil */
     }
     
     .preview-header {
@@ -792,10 +793,40 @@
       grid-template-columns: 1fr;
       gap: 4px;
     }
-    
-    .btn-explorar {
-      padding: 8px 12px;
-      font-size: 0.75rem;
+
+    /* 🚀 NUEVO: Asegurar que las características se muestren completas en móvil */
+    .caracteristica-info h4 {
+      font-size: 0.8rem;
+    }
+
+    .caracteristica-info p {
+      font-size: 0.65rem;
+      line-height: 1.4;
+    }
+
+    .mini-titulo {
+      font-size: 0.6rem;
+      white-space: normal; /* 🚀 Permitir wrap en móvil */
+      overflow: visible;
+      text-overflow: unset;
+    }
+  }
+
+  /* 🚀 NUEVO: BREAKPOINT PARA TABLETS - TRANSICIÓN SUAVE */
+  @media (max-width: 1300px) {
+    .simulador-preview {
+      height: auto; /* 🚀 Altura automática en tablets */
+      min-height: 480px; /* 🚀 Altura mínima ajustada para tablets */
+      overflow: visible; /* 🚀 Sin overflow en tablets */
+    }
+
+    .caracteristicas-grid {
+      grid-template-columns: repeat(2, 1fr); /* 🚀 Mantener 2 columnas en tablets */
+      gap: 8px; /* 🚀 Espaciado ajustado */
+    }
+
+    .estadisticas-grid {
+      grid-template-columns: repeat(2, 1fr); /* 🚀 Mantener 2 columnas en tablets */
     }
   }
 </style>

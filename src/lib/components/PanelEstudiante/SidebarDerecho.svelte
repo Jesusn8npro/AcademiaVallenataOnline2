@@ -36,21 +36,14 @@
         fecha: '24 jun',
         vistas: '0',
         estado: 'publicado'
-      },
-      {
-        id: 3,
-        titulo: 'Cómo estudiar acordeón correctamente y avanzar de forma real',
-        fecha: '24 jun',
-        vistas: '0',
-        estado: 'publicado'
       }
+      // 🚀 Eliminar tercer artículo para reducir contenido
     ],
     ranking: [
       { nombre: 'Jesus Gonzalez', puntos: 3537, posicion: 1 },
       { nombre: 'Robinson Niñez', puntos: 1900, posicion: 2 },
-      { nombre: 'John Orozco', puntos: 1900, posicion: 3 },
-      { nombre: 'Wilfred José Van Bochove Marín', puntos: 1500, posicion: 4 },
-      { nombre: 'Aymer Zaveedra', puntos: 1300, posicion: 5 }
+      { nombre: 'John Orozco', puntos: 1900, posicion: 3 }
+      // 🚀 Eliminar usuarios 4 y 5 para reducir contenido
     ]
   };
 
@@ -67,7 +60,7 @@
         .select('*')
         .eq('estado', 'publicado')
         .order('creado_en', { ascending: false })
-        .limit(3);
+        .limit(2); // 🚀 Cambiar de 3 a 2 artículos
 
       if (error) throw error;
       
@@ -90,7 +83,7 @@
       cargandoRanking = false;
       
       // 📊 CARGAR DATOS REALES EN SEGUNDO PLANO
-      const ranking = await GamificacionService.obtenerRanking('general', 5);
+      const ranking = await GamificacionService.obtenerRanking('general', 3); // 🚀 Cambiar de 5 a 3
       
       // ✅ ACTUALIZAR CON DATOS REALES
       if (ranking && ranking.length > 0) {
@@ -108,13 +101,9 @@
     try {
       const { data: publicaciones, error } = await supabase
         .from('comunidad_publicaciones')
-        .select(`
-          *,
-          perfiles(nombre_usuario, nombre, apellido, nombre_completo, url_foto_perfil)
-        `)
-        .not('tipo', 'in', '("foto_perfil","foto_portada")')
+        .select('*, perfiles(nombre, apellido, url_foto_perfil)')
         .order('fecha_creacion', { ascending: false })
-        .limit(3);
+        .limit(2); // 🚀 Cambiar de 3 a 2 publicaciones
 
       if (error) throw error;
 
@@ -310,7 +299,7 @@
       
             {#if publicacionesRecientes.length > 0}
         <div class="comunidad-lista">
-          {#each publicacionesRecientes.slice(0, 3) as publicacion}
+          {#each publicacionesRecientes.slice(0, 2) as publicacion} <!-- 🚀 Cambiar de 3 a 2 -->
             <div class="comunidad-item" on:click={() => irAPerfilUsuario(publicacion.usuario_slug)} role="button" tabindex="0">
               <div class="publicacion-avatar">
                 <Avatar 
@@ -347,31 +336,16 @@
   .sidebar-derecho {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    height: 100%; /* Altura fija */
-    overflow-y: auto; /* Scroll vertical cuando sea necesario */
-    overflow-x: hidden;
+    gap: 12px; /* 🚀 Reducir gap de 16px a 12px */
+    height: calc(100vh - 140px); /* 🚀 Altura fija calculada */
+    overflow: visible; /* 🚀 Eliminar scroll interno */
     grid-area: widgets;
-    padding-right: 8px; /* Espacio para scrollbar */
-  }
-
-  /* 🎨 Estilizar scrollbar del sidebar */
-  .sidebar-derecho::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .sidebar-derecho::-webkit-scrollbar-track {
-    background: rgba(100, 116, 139, 0.1);
-    border-radius: 3px;
-  }
-
-  .sidebar-derecho::-webkit-scrollbar-thumb {
-    background: rgba(100, 116, 139, 0.3);
-    border-radius: 3px;
-  }
-
-  .sidebar-derecho::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.5);
+    padding-right: 0; /* 🚀 Eliminar padding para scrollbar */
+    padding-top: 20px;
+    position: fixed; /* 🚀 Cambiar de sticky a fixed */
+    right: 20px; /* 🚀 Posicionar desde la derecha */
+    width: 300px; /* 🚀 Ancho fijo */
+    z-index: 1000; /* 🚀 Asegurar que esté por encima del contenido */
   }
 
   /* 🔄 Loading */
@@ -403,8 +377,8 @@
   .widget-card {
     background: rgba(30, 41, 59, 0.8);
     backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 12px; /* 🚀 Reducir de 16px a 12px */
+    padding: 12px; /* 🚀 Reducir de 16px a 12px */
     border: 1px solid rgba(100, 116, 139, 0.2);
     transition: all 0.3s ease;
     flex-shrink: 0; /* Evitar que se compriman demasiado */
@@ -419,13 +393,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 12px; /* 🚀 Reducir de 16px a 12px */
+    padding-bottom: 8px; /* 🚀 Reducir de 12px a 8px */
     border-bottom: 1px solid rgba(100, 116, 139, 0.3);
   }
 
   .widget-header h4 {
-    font-size: 1.1rem;
+    font-size: 1rem; /* 🚀 Reducir de 1.1rem a 1rem */
     font-weight: bold;
     margin: 0;
   }

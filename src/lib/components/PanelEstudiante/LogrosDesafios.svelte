@@ -14,7 +14,6 @@
     rachaActual: 0,
     puntosGanados: 0
   };
-  let debugInfo = "";
 
   // 🕒 FUNCIÓN PARA CALCULAR TIEMPO HISTÓRICO TOTAL (EN PARALELO)
   async function calcularTiempoHistoricoRapido(usuarioId: string): Promise<number> {
@@ -255,14 +254,12 @@
   // 🔥 Cargar datos REALES desde las tablas correctas
     async function cargarDatosReales() {
     if (!$usuario?.id) {
-      debugInfo = "❌ No hay usuario autenticado";
       cargando = false;
       return;
     }
 
     try {
       console.log('🚀 Buscando datos REALES para:', $usuario.id);
-      debugInfo = "🔍 Ejecutando consultas en paralelo...";
 
       // 📅 Fecha más amplia para capturar más actividad (últimos 30 días)
       const fechaHaceUnMes = new Date();
@@ -429,39 +426,10 @@
          puntosGanados: puntosFinales // Puntos reales del ranking (0 si no está en ranking)
        };
 
-             // 🔍 Info de debug detallada
-       debugInfo = `
-📊 DATOS REALES ENCONTRADOS:
-• Lecciones completadas: ${leccionesEstaSemanCompletadas} 
-• Tutoriales con progreso: ${tutorialesEstaSemanProgreso}  
-• Sesiones simulador: ${simuladorSesiones?.length || 0}
-• Puntos del ranking: ${puntosFinales}
-• Actividad reciente: ${actividadReciente?.length || 0} registros
-• Racha calculada: ${rachaCalculada} días consecutivos
-
-⏰ Tiempo desglosado (TIEMPO REAL):
-• Tiempo REAL de plataforma: ${tiempoRealPlataforma} min 🎯
-• Tiempo histórico TOTAL: ${tiempoHistoricoTotal} min
-• Servicio semanal: ${tiempoTotalSemanal} min
-• Lecciones período: ${tiempoLecciones.toFixed(2)} min (convertido de ms)
-• Tutoriales período: ${tiempoTutoriales.toFixed(2)} min (convertido de ms)
-• Simulador período: ${tiempoSimulador} min
-• Manual período: ${tiempoManual.toFixed(2)} min
-• FINAL USADO: ${tiempoFinal} min
-
-🔍 Estado de consultas:
-• Ranking: ${ranking.length > 0 ? 'OK ✅' : 'Sin datos ⚠️'}
-• Lecciones: ${progresoLecciones.length > 0 ? 'OK ✅' : 'Sin datos ⚠️'}
-• Tutoriales: ${progresoTutoriales.length > 0 ? 'OK ✅' : 'Sin datos ⚠️'}
-• Simulador: ${simuladorSesiones.length > 0 ? 'OK ✅' : 'Sin datos ⚠️'}
-       `.trim();
-
       console.log('✅ STATS FINALES REALES:', stats);
-      console.log('🔍 DEBUG INFO:', debugInfo);
 
     } catch (error) {
       console.error('❌ Error cargando datos:', error);
-      debugInfo = `❌ ERROR: ${error}`;
       
       // Mantener en 0 si hay error
       stats = { 
@@ -551,14 +519,6 @@
         <span class="label">Puntos</span>
       </div>
     </div>
-
-    <!-- 🔍 INFO DE DEBUG -->
-    {#if debugInfo}
-      <details class="debug-info">
-        <summary>🔍 Ver detalles técnicos</summary>
-        <pre>{debugInfo}</pre>
-      </details>
-    {/if}
 
     <!-- 🎯 Acciones rápidas -->
     <div class="acciones">
@@ -673,28 +633,6 @@
     color: #94a3b8;
     font-size: 14px;
     font-weight: 500;
-  }
-
-  .debug-info {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #475569;
-    border-radius: 8px;
-    padding: 12px;
-    margin: 16px 0;
-    font-size: 12px;
-  }
-
-  .debug-info summary {
-    color: #94a3b8;
-    cursor: pointer;
-    margin-bottom: 8px;
-  }
-
-  .debug-info pre {
-    color: #e2e8f0;
-    margin: 0;
-    white-space: pre-wrap;
-    font-family: 'Courier New', monospace;
   }
 
   .acciones {

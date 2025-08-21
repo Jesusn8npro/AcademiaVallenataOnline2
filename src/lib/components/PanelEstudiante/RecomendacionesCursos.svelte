@@ -21,6 +21,7 @@
       nivel: 'principiante',
       categoria: 'Vallenato',
       precio_normal: 0,
+      precio_rebajado: null, // 🚀 NUEVO: Agregar precio rebajado
       tipo: 'curso',
       rating: '4.8',
       estudiantes: '500+',
@@ -35,6 +36,7 @@
       nivel: 'intermedio',
       categoria: 'Vallenato',
       precio_normal: 0,
+      precio_rebajado: null, // 🚀 NUEVO: Agregar precio rebajado
       tipo: 'tutorial',
       rating: '4.6',
       estudiantes: '300+',
@@ -78,7 +80,7 @@
         nivel: curso.nivel || 'principiante',
         categoria: curso.categoria || 'Vallenato',
         precio_normal: curso.precio_normal || 0,
-        precio_descuento: curso.precio_descuento || null,
+        precio_rebajado: curso.precio_rebajado || null, // 🚀 NUEVO: Campo correcto
         tipo: 'curso',
         rating: (4.2 + Math.random() * 0.8).toFixed(1),
         estudiantes: `${Math.floor(Math.random() * 2000) + 100}+`,
@@ -95,8 +97,8 @@
         nivel: tutorial.nivel || 'principiante',
         categoria: tutorial.categoria || 'Vallenato',
         artista: tutorial.artista || 'Artista Desconocido',
-        precio_normal: 0,
-        precio_descuento: null,
+        precio_normal: tutorial.precio_normal || 0, // 🚀 NUEVO: Usar precio real del tutorial
+        precio_rebajado: tutorial.precio_rebajado || null, // 🚀 NUEVO: Campo correcto
         tipo: 'tutorial',
         rating: (4.2 + Math.random() * 0.8).toFixed(1),
         estudiantes: `${Math.floor(Math.random() * 1500) + 50}+`,
@@ -165,8 +167,8 @@
   }
 
   // 📊 Calcular descuento
-  function calcularDescuento(precioNormal: number, precioDescuento: number): number {
-    return Math.round(((precioNormal - precioDescuento) / precioNormal) * 100);
+  function calcularDescuento(precioNormal: number, precioRebajado: number): number {
+    return Math.round(((precioNormal - precioRebajado) / precioNormal) * 100);
   }
 
   // ✂️ Acortar texto
@@ -238,8 +240,8 @@
                   {item.tipo === 'curso' ? '🎓 CURSO' : '🎵 TUTORIAL'}
                 </div>
                 
-                {#if item.precio_descuento && item.precio_normal}
-                  {@const descuento = calcularDescuento(item.precio_normal, item.precio_descuento)}
+                {#if item.precio_rebajado && item.precio_normal}
+                  {@const descuento = calcularDescuento(item.precio_normal, item.precio_rebajado)}
                   {#if descuento > 0}
                     <div class="descuento-badge">-{descuento}%</div>
                   {/if}
@@ -282,9 +284,9 @@
                   <div class="precio-container">
                     {#if item.precio_normal === 0 || item.precio_normal === null}
                       <span class="precio-gratis">¡GRATIS!</span>
-                    {:else if item.precio_descuento && item.precio_descuento < item.precio_normal}
+                    {:else if item.precio_rebajado && item.precio_rebajado < item.precio_normal}
                       <span class="precio-original">{formatearPrecio(item.precio_normal)}</span>
-                      <span class="precio-actual">{formatearPrecio(item.precio_descuento)}</span>
+                      <span class="precio-actual">{formatearPrecio(item.precio_rebajado)}</span>
                     {:else}
                       <span class="precio-actual">{formatearPrecio(item.precio_normal)}</span>
                     {/if}
@@ -326,7 +328,8 @@
   /* 🚀 CONTENEDOR PRINCIPAL */
   .recomendaciones-cursos {
     width: 100%;
-    height: 100%;
+    height: auto; /* 🚀 Cambiar de 100% a auto */
+    min-height: 480px; /* 🚀 Altura mínima igual al simulador */
   }
 
   /* 🎯 TARJETA DE RECOMENDACIONES */
@@ -336,11 +339,12 @@
     padding: 16px;
     color: white;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 🚀 Cambiar de hidden a visible para que se vea completo */
     box-shadow: 0 8px 32px rgba(124, 58, 237, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    height: 100%;
+    height: auto; /* 🚀 Cambiar de 100% a auto */
+    min-height: 480px; /* 🚀 Altura mínima igual al simulador */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -410,8 +414,90 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    overflow-y: auto;
-    max-height: 380px;
+    overflow-y: visible; /* 🚀 NUNCA scroll */
+    max-height: none; /* 🚀 Sin altura máxima */
+    height: auto; /* 🚀 Altura automática */
+  }
+
+  /* 📱 RESPONSIVE - ELIMINAR SCROLL EN MÓVIL */
+  @media (max-width: 900px) {
+    .contenido-recomendaciones {
+      overflow-y: visible; /* Sin scroll en móvil */
+      max-height: none; /* Sin altura máxima en móvil */
+      height: auto; /* Altura automática */
+    }
+
+    .tarjeta-recomendaciones {
+      height: auto; /* Altura automática en móvil */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
+      padding: 20px; /* Padding mayor en móvil para mejor legibilidad */
+    }
+
+    .recomendaciones-grid {
+      grid-template-columns: 1fr; /* Una columna en móvil */
+      gap: 16px; /* Espaciado mayor en móvil */
+    }
+
+    /* 🚀 NUEVO: Asegurar que las tarjetas se muestren completas */
+    .curso-card {
+      height: auto; /* Altura automática */
+      min-height: auto; /* Sin altura mínima */
+      padding: 12px; /* Padding mayor en móvil */
+    }
+
+    /* 🚀 NUEVO: Ajustar el contenedor principal para móvil */
+    .recomendaciones-cursos {
+      height: auto; /* Altura automática en móvil */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
+    }
+
+    /* 🚀 NUEVO: Ajustar header para móvil */
+    .recomendaciones-header {
+      flex-direction: column; /* Stack vertical en móvil */
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .header-stats {
+      width: 100%; /* Ocupar todo el ancho */
+      justify-content: space-between; /* Distribuir badges */
+    }
+
+    /* 🚀 NUEVO: Ajustar botones de acción para móvil */
+    .acciones-container {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ver-mas-btn, .ver-todos-btn {
+      width: 100%; /* Botones de ancho completo en móvil */
+      padding: 12px 16px; /* Padding mayor para mejor touch */
+    }
+  }
+
+  /* 🚀 NUEVO: BREAKPOINT PARA TABLETS - TRANSICIÓN SUAVE */
+  @media (max-width: 1300px) {
+    .contenido-recomendaciones {
+      overflow-y: visible; /* Sin scroll en tablets */
+      max-height: none; /* Sin altura máxima en tablets */
+      height: auto; /* Altura automática */
+    }
+
+    .tarjeta-recomendaciones {
+      height: auto; /* Altura automática en tablets */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
+    }
+
+    .recomendaciones-cursos {
+      height: auto; /* Altura automática en tablets */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
+    }
+
+    /* 🚀 NUEVO: Ajustar grid para tablets */
+    .recomendaciones-grid {
+      grid-template-columns: repeat(2, 1fr); /* Mantener 2 columnas en tablets */
+      gap: 16px; /* Espaciado ligeramente mayor */
+    }
   }
 
   /* 🎯 TARJETAS DE CURSO (Basado en GridCursos) */
@@ -811,42 +897,78 @@
     100% { left: 100%; }
   }
 
-  /* 📱 RESPONSIVE */
+  /* 📱 RESPONSIVE - ESTILOS ADICIONALES PARA MÓVIL */
   @media (max-width: 900px) {
+    /* 🚀 NUEVO: Ajustes adicionales para móvil */
+    .curso-imagen-container {
+      height: 70px; /* Imagen ligeramente más alta en móvil */
+    }
+
+    .curso-meta {
+      flex-direction: column; /* Stack vertical para mejor legibilidad */
+      gap: 4px;
+    }
+
+    .nivel-container {
+      margin: 6px 0; /* Margen mayor para mejor separación */
+    }
+
+    .imagen-overlay {
+      opacity: 1; /* Siempre visible en móvil para mejor UX */
+      background: rgba(0, 0, 0, 0.3); /* Fondo más sutil */
+    }
+
+    .btn-ver-curso {
+      font-size: 0.65rem; /* Botón más pequeño */
+      padding: 4px 8px; /* Padding ajustado */
+    }
+  }
+
+  /* 🚀 NUEVO: BREAKPOINT PARA MÓVILES MUY PEQUEÑOS */
+  @media (max-width: 480px) {
     .tarjeta-recomendaciones {
-      padding: 16px;
-      gap: 12px;
+      padding: 16px; /* Padding ajustado para móviles muy pequeños */
+      border-radius: 16px; /* Border radius menor */
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
     }
 
-    .recomendaciones-header {
-      gap: 8px;
+    .recomendaciones-cursos {
+      min-height: 480px; /* 🚀 Mantener altura mínima igual al simulador */
     }
 
-    .header-info h3 {
-      font-size: 1.1rem;
+    .recomendaciones-header h3 {
+      font-size: 1rem; /* Título más pequeño */
     }
 
-    .item-imagen {
-      width: 50px;
-      height: 50px;
+    .subtitulo {
+      font-size: 0.7rem; /* Subtítulo más pequeño */
     }
 
-    .item-titulo {
-      font-size: 0.85rem;
+    .stat-badge {
+      font-size: 0.65rem; /* Badges más pequeños */
+      padding: 3px 6px; /* Padding menor */
     }
 
-    .item-descripcion,
-    .item-artista {
-      font-size: 0.7rem;
+    .curso-card {
+      padding: 10px; /* Padding menor en móviles muy pequeños */
     }
 
-    .lista-recomendaciones {
-      gap: 8px;
+    .curso-titulo {
+      font-size: 0.7rem; /* Título más pequeño */
     }
 
-    .item-recomendacion {
-      padding: 10px;
-      gap: 10px;
+    .curso-descripcion {
+      font-size: 0.65rem; /* Descripción más pequeña */
+    }
+
+    .btn-acceder {
+      font-size: 0.6rem; /* Botón más pequeño */
+      padding: 3px 6px; /* Padding menor */
+    }
+
+    .ver-mas-btn, .ver-todos-btn {
+      font-size: 0.7rem; /* Botones más pequeños */
+      padding: 10px 14px; /* Padding ajustado */
     }
   }
 </style>

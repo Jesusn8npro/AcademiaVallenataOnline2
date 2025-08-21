@@ -7,6 +7,7 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { usuario } from '$lib/UsuarioActivo/usuario';
   import { generateSlug } from '$lib/utilidades/utilidadesSlug';
+  import Avatar from '$lib/components/ui/Avatar.svelte'; // 🚀 Importar componente Avatar
 
   // 📊 Estados
   let cargando = true;
@@ -36,6 +37,28 @@
       ultima_actividad: 'Hoy'
     }
   };
+
+  // 🚀 MENSAJES MOTIVACIONALES PERSUASIVOS
+  const mensajesMotivacionales = [
+    "¡Tu pasión por el acordeón te llevará lejos! 🎵",
+    "Cada nota que aprendes es un paso hacia tu sueño musical ✨",
+    "El talento se desarrolla con práctica constante 🎯",
+    "Tu dedicación hoy construye tu mañana musical 🌟",
+    "El acordeón es tu voz, ¡hazla cantar! 🎼",
+    "Cada clase te acerca más a ser el músico que quieres ser 🚀",
+    "La música está en tu corazón, ¡déjala salir! 💫",
+    "Tu progreso musical inspira a otros a seguir sus sueños 🌈",
+    "El ritmo vallenato corre por tus venas 🎭",
+    "Cada acorde que dominas es una victoria personal 🏆",
+    "Tu amor por la música te hace único y especial 💝",
+    "El acordeón es tu compañero de vida musical 🎪",
+    "Cada día de práctica te hace más fuerte musicalmente 💪",
+    "Tu determinación es la clave de tu éxito musical 🔑",
+    "La música no tiene límites, ¡tú tampoco! 🌌"
+  ];
+
+  // 🎲 Mensaje motivacional aleatorio para esta sesión
+  let mensajeMotivacional = '';
 
     // 🎯 LÓGICA EXACTA DE "MIS CURSOS" - COPIADA COMPLETA
   async function cargarUltimaActividad() {
@@ -571,8 +594,33 @@
     return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
   }
 
+  // 🚀 CARGA INMEDIATA DE INTERFAZ
   onMount(() => {
+    console.log('🚀 [CONTINUAR] Componente cargado INMEDIATAMENTE');
+    
+    // 🎲 SELECCIONAR MENSAJE MOTIVACIONAL ALEATORIO
+    const indiceAleatorio = Math.floor(Math.random() * mensajesMotivacionales.length);
+    mensajeMotivacional = mensajesMotivacionales[indiceAleatorio];
+    console.log('💫 [MOTIVACIÓN] Mensaje seleccionado:', mensajeMotivacional);
+    
+    // 📊 CARGAR DATOS PRINCIPALES
     cargarUltimaActividad();
+    
+    // ⚡ CARGAR DATOS ADICIONALES EN SEGUNDO PLANO
+    setTimeout(async () => {
+      try {
+        console.log('📊 [CONTINUAR] Cargando datos adicionales en segundo plano...');
+        
+        // Aquí puedes agregar la carga de datos específicos del panel
+        // Por ahora solo simulamos un delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('✅ [CONTINUAR] Datos adicionales cargados en segundo plano');
+        
+      } catch (error) {
+        console.warn('⚠️ [CONTINUAR] Error cargando datos adicionales en segundo plano:', error);
+      }
+    }, 100); // 100ms después de cargar la interfaz
   });
 
   // 🔄 INICIAR AUTO-PLAY SOLO UNA VEZ AL CARGAR DATOS
@@ -655,17 +703,17 @@
       <!-- Header del slider con navegación -->
       <div class="slider-header">
         <div class="usuario-info">
-          <img 
-            src={$usuario?.url_foto_perfil || '/images/perfil-portada/default-avatar.png'} 
+          <Avatar 
+            src={$usuario?.url_foto_perfil}
             alt="Foto de perfil"
-            class="avatar-usuario"
-            on:click={() => goto('/perfil')}
-            role="button"
-            tabindex="0"
+            nombreCompleto={$usuario?.nombre || 'Usuario'}
+            size="large"
+            onClick={() => goto('/perfil')}
           />
+          
           <div class="saludo-usuario">
             <span class="saludo">¡Hola {$usuario?.nombre || 'Estudiante'}!</span>
-            <span class="submensaje">Continúa aprendiendo 🎵</span>
+            <span class="submensaje">{mensajeMotivacional}</span>
           </div>
         </div>
         
@@ -757,6 +805,15 @@
           <button class="boton-continuar" on:click={continuarAprendizaje}>
             <span class="icono-play">▶️</span>
             <span>Continuar {ultimaActividad.tipo === 'curso' ? 'Lección' : 'Clase'}</span>
+            <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+          
+          <!-- 🚀 BOTÓN PARA IR A MIS CURSOS -->
+          <button class="boton-mis-cursos" on:click={() => goto('/mis-cursos')}>
+            <span class="icono-libros">📚</span>
+            <span>Ver Todos Mis Cursos</span>
             <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
@@ -905,10 +962,11 @@
   }
 
   .titulo-principal {
-    font-size: 2.2rem;
-    font-weight: bold;
-    margin: 0 0 16px 0;
-    line-height: 1.2;
+    font-size: 3rem; /* 🚀 Cambiar de 2.2rem a 3rem */
+    font-weight: 900; /* 🚀 Cambiar de bold a 900 para más impacto */
+    margin: 0 0 20px 0; /* 🚀 Aumentar margen inferior */
+    line-height: 1.1; /* 🚀 Ajustar line-height para título más grande */
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 🚀 Agregar sombra para profundidad */
   }
 
   .info-actividad {
@@ -1002,7 +1060,32 @@
     background: rgba(255, 255, 255, 0.25);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+  }
+
+  /* 🚀 BOTÓN MIS CURSOS */
+  .boton-mis-cursos {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 16px; /* 🚀 Espacio entre botones */
+  }
+
+  .boton-mis-cursos:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
   }
 
   .icono-flecha {
@@ -1178,11 +1261,6 @@
       gap: 8px;
     }
 
-    .avatar-usuario {
-      width: 40px;
-      height: 40px;
-    }
-
     .saludo {
       font-size: 1rem;
     }
@@ -1249,20 +1327,18 @@
     gap: 12px;
   }
 
-  .avatar-usuario {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    object-fit: cover;
+  /* 🚀 ESTILOS PARA EL COMPONENTE AVATAR */
+  .usuario-info :global(.avatar) {
+    width: 50px !important;
+    height: 50px !important;
+    border: 3px solid rgba(255, 255, 255, 0.3) !important;
+    transition: all 0.3s ease !important;
   }
 
-  .avatar-usuario:hover {
-    border-color: rgba(255, 255, 255, 0.7);
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+  .usuario-info :global(.avatar:hover) {
+    border-color: rgba(255, 255, 255, 0.7) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2) !important;
   }
 
   .saludo-usuario {
@@ -1278,8 +1354,12 @@
   }
 
   .submensaje {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    opacity: 0.9;
+    font-style: italic; /* 🚀 Agregar estilo itálico */
+    color: #fbbf24; /* 🚀 Color dorado para destacar */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* 🚀 Sombra sutil */
+    font-weight: 500; /* 🚀 Peso medio para mejor legibilidad */
   }
 
   .navegacion-externa {
