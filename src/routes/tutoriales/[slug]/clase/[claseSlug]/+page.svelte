@@ -48,6 +48,117 @@ function cambiarLeccion(event: any) {
   window.location.href = `/tutoriales/${tutorialSlug}/clase/${leccionSlug}`;
 }
 
+  // ✅ NUEVO: FUNCIÓN PARA HABILITAR SCROLL TÁCTIL NATIVO
+  function habilitarScrollTactil() {
+    if (typeof window === 'undefined') return;
+    
+    // Buscar todos los contenedores de lecciones
+    const contenedoresLecciones = document.querySelectorAll(
+      '[class*="lista-lecciones"], [class*="cards-lecciones"], [class*="grid-lecciones"], .contenido-tab, .tab-content'
+    );
+    
+    contenedoresLecciones.forEach(contenedor => {
+      if (!contenedor) return;
+      
+      // Habilitar scroll nativo
+      (contenedor as HTMLElement).style.overflowY = 'auto';
+      (contenedor as HTMLElement).style.overflowX = 'hidden';
+      (contenedor as HTMLElement).style.webkitOverflowScrolling = 'touch';
+      (contenedor as HTMLElement).style.scrollBehavior = 'smooth';
+      
+      // Variables para scroll táctil
+      let startY = 0;
+      let startScrollTop = 0;
+      let isScrolling = false;
+      
+      // Touch start
+      contenedor.addEventListener('touchstart', (e: TouchEvent) => {
+        startY = e.touches[0].clientY;
+        startScrollTop = (contenedor as HTMLElement).scrollTop;
+        isScrolling = false;
+      }, { passive: true });
+      
+      // Touch move
+      contenedor.addEventListener('touchmove', (e: TouchEvent) => {
+        if (!startY) return;
+        
+        const currentY = e.touches[0].clientY;
+        const deltaY = startY - currentY;
+        
+        // Si el movimiento es vertical, es scroll
+        if (Math.abs(deltaY) > 10) {
+          isScrolling = true;
+          e.preventDefault();
+          
+          // Aplicar scroll
+          (contenedor as HTMLElement).scrollTop = startScrollTop + deltaY;
+        }
+      }, { passive: false });
+      
+      // Touch end
+      contenedor.addEventListener('touchend', (e: TouchEvent) => {
+        if (isScrolling) {
+          // Si fue scroll, no hacer nada más
+          e.preventDefault();
+        }
+        
+        startY = 0;
+        startScrollTop = 0;
+        isScrolling = false;
+      }, { passive: true });
+      
+      // Prevenir scroll no deseado
+      contenedor.addEventListener('scroll', (e: Event) => {
+        if (isScrolling) {
+          e.stopPropagation();
+        }
+      }, { passive: true });
+    });
+  }
+
+  // ✅ NUEVO: FUNCIÓN PARA HABILITAR CLICK EN LECCIONES
+  function habilitarClickLecciones() {
+    if (typeof window === 'undefined') return;
+    
+    // Buscar todas las lecciones individuales
+    const lecciones = document.querySelectorAll(
+      '[class*="leccion-item"], [class*="card-leccion"], [class*="item-leccion"]'
+    );
+    
+    lecciones.forEach(leccion => {
+      if (!leccion) return;
+      
+      // Agregar cursor pointer
+      leccion.style.cursor = 'pointer';
+      leccion.style.transition = 'all 0.2s ease';
+      
+      // Click event
+      leccion.addEventListener('click', (e) => {
+        // Solo si no fue scroll
+        if (!e.target.closest('[class*="lista-lecciones"]') || 
+            !e.target.closest('[class*="cards-lecciones"]') || 
+            !e.target.closest('[class*="grid-lecciones"]')) {
+          return;
+        }
+        
+        // Aquí puedes agregar la lógica de redirección
+        console.log('Lección clickeada:', leccion);
+        // goto(`/tutoriales/${$page.params.slug}/clase/${leccion.dataset.slug}`);
+      });
+      
+      // Hover effect
+      leccion.addEventListener('mouseenter', () => {
+        leccion.style.transform = 'translateY(-2px)';
+        leccion.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+      });
+      
+      leccion.addEventListener('mouseleave', () => {
+        leccion.style.transform = 'translateY(0)';
+        leccion.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+      });
+    });
+  }
+
   // Esconder BarraLateralCurso en Version responsiva
   onMount(() => {
     windowWidth = window.innerWidth;
@@ -61,6 +172,26 @@ function cambiarLeccion(event: any) {
       }
     };
     window.addEventListener('resize', handleResize);
+    
+    // ✅ NUEVO: HABILITAR SCROLL TÁCTIL DESPUÉS DE QUE SE MONTE EL COMPONENTE
+    setTimeout(() => {
+      habilitarScrollTactil();
+      habilitarClickLecciones();
+    }, 1000);
+    
+    // ✅ NUEVO: RE-HABILITAR SCROLL TÁCTIL CUANDO CAMBIEN LOS TABS
+    const observer = new MutationObserver(() => {
+      setTimeout(() => {
+        habilitarScrollTactil();
+        habilitarClickLecciones();
+      }, 500);
+    });
+    
+    const tabsContainer = document.querySelector('.leccion-tabs');
+    if (tabsContainer) {
+      observer.observe(tabsContainer, { childList: true, subtree: true });
+    }
+    
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -291,7 +422,7 @@ function cambiarLeccion(event: any) {
   .contenido-container {
     display: flex;
     flex: 1;
-    background: #f4f6fa;
+    background: #f8fafc; /* ✅ NUEVO: Fondo claro para mejor visibilidad */
   }
   
   /* ✅ MÓVILES: Layout fijo estilo Platzi */
@@ -299,7 +430,10 @@ function cambiarLeccion(event: any) {
     .contenido-container {
       height: 100vh; /* FORZAR altura fija de viewport */
       max-height: 100vh; /* NO puede ser más alto */
-      overflow: hidden; /* SIN SCROLL en el contenedor principal */
+      overflow: hidden !important; /* 🚫 SIN SCROLL EN CONTENEDOR PRINCIPAL */
+      overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+      max-width: 100vw !important; /* ✅ PREVENIR SCROLL HORIZONTAL */
+      width: 100% !important;
       padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px para ser más sutil */
       margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
     }
@@ -307,9 +441,54 @@ function cambiarLeccion(event: any) {
     .contenido-principal {
       height: calc(100vh - 90px) !important; /* ✅ ALTURA AJUSTADA PARA EL MENÚ */
       max-height: calc(100vh - 90px) !important; /* NO puede crecer más */
-      overflow: hidden; /* SIN SCROLL aquí */
+      overflow: hidden; /* 🚫 SIN SCROLL en contenido principal */
       padding-bottom: 0 !important; /* SIN PADDING ADICIONAL */
       margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
+    }
+    
+    /* ✅ NUEVO: PERMITIR SCROLL SOLO EN TABS Y CONTENIDO INFERIOR */
+    .contenido-principal :global(.leccion-tabs),
+    .contenido-principal :global(.tabs-container),
+    .contenido-principal :global(.contenido-tab) {
+      overflow-y: auto !important; /* ✅ PERMITIR SCROLL VERTICAL */
+      overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+      max-height: calc(100vh - 400px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL */
+    }
+    
+    /* ✅ NUEVO: BLOQUEAR SCROLL EN "CLASES DEL TUTORIAL" */
+    .contenido-principal :global(.tab-content),
+    .contenido-principal :global([class*="clases-tutorial"]),
+    .contenido-principal :global([class*="lista-clases"]),
+    .contenido-principal :global(.contenido-tab .tab-content),
+    .contenido-principal :global([class*="titulo-clases"]),
+    .contenido-principal :global([class*="header-clases"]),
+    .contenido-principal :global([class*="navegacion-clases"]) {
+      overflow: hidden !important; /* 🚫 SIN SCROLL */
+      overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+      overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+      max-height: none !important; /* ✅ SIN ALTURA MÁXIMA */
+    }
+    
+    /* ✅ NUEVO: SCROLL TÁCTIL NATIVO 100% FUNCIONAL EN LISTA DE LECCIONES */
+    .contenido-principal :global([class*="lista-lecciones"]),
+    .contenido-principal :global([class*="cards-lecciones"]),
+    .contenido-principal :global([class*="grid-lecciones"]),
+    .contenido-principal :global(.contenido-tab [class*="lecciones"]),
+    .contenido-principal :global(.tab-content [class*="lecciones"]),
+    .contenido-principal :global(.contenido-tab),
+    .contenido-principal :global(.tab-content),
+    .contenido-principal :global(.leccion-tabs),
+    .contenido-principal :global(.tabs-container) {
+      overflow-y: auto !important; /* ✅ SCROLL NATIVO AUTO */
+      overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+      max-height: calc(100vh - 500px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL */
+      -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+      scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+      touch-action: manipulation !important; /* ✅ TOUCH ACTION COMPLETO */
+      -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+      user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+      position: relative !important; /* ✅ POSICIÓN RELATIVA */
+      z-index: 10 !important; /* ✅ Z-INDEX ALTO */
     }
   }
   
@@ -318,7 +497,10 @@ function cambiarLeccion(event: any) {
     .contenido-container {
       min-height: 100vh; /* MÍNIMO una pantalla, pero puede crecer */
       overflow: visible; /* PERMITIR SCROLL NATURAL */
+      overflow-x: hidden !important; /* ✅ NUEVO: PREVENIR SCROLL HORIZONTAL EN ESCRITORIO */
       padding-bottom: 0 !important; /* SIN PADDING EN ESCRITORIO */
+      max-width: 100vw !important; /* ✅ NUEVO: PREVENIR SCROLL HORIZONTAL */
+      background: #f8fafc; /* ✅ NUEVO: Fondo claro en escritorio también */
     }
   }
   .contenido-principal {
@@ -331,17 +513,6 @@ function cambiarLeccion(event: any) {
     color: #fff;
   }
   
-  /* ✅ MÓVILES: Contenido principal fijo */
-  @media (max-width: 900px) {
-    .contenido-principal {
-      height: calc(100vh - 80px) !important; /* ✅ ALTURA AJUSTADA PARA EL MENÚ */
-      max-height: calc(100vh - 80px) !important; /* NO puede crecer más */
-      overflow: hidden; /* SIN SCROLL aquí */
-      padding-bottom: 0 !important; /* SIN PADDING ADICIONAL */
-      margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
-    }
-  }
-  
   /* ✅ ESCRITORIO: Contenido principal con scroll */
   @media (min-width: 901px) {
     .contenido-principal {
@@ -351,10 +522,39 @@ function cambiarLeccion(event: any) {
     }
   }
 
-  /* NUEVO: Asegurar que el video player no se encoja */
+  /* ✅ NUEVO: Asegurar que el video player (IMAGEN 3) esté SIEMPRE visible */
   .contenido-principal :global(.reproductor-container),
   .contenido-principal :global(.reproductor-lecciones) {
-    flex-shrink: 0; /* CLAVE: Video siempre visible, no se encoge */
+    flex-shrink: 0 !important; /* ✅ CLAVE: Video siempre visible, no se encoge */
+    min-height: 300px !important; /* ✅ ALTURA MÍNIMA para asegurar visibilidad */
+    position: sticky !important; /* ✅ POSICIÓN STICKY para mantener en pantalla */
+    top: 0 !important; /* ✅ SIEMPRE EN LA PARTE SUPERIOR */
+    z-index: 100 !important; /* ✅ Z-INDEX ALTO para estar por encima */
+    background: #000 !important; /* ✅ FONDO NEGRO para el video */
+  }
+  
+  /* ✅ NUEVO: Asegurar que los tabs estén debajo del video */
+  .contenido-principal :global(.leccion-tabs) {
+    margin-top: 20px !important; /* ✅ ESPACIO entre video y tabs */
+    background: #fff !important; /* ✅ FONDO BLANCO para los tabs */
+    border-radius: 8px !important; /* ✅ BORDES REDONDEADOS */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; /* ✅ SOMBRA SUTIL */
+    padding: 16px !important; /* ✅ PADDING REDUCIDO */
+    margin-bottom: 0 !important; /* ✅ SIN MARGIN INFERIOR */
+  }
+  
+  /* ✅ NUEVO: ELIMINAR PADDING EXCESIVO EN CONTENIDO DE TABS */
+  .contenido-principal :global(.contenido-tab),
+  .contenido-principal :global(.tab-content) {
+    padding: 0 !important; /* ✅ SIN PADDING EXCESIVO */
+    margin: 0 !important; /* ✅ SIN MARGIN EXCESIVO */
+  }
+  
+  /* ✅ NUEVO: ELIMINAR PADDING EN LISTA DE CLASES */
+  .contenido-principal :global([class*="clases-tutorial"]),
+  .contenido-principal :global([class*="lista-clases"]) {
+    padding: 0 !important; /* ✅ SIN PADDING EXCESIVO */
+    margin: 0 !important; /* ✅ SIN MARGIN EXCESIVO */
   }
 
   .leccion-sidebar {
@@ -463,22 +663,41 @@ function cambiarLeccion(event: any) {
   }
 }
 
-/* ✅ SCROLL CONTROLADO: Solo bloquear en móviles, permitir en escritorio */
+/* ✅ SCROLL COMPLETAMENTE BLOQUEADO EN MÓVILES: Sin scroll horizontal ni vertical */
 @media (max-width: 900px) {
   :global(body) {
-    overflow: hidden !important; /* SIN SCROLL en móviles */
+    overflow: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
     height: 100vh !important;
     position: fixed !important;
     width: 100% !important;
-    padding-bottom: 90px !important; /* ✅ PADDING REDUCIDO: de 120px a 90px */
-    margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
+    max-width: 100vw !important; /* ✅ PREVENIR SCROLL HORIZONTAL */
+    padding-bottom: 90px !important;
+    margin-bottom: 0 !important;
   }
 
   :global(html) {
-    overflow: hidden !important; /* SIN SCROLL en HTML móviles */
+    overflow: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
     height: 100vh !important;
-    padding-bottom: 0 !important; /* ✅ SIN PADDING ADICIONAL */
-    margin-bottom: 0 !important; /* ✅ SIN MARGIN ADICIONAL */
+    width: 100% !important;
+    max-width: 100vw !important; /* ✅ PREVENIR SCROLL HORIZONTAL */
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* ✅ PREVENIR SCROLL EN TODOS LOS ELEMENTOS */
+  :global(*) {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* ✅ PREVENIR SCROLL EN EL CONTENEDOR PRINCIPAL */
+  :global(.contenido-container) {
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
   }
   
   /* ✅ IMPORTANTE: Asegurar que el menú esté visible */
@@ -578,4 +797,368 @@ function cambiarLeccion(event: any) {
   }
 }
 
+  /* ✅ NUEVO: CSS GLOBAL PARA PREVENIR SCROLL HORIZONTAL EN TODAS LAS PÁGINAS DE LECCIONES */
+  :global(html) {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  :global(body) {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  :global(#svelte) {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  /* ✅ NUEVO: CSS GLOBAL AGRESIVO PARA SCROLL TÁCTIL NATIVO EN MÓVILES */
+  :global(.contenido-tab),
+  :global(.tab-content),
+  :global([class*="lecciones"]),
+  :global([class*="lista"]),
+  :global([class*="cards"]),
+  :global(.leccion-tabs),
+  :global(.tabs-container),
+  :global(.tab-content),
+  :global([class*="contenido"]) {
+    touch-action: manipulation !important; /* ✅ TOUCH ACTION COMPLETO */
+    -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+    scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+    -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+    user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+    overflow-y: auto !important; /* ✅ SCROLL VERTICAL AUTO */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+    position: relative !important; /* ✅ POSICIÓN RELATIVA */
+    z-index: 5 !important; /* ✅ Z-INDEX MEDIO */
+  }
+  
+      /* ✅ NUEVO: CSS ESPECÍFICO PARA MÓVILES - ELIMINAR SCROLL NO DESEADO */
+    @media (max-width: 900px) {
+      :global(.tab-content),
+      :global([class*="clases-tutorial"]),
+      :global([class*="lista-clases"]),
+      :global(.contenido-tab .tab-content),
+      :global(.leccion-tabs .tab-content) {
+        overflow: hidden !important; /* 🚫 SIN SCROLL */
+        overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        max-height: none !important; /* ✅ SIN ALTURA MÁXIMA */
+        height: auto !important; /* ✅ ALTURA AUTOMÁTICA */
+      }
+      
+      /* ✅ NUEVO: ELIMINAR PADDING EXCESIVO EN MÓVILES */
+      :global(.contenido-tab),
+      :global(.tab-content),
+      :global([class*="clases-tutorial"]),
+      :global([class*="lista-clases"]) {
+        padding: 0 !important; /* ✅ SIN PADDING EXCESIVO */
+        margin: 0 !important; /* ✅ SIN MARGIN EXCESIVO */
+      }
+      
+      /* ✅ NUEVO: BLOQUEAR SCROLL ESPECÍFICAMENTE EN HEADER DE CLASES EN MÓVILES */
+      :global([class*="titulo-clases"]),
+      :global([class*="header-clases"]),
+      :global([class*="navegacion-clases"]),
+      :global(.contenido-tab [class*="clases"]),
+      :global(.tab-content [class*="clases"]) {
+        overflow: hidden !important; /* 🚫 SIN SCROLL */
+        overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        max-height: none !important; /* ✅ SIN ALTURA MÁXIMA */
+        height: auto !important; /* ✅ ALTURA AUTOMÁTICA */
+        position: relative !important; /* ✅ POSICIÓN RELATIVA */
+        z-index: 1 !important; /* ✅ Z-INDEX BAJO */
+        padding: 40px 44px !important; /* ✅ PADDING MÁS GRANDE EN MÓVILES para ver todo el título */
+        font-size: 1.5rem !important; /* ✅ TEXTO MÁS GRANDE EN MÓVILES */
+        min-height: 110px !important; /* ✅ ALTURA MÍNIMA MÁS GRANDE EN MÓVILES */
+        line-height: 1.6 !important; /* ✅ LINE-HEIGHT MÁS GRANDE EN MÓVILES */
+      }
+      
+      /* ✅ NUEVO: SCROLL TÁCTIL NATIVO 100% FUNCIONAL EN MÓVILES */
+      :global([class*="lista-lecciones"]),
+      :global([class*="cards-lecciones"]),
+      :global([class*="grid-lecciones"]),
+      :global(.contenido-tab [class*="lecciones"]),
+      :global(.tab-content [class*="lecciones"]),
+      :global(.contenido-tab),
+      :global(.tab-content),
+      :global(.leccion-tabs),
+      :global(.tabs-container) {
+        overflow-y: scroll !important; /* ✅ SCROLL NATIVO PARA MÓVILES */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        max-height: calc(100vh - 550px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL EN MÓVILES */
+        -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+        scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+        touch-action: pan-y !important; /* ✅ PERMITIR DESLIZAR VERTICALMENTE */
+        -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        position: relative !important; /* ✅ POSICIÓN RELATIVA */
+        z-index: 10 !important; /* ✅ Z-INDEX ALTO */
+        padding: 16px !important; /* ✅ PADDING PARA MEJOR TOQUE */
+        scrollbar-width: none !important; /* ✅ OCULTAR SCROLLBAR EN FIREFOX */
+        -ms-overflow-style: none !important; /* ✅ OCULTAR SCROLLBAR EN IE/EDGE */
+      }
+      
+      /* ✅ NUEVO: SCROLL TÁCTIL ESPECÍFICO PARA LISTA DE LECCIONES */
+      :global(.contenido-tab [class*="lista-lecciones"]),
+      :global(.tab-content [class*="lista-lecciones"]),
+      :global(.contenido-tab [class*="cards-lecciones"]),
+      :global(.tab-content [class*="cards-lecciones"]),
+      :global(.contenido-tab [class*="grid-lecciones"]),
+      :global(.tab-content [class*="grid-lecciones"]) {
+        overflow-y: scroll !important; /* ✅ SCROLL NATIVO PARA MÓVILES */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        max-height: calc(100vh - 600px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL */
+        -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+        scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+        touch-action: pan-y !important; /* ✅ PERMITIR DESLIZAR VERTICALMENTE */
+        -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        position: relative !important; /* ✅ POSICIÓN RELATIVA */
+        z-index: 15 !important; /* ✅ Z-INDEX ALTO */
+        padding: 20px !important; /* ✅ PADDING PARA MEJOR TOQUE */
+        background: #fff !important; /* ✅ FONDO BLANCO PARA VISIBILIDAD */
+        border-radius: 8px !important; /* ✅ BORDES REDONDEADOS */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; /* ✅ SOMBRA SUAVE */
+        scrollbar-width: none !important; /* ✅ OCULTAR SCROLLBAR EN FIREFOX */
+        -ms-overflow-style: none !important; /* ✅ OCULTAR SCROLLBAR EN IE/EDGE */
+      }
+      
+      /* ✅ NUEVO: BLOQUEAR SCROLL Y HACER MÁS GRANDE LA BARRA BLANCA EN MÓVILES */
+      :global([class*="lecciones-modulo"]),
+      :global([class*="total-lecciones"]),
+      :global([class*="resumen-modulo"]),
+      :global([class*="contador-lecciones"]) {
+        overflow: hidden !important; /* 🚫 SIN SCROLL */
+        overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        padding: 28px 32px !important; /* ✅ PADDING MÁS GRANDE EN MÓVILES */
+        font-size: 1.3rem !important; /* ✅ TEXTO MÁS GRANDE EN MÓVILES */
+        min-height: 80px !important; /* ✅ ALTURA MÍNIMA MÁS GRANDE EN MÓVILES */
+        margin: 28px 0 !important; /* ✅ MARGIN MÁS GRANDE EN MÓVILES */
+      }
+      
+      /* ✅ NUEVO: SCROLL TÁCTIL ESPECÍFICO PARA MÓVILES EN LISTA DE LECCIONES */
+      :global(.contenido-tab [class*="lista-lecciones"]),
+      :global(.tab-content [class*="lista-lecciones"]),
+      :global(.contenido-tab [class*="cards-lecciones"]),
+      :global(.tab-content [class*="cards-lecciones"]),
+      :global(.contenido-tab [class*="grid-lecciones"]),
+      :global(.tab-content [class*="grid-lecciones"]) {
+        overflow-y: scroll !important; /* ✅ SCROLL NATIVO PARA MÓVILES */
+        overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+        max-height: calc(100vh - 650px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL EN MÓVILES */
+        -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+        scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+        touch-action: pan-y !important; /* ✅ PERMITIR DESLIZAR VERTICALMENTE */
+        -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+        position: relative !important; /* ✅ POSICIÓN RELATIVA */
+        z-index: 25 !important; /* ✅ Z-INDEX MÁS ALTO EN MÓVILES */
+        padding: 24px !important; /* ✅ PADDING MÁS GRANDE PARA MEJOR TOQUE */
+        background: #fff !important; /* ✅ FONDO BLANCO PARA VISIBILIDAD */
+        border-radius: 12px !important; /* ✅ BORDES MÁS REDONDEADOS EN MÓVILES */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; /* ✅ SOMBRA MÁS PRONUNCIADA EN MÓVILES */
+        scrollbar-width: none !important; /* ✅ OCULTAR SCROLLBAR EN FIREFOX */
+        -ms-overflow-style: none !important; /* ✅ OCULTAR SCROLLBAR EN IE/EDGE */
+      }
+      
+      /* ✅ NUEVO: OCULTAR SCROLLBAR EN WEBKIT PARA MÓVILES */
+      :global(.contenido-tab [class*="lista-lecciones"])::-webkit-scrollbar,
+      :global(.tab-content [class*="lista-lecciones"])::-webkit-scrollbar,
+      :global(.contenido-tab [class*="cards-lecciones"])::-webkit-scrollbar,
+      :global(.tab-content [class*="cards-lecciones"])::-webkit-scrollbar,
+      :global(.contenido-tab [class*="grid-lecciones"])::-webkit-scrollbar,
+      :global(.tab-content [class*="grid-lecciones"])::-webkit-scrollbar {
+        display: none !important; /* ✅ OCULTAR SCROLLBAR EN MÓVILES */
+      }
+    }
+
+/* ✅ NUEVO: PREVENIR SCROLL HORIZONTAL EN COMPONENTES ESPECÍFICOS */
+:global(.reproductor-container),
+:global(.reproductor-lecciones) {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* ✅ NUEVO: PERMITIR SCROLL VERTICAL EN TABS Y CONTENIDO */
+:global(.leccion-tabs),
+:global(.contenido-tab),
+:global(.tabs-container) {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  overflow-y: auto !important; /* ✅ PERMITIR SCROLL VERTICAL */
+  -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL SUAVE EN MÓVILES */
+}
+
+/* ✅ NUEVO: CSS GLOBAL FINAL PARA SCROLL TÁCTIL NATIVO */
+:global([class*="lista-lecciones"]),
+:global([class*="cards-lecciones"]),
+:global([class*="grid-lecciones"]),
+:global(.contenido-tab [class*="lecciones"]),
+:global(.tab-content [class*="lecciones"]),
+:global(.contenido-tab),
+:global(.tab-content) {
+  overflow-y: scroll !important; /* ✅ SCROLL NATIVO PARA MÓVILES */
+  overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+  max-height: calc(100vh - 500px) !important; /* ✅ ALTURA MÁXIMA PARA SCROLL */
+  -webkit-overflow-scrolling: touch !important; /* ✅ SCROLL TÁCTIL SUAVE */
+  scroll-behavior: smooth !important; /* ✅ SCROLL SUAVE */
+  touch-action: pan-y !important; /* ✅ PERMITIR DESLIZAR VERTICALMENTE */
+  -webkit-user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+  user-select: none !important; /* ✅ EVITAR SELECCIÓN DE TEXTO */
+  position: relative !important; /* ✅ POSICIÓN RELATIVA */
+  z-index: 20 !important; /* ✅ Z-INDEX MÁS ALTO */
+  background: #fff !important; /* ✅ FONDO BLANCO PARA VISIBILIDAD */
+  border-radius: 8px !important; /* ✅ BORDES REDONDEADOS */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; /* ✅ SOMBRA SUAVE */
+  padding: 16px !important; /* ✅ PADDING PARA MEJOR TOQUE */
+  scrollbar-width: none !important; /* ✅ OCULTAR SCROLLBAR EN FIREFOX */
+  -ms-overflow-style: none !important; /* ✅ OCULTAR SCROLLBAR EN IE/EDGE */
+}
+
+/* ✅ NUEVO: CSS ESPECÍFICO PARA SCROLL TÁCTIL EN LECCIONES INDIVIDUALES */
+:global([class*="leccion-item"]),
+:global([class*="card-leccion"]),
+:global([class*="item-leccion"]),
+:global(.contenido-tab [class*="leccion"]),
+:global(.tab-content [class*="leccion"]) {
+  touch-action: manipulation !important; /* ✅ TOUCH ACTION PARA LECCIONES INDIVIDUALES */
+  cursor: pointer !important; /* ✅ CURSOR POINTER PARA INDICAR CLICK */
+  transition: all 0.2s ease !important; /* ✅ TRANSICIÓN SUAVE */
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important; /* ✅ HIGHLIGHT AL TOCAR */
+  tap-highlight-color: rgba(0,0,0,0.1) !important; /* ✅ HIGHLIGHT AL TOCAR */
+}
+
+/* ✅ NUEVO: OCULTAR SCROLLBAR EN WEBKIT (CHROME/SAFARI) */
+:global([class*="lista-lecciones"])::-webkit-scrollbar,
+:global([class*="cards-lecciones"])::-webkit-scrollbar,
+:global([class*="grid-lecciones"])::-webkit-scrollbar,
+:global(.contenido-tab [class*="lecciones"])::-webkit-scrollbar,
+:global(.tab-content [class*="lecciones"])::-webkit-scrollbar {
+  display: none !important; /* ✅ OCULTAR SCROLLBAR */
+}
+
+/* ✅ NUEVO: MEJORAR ESTILO DEL TEXTO "4 LECCIONES EN ESTE MÓDULO" */
+:global(.tab-content),
+:global([class*="clases-tutorial"]),
+:global([class*="lista-clases"]),
+:global(.contenido-tab .tab-content) {
+  overflow: hidden !important; /* 🚫 SIN SCROLL */
+  overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+  overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+}
+
+  /* ✅ NUEVO: ESTILO MEJORADO PARA EL CONTADOR DE LECCIONES */
+  :global([class*="lecciones-modulo"]),
+  :global([class*="total-lecciones"]),
+  :global([class*="resumen-modulo"]) {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    margin: 20px 0 !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    font-size: 1rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  /* ✅ NUEVO: BLOQUEAR SCROLL EN HEADER DE CLASES */
+  :global([class*="clases-tutorial"]),
+  :global([class*="titulo-clases"]),
+  :global([class*="header-clases"]),
+  :global([class*="navegacion-clases"]),
+  :global(.contenido-tab [class*="clases"]),
+  :global(.tab-content [class*="clases"]) {
+    overflow: hidden !important; /* 🚫 SIN SCROLL */
+    overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+    max-height: none !important; /* ✅ SIN ALTURA MÁXIMA */
+    height: auto !important; /* ✅ ALTURA AUTOMÁTICA */
+  }
+  
+  /* ✅ NUEVO: CSS GLOBAL PARA BLOQUEAR SCROLL EN TODOS LOS HEADERS */
+  :global([class*="header"]),
+  :global([class*="titulo"]),
+  :global([class*="navegacion"]),
+  :global([class*="clases"]),
+  :global([class*="tutorial"]) {
+    overflow: hidden !important; /* 🚫 SIN SCROLL */
+    overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+  }
+  
+  /* ✅ NUEVO: HACER MÁS GRANDES LAS FLECHAS DE NAVEGACIÓN */
+  :global([class*="navegacion"] svg),
+  :global([class*="navegacion"] .icono-flecha),
+  :global([class*="navegacion"] .flecha),
+  :global([class*="clases"] svg),
+  :global([class*="clases"] .icono-flecha),
+  :global([class*="clases"] .flecha) {
+    width: 24px !important; /* ✅ FLECHAS MÁS GRANDES */
+    height: 24px !important; /* ✅ FLECHAS MÁS GRANDES */
+    font-size: 1.2rem !important; /* ✅ TEXTO MÁS GRANDE */
+  }
+  
+  /* ✅ NUEVO: ASEGURAR QUE EL TÍTULO COMPLETO SEA VISIBLE */
+  :global([class*="clases-tutorial"]),
+  :global([class*="titulo-clases"]),
+  :global([class*="header-clases"]) {
+    white-space: nowrap !important; /* ✅ EVITAR QUE EL TÍTULO SE ROMPA */
+    text-overflow: clip !important; /* ✅ MOSTRAR TODO EL TEXTO */
+    overflow: visible !important; /* ✅ PERMITIR QUE EL TEXTO SEA VISIBLE */
+    width: 100% !important; /* ✅ ANCHO COMPLETO */
+    box-sizing: border-box !important; /* ✅ BOX-SIZING CORRECTO */
+  }
+  
+  /* ✅ NUEVO: BLOQUEAR SCROLL EN ELEMENTOS ESPECÍFICOS DEL HEADER */
+  :global(.contenido-tab header),
+  :global(.tab-content header),
+  :global(.leccion-tabs header),
+  :global([class*="clases"] header) {
+    overflow: hidden !important; /* 🚫 SIN SCROLL */
+    overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+    position: relative !important; /* ✅ POSICIÓN RELATIVA */
+    z-index: 1 !important; /* ✅ Z-INDEX BAJO */
+  }
+  
+  /* ✅ NUEVO: BLOQUEAR SCROLL Y HACER MÁS GRANDE LA BARRA NARANJA "CLASES DEL TUTORIAL" */
+  :global([class*="clases-tutorial"]),
+  :global([class*="titulo-clases"]),
+  :global([class*="header-clases"]),
+  :global([class*="navegacion-clases"]),
+  :global(.contenido-tab [class*="clases"]),
+  :global(.tab-content [class*="clases"]) {
+    overflow: hidden !important; /* 🚫 SIN SCROLL */
+    overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+    max-height: none !important; /* ✅ SIN ALTURA MÁXIMA */
+    height: auto !important; /* ✅ ALTURA AUTOMÁTICA */
+    padding: 36px 40px !important; /* ✅ PADDING MÁS GRANDE para ver todo el título */
+    font-size: 1.4rem !important; /* ✅ TEXTO MÁS GRANDE */
+    min-height: 100px !important; /* ✅ ALTURA MÍNIMA MÁS GRANDE */
+    line-height: 1.5 !important; /* ✅ LINE-HEIGHT para mejor legibilidad */
+  }
+  
+  /* ✅ NUEVO: BLOQUEAR SCROLL Y HACER MÁS GRANDE LA BARRA BLANCA "4 LECCIONES" */
+  :global([class*="lecciones-modulo"]),
+  :global([class*="total-lecciones"]),
+  :global([class*="resumen-modulo"]),
+  :global([class*="contador-lecciones"]) {
+    overflow: hidden !important; /* 🚫 SIN SCROLL */
+    overflow-y: hidden !important; /* 🚫 SIN SCROLL VERTICAL */
+    overflow-x: hidden !important; /* 🚫 SIN SCROLL HORIZONTAL */
+    padding: 24px 28px !important; /* ✅ PADDING MÁS GRANDE */
+    font-size: 1.2rem !important; /* ✅ TEXTO MÁS GRANDE */
+    min-height: 70px !important; /* ✅ ALTURA MÍNIMA MÁS GRANDE */
+    margin: 24px 0 !important; /* ✅ MARGIN MÁS GRANDE */
+  }
+
 </style>
+
+

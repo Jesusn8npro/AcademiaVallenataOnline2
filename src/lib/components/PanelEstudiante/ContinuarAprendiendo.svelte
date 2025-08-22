@@ -719,11 +719,13 @@
         
         {#if todasLasActividades.length > 1}
           <div class="navegacion-externa">
+            <!-- ✅ NUEVO: FLECHAS OCULTAS - SOLO FUNCIONALIDAD -->
             <button 
               class="nav-btn-external nav-prev" 
               on:click={anteriorActividad} 
               disabled={actividadActual === 0}
               aria-label="Actividad anterior"
+              style="opacity: 0; pointer-events: none;"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 18l-6-6 6-6"/>
@@ -744,6 +746,7 @@
               on:click={siguienteActividad} 
               disabled={actividadActual === todasLasActividades.length - 1}
               aria-label="Siguiente actividad"
+              style="opacity: 0; pointer-events: none;"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 18l6-6-6-6"/>
@@ -802,22 +805,27 @@
             </p>
           </div>
           
-          <button class="boton-continuar" on:click={continuarAprendizaje}>
-            <span class="icono-play">▶️</span>
-            <span>Continuar {ultimaActividad.tipo === 'curso' ? 'Lección' : 'Clase'}</span>
-            <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
-          
-          <!-- 🚀 BOTÓN PARA IR A MIS CURSOS -->
-          <button class="boton-mis-cursos" on:click={() => goto('/mis-cursos')}>
-            <span class="icono-libros">📚</span>
-            <span>Ver Todos Mis Cursos</span>
-            <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
+          <!-- ✅ NUEVO: CONTENEDOR DE BOTONES LADO A LADO -->
+          <div class="botones-container">
+            <button class="boton-continuar" on:click={continuarAprendizaje}>
+              <span class="icono-play">▶️</span>
+              <span>Continuar {ultimaActividad.tipo === 'curso' ? 'Lección' : 'Clase'}</span>
+              <!-- ✅ NUEVO: FLECHA OCULTA -->
+              <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0;">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+            
+            <!-- 🚀 BOTÓN PARA IR A MIS CURSOS -->
+            <button class="boton-mis-cursos" on:click={() => goto('/mis-cursos')}>
+              <span class="icono-libros">📚</span>
+              <span>Ver Todos Mis Cursos</span>
+              <!-- ✅ NUEVO: FLECHA OCULTA -->
+              <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0;">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
         </div>
         
         <div class="contenido-derecho">
@@ -900,7 +908,7 @@
   .slider-container {
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
     border-radius: 20px;
-    padding: 40px;
+    padding: 24px; /* ✅ NUEVO: Reducir padding de 40px a 24px */
     color: white;
     position: relative;
     overflow: hidden;
@@ -922,8 +930,8 @@
   .hero-actividad {
     display: grid;
     grid-template-columns: 1fr 300px;
-    gap: 40px;
-    padding: 40px;
+    gap: 24px; /* ✅ NUEVO: Reducir gap de 40px a 24px */
+    padding: 24px; /* ✅ NUEVO: Reducir padding de 40px a 24px */
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
     border-radius: 20px;
     color: white;
@@ -962,11 +970,11 @@
   }
 
   .titulo-principal {
-    font-size: 3rem; /* 🚀 Cambiar de 2.2rem a 3rem */
-    font-weight: 900; /* 🚀 Cambiar de bold a 900 para más impacto */
-    margin: 0 0 20px 0; /* 🚀 Aumentar margen inferior */
-    line-height: 1.1; /* 🚀 Ajustar line-height para título más grande */
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 🚀 Agregar sombra para profundidad */
+    font-size: 2.2rem; /* ✅ NUEVO: Reducir de 3rem a 2.2rem para mejor legibilidad */
+    font-weight: 700; /* ✅ NUEVO: Reducir de 900 a 700 para menos agresividad */
+    margin: 0 0 16px 0; /* ✅ NUEVO: Reducir margen inferior de 20px a 16px */
+    line-height: 1.2; /* ✅ NUEVO: Ajustar line-height para mejor espaciado */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* ✅ NUEVO: Reducir sombra para menos agresividad */
   }
 
   .info-actividad {
@@ -1043,14 +1051,14 @@
   .boton-continuar {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px; /* ✅ NUEVO: Reducir gap de 12px a 8px */
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(20px);
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
-    padding: 16px 24px;
-    border-radius: 12px;
-    font-size: 1.1rem;
+    padding: 8px 12px; /* ✅ NUEVO: Reducir padding de 10px 16px a 8px 12px */
+    border-radius: 10px; /* ✅ NUEVO: Reducir border-radius de 12px a 10px */
+    font-size: 1rem; /* ✅ NUEVO: Reducir font-size de 1.1rem a 1rem */
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1063,22 +1071,30 @@
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
   }
 
+  /* ✅ NUEVO: CONTENEDOR DE BOTONES LADO A LADO */
+  .botones-container {
+    display: flex;
+    gap: 8px; /* ✅ NUEVO: Reducir gap de 12px a 8px */
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
   /* 🚀 BOTÓN MIS CURSOS */
   .boton-mis-cursos {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px; /* ✅ NUEVO: Reducir gap de 12px a 8px */
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
     border: 2px solid rgba(255, 255, 255, 0.2);
     color: white;
-    padding: 14px 20px;
-    border-radius: 10px;
-    font-size: 1rem;
+    padding: 6px 10px; /* ✅ NUEVO: Reducir padding de 10px 16px a 6px 10px */
+    border-radius: 8px; /* ✅ NUEVO: Reducir border-radius de 10px a 8px */
+    font-size: 0.9rem; /* ✅ NUEVO: Reducir font-size de 1rem a 0.9rem */
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-left: 16px; /* 🚀 Espacio entre botones */
+    margin-left: 0; /* ✅ NUEVO: Eliminar margin-left ya que está en contenedor */
   }
 
   .boton-mis-cursos:hover {
@@ -1091,6 +1107,8 @@
   .icono-flecha {
     width: 20px;
     height: 20px;
+    opacity: 0 !important; /* ✅ NUEVO: OCULTAR FLECHAS COMPLETAMENTE */
+    pointer-events: none; /* ✅ NUEVO: DESHABILITAR INTERACCIÓN */
   }
 
   /* 🖼️ IMAGEN Y PROGRESO CIRCULAR */
@@ -1102,8 +1120,8 @@
 
   .imagen-contenedor {
     position: relative;
-    width: 250px;
-    height: 200px;
+    width: 350px; /* ✅ NUEVO: Aumentar de 250px a 350px */
+    height: 280px; /* ✅ NUEVO: Aumentar de 200px a 280px */
     border-radius: 16px;
     overflow: hidden;
   }
@@ -1121,8 +1139,8 @@
   }
 
   .progreso-circular {
-    width: 60px;
-    height: 60px;
+    width: 80px; /* ✅ NUEVO: Aumentar de 60px a 80px */
+    height: 80px; /* ✅ NUEVO: Aumentar de 60px a 80px */
   }
 
   .circular-chart-svg {
@@ -1150,7 +1168,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 0.8rem;
+    font-size: 1.2rem; /* ✅ NUEVO: Aumentar de 0.8rem a 1.2rem */
     font-weight: bold;
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1283,11 +1301,18 @@
       height: 18px;
     }
 
+      .contador-externo {
+    font-size: 0.9rem;
+    min-width: 40px;
+    gap: 6px;
+  }
+  
+  /* ✅ NUEVO: OCULTAR CONTADOR EN PANTALLAS < 750px */
+  @media (max-width: 750px) {
     .contador-externo {
-      font-size: 0.9rem;
-      min-width: 40px;
-      gap: 6px;
+      display: none !important;
     }
+  }
 
     .auto-indicator {
       font-size: 0.7rem;
@@ -1380,6 +1405,8 @@
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
+    opacity: 0 !important; /* ✅ NUEVO: OCULTAR FLECHAS EXTERNAS */
+    pointer-events: none !important; /* ✅ NUEVO: DESHABILITAR INTERACCIÓN */
     justify-content: center;
   }
 
@@ -1644,7 +1671,160 @@
     .acordeon-animado {
       font-size: 3rem;
     }
+    
+    /* ✅ NUEVO: OPTIMIZACIONES PARA PANTALLAS PEQUEÑAS */
+    .slider-container {
+      padding: 16px;
+    }
+    
+    .hero-actividad {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    
+    .titulo-principal {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+    
+    /* ✅ NUEVO: BOTONES LADO A LADO EN MÓVILES */
+    .botones-container {
+      flex-direction: row; /* ✅ NUEVO: Mantener lado a lado */
+      gap: 8px;
+      width: 100%;
+      flex-wrap: wrap; /* ✅ NUEVO: Permitir wrap si es necesario */
+    }
+    
+    .boton-continuar {
+      padding: 8px 12px; /* ✅ NUEVO: Reducir padding */
+      font-size: 0.9rem;
+      flex: 1; /* ✅ NUEVO: Ocupar espacio disponible */
+      min-width: 0; /* ✅ NUEVO: Permitir que se reduzca */
+    }
+    
+    .boton-mis-cursos {
+      padding: 6px 10px; /* ✅ NUEVO: Reducir padding */
+      font-size: 0.9rem;
+      flex: 1; /* ✅ NUEVO: Ocupar espacio disponible */
+      min-width: 0; /* ✅ NUEVO: Permitir que se reduzca */
+    }
+    
+    .imagen-contenedor {
+      width: 280px; /* ✅ NUEVO: Aumentar de 200px a 280px para pantallas estrechas */
+      height: 210px; /* ✅ NUEVO: Aumentar de 150px a 210px para pantallas estrechas */
+    }
+    
+    /* ✅ NUEVO: ASEGURAR QUE LAS FLECHAS ESTÉN OCULTAS EN MÓVILES */
+    .nav-btn-external {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    .icono-flecha {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
   }
+  
+  /* ✅ NUEVO: MEDIA QUERY PARA PANTALLAS MUY PEQUEÑAS */
+  @media (max-width: 480px) {
+    .slider-container {
+      padding: 12px;
+    }
+    
+    .hero-actividad {
+      padding: 12px;
+      gap: 12px;
+    }
+    
+    .titulo-principal {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .boton-continuar {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+    }
+    
+    .boton-mis-cursos {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      margin-left: 6px;
+    }
+    
+    .imagen-contenedor {
+      width: 220px; /* ✅ NUEVO: Aumentar de 150px a 220px para pantallas muy pequeñas */
+      height: 165px; /* ✅ NUEVO: Aumentar de 120px a 165px para pantallas muy pequeñas */
+    }
+    
+    .estadisticas {
+      gap: 16px;
+    }
+    
+    .stat .valor {
+      font-size: 1.2rem;
+    }
+    
+      /* ✅ NUEVO: ASEGURAR QUE LAS FLECHAS ESTÉN OCULTAS EN PANTALLAS MUY PEQUEÑAS */
+  .nav-btn-external {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  .icono-flecha {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* ✅ NUEVO: BOTONES EN PANTALLAS MUY PEQUEÑAS */
+  .botones-container {
+    flex-direction: row; /* ✅ NUEVO: Mantener lado a lado */
+    gap: 6px;
+    width: 100%;
+    flex-wrap: wrap; /* ✅ NUEVO: Permitir wrap si es necesario */
+  }
+  
+      .boton-continuar {
+      flex: 1; /* ✅ NUEVO: Ocupar espacio disponible */
+      min-width: 0; /* ✅ NUEVO: Permitir que se reduzca */
+      padding: 6px 10px; /* ✅ NUEVO: Padding ultra-compacto */
+    }
+    
+    .boton-mis-cursos {
+      flex: 1; /* ✅ NUEVO: Ocupar espacio disponible */
+      min-width: 0; /* ✅ NUEVO: Permitir que se reduzca */
+      padding: 5px 8px; /* ✅ NUEVO: Padding ultra-compacto */
+    }
+}
+
+/* ✅ NUEVO: CSS ESPECÍFICO PARA PANTALLAS ESTRECHAS (400-500px) */
+@media (min-width: 400px) and (max-width: 500px) {
+  .botones-container {
+    flex-direction: row;
+    gap: 10px;
+  }
+  
+  .boton-continuar {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    padding: 6px 10px; /* ✅ NUEVO: Padding más compacto */
+  }
+  
+  .boton-mis-cursos {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 5px 8px; /* ✅ NUEVO: Padding más compacto */
+  }
+  
+  .imagen-contenedor {
+    width: 300px; /* ✅ NUEVO: Imagen más grande para pantallas estrechas */
+    height: 225px;
+  }
+}
 
   /* 📍 INDICADORES DEL SLIDER */
   .slider-indicators {

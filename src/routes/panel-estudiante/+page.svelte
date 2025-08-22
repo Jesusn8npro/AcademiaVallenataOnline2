@@ -87,9 +87,10 @@
     gap: 20px;
     padding: 20px;
     padding-right: 340px; /* 🚀 Agregar padding derecho para el sidebar fijo */
-    overflow: visible; /* 🚀 Permitir overflow natural */
+    overflow: hidden; /* ✅ NUEVO: Prevenir scroll horizontal */
     max-width: 100vw; /* Evitar que se extienda más allá del viewport */
     box-sizing: border-box; /* Incluir padding en el width total */
+    width: 100%; /* ✅ NUEVO: Asegurar ancho completo */
   }
 
 
@@ -128,34 +129,38 @@
     .panel-gaming-container {
       height: auto; /* Permitir altura automática en móvil */
       min-height: 100vh;
-      overflow: visible;
+      overflow: hidden; /* ✅ NUEVO: Prevenir scroll horizontal en móvil */
       grid-template-columns: 1fr;
       grid-template-areas: 
         "main";
       gap: 16px;
       padding: 16px;
+      padding-top: 40px;
+      width: 100%; /* ✅ NUEVO: Asegurar ancho completo */
     }
 
     .contenido-principal {
-      overflow: visible; /* Sin scroll en móvil */
+      overflow: hidden; /* ✅ NUEVO: Prevenir scroll en móvil */
       height: auto;
       padding-right: 0;
+      width: 100%; /* ✅ NUEVO: Asegurar ancho completo */
     }
 
     .simulador-stats {
       grid-template-columns: 1fr;
+      gap: 16px; /* ✅ NUEVO: Reducir gap en móvil */
     }
 
     /* 🚀 NUEVO: Ajustar altura de las tarjetas en móvil */
     .simulador-card, .estadisticas-card {
       height: auto; /* Altura automática en móvil */
-      min-height: 480px; /* 🚀 Mantener altura mínima igual para consistencia */
+      min-height: 400px; /* ✅ NUEVO: Reducir altura mínima para móvil */
     }
 
     /* 🚀 NUEVO: Asegurar que las recomendaciones se muestren completas */
     .simulador-card {
       height: auto !important; /* Forzar altura automática */
-      min-height: 480px; /* 🚀 Mantener altura mínima igual */
+      min-height: 400px; /* ✅ NUEVO: Reducir altura mínima para móvil */
     }
 
     /* 🚀 OCULTAR SIDEBAR DERECHO EN MÓVIL */
@@ -164,18 +169,23 @@
     }
   }
 
-  /* 🚀 MEDIA QUERY PARA PANTALLAS MEDIANAS */
-  @media (max-width: 1400px) and (min-width: 1301px) {
-    .panel-gaming-container {
-      padding-right: 320px; /* 🚀 Reducir padding para pantallas medianas */
-    }
-  }
 
   /* 🚫 PREVENIR SCROLL HORIZONTAL GLOBAL EN ESTA PÁGINA */
   :global(html, body) {
     max-width: 100vw;
     overflow-x: hidden;
+    width: 100%;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important; /* 🚀 Sobrescribir fondo blanco */
+  }
+  
+  /* ✅ NUEVO: CSS GLOBAL PARA PREVENIR SCROLL HORIZONTAL */
+  :global(*) {
+    box-sizing: border-box;
+  }
+  
+  :global(.panel-gaming-container *) {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* 🚀 SOBRESCRIBIR FONDO BLANCO DEL CSS GLOBAL */
