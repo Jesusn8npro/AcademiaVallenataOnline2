@@ -17,6 +17,7 @@
   import { browser } from '$app/environment';
   import CursorPersonalizado from '$lib/components/CursorPersonalizado/CursorPersonalizado.svelte';
   import { modalPagoAbierto } from '$lib/stores/modalPagoStore';
+  import { chatWidgetVisible } from '$lib/stores/chatWidgetStore';
   import FooterPoliticas from '$lib/components/Footer/FooterPoliticas.svelte';
   import { TiempoService } from '$lib/services/tiempoService';
   import { trackingRealService } from '$lib/services/trackingActividadReal';

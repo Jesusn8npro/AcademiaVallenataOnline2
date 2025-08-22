@@ -4,6 +4,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { supabase } from '$lib/supabase/clienteSupabase';
+	import { chatWidgetVisible } from '$lib/stores/chatWidgetStore';
 	import { chatService } from '$lib/services/chatService';
 	import { leadsService } from '$lib/services/leadsService';
 	import { generateSlug } from '$lib/utilidades/utilidadesSlug';
@@ -1293,7 +1294,7 @@ ${textoMensaje}`,
 </script>
 
 <!-- 🎨 WIDGET DEL CHAT -->
-{#if !chatAbierto}
+{#if !chatAbierto && $chatWidgetVisible}
 	<!-- 🔵 Botón flotante -->
 	<button 
 		on:click={abrirChat}

@@ -5,6 +5,7 @@
   import { supabase } from '$lib/supabase/clienteSupabase';
   import { actividadService } from '$lib/services/actividadTiempoRealService';
   import { trackearUbicacionUsuario } from '$lib/services/geoLocationService';
+  import { ocultarChatWidget, mostrarChatWidget } from '$lib/stores/chatWidgetStore';
   export let abierto = false;
   export let onCerrar = () => {};
   let usuario = '';
@@ -27,6 +28,11 @@
   // Estados para mostrar/ocultar contraseñas
   let mostrarContrasena = false;
   let mostrarContrasenaRegistro = false;
+  
+  // ✅ NUEVO: Reactive statement para controlar chat widget
+  $: if (abierto) {
+    ocultarChatWidget();
+  }
   
   // Selector de país para WhatsApp
   let codigoPais = '+57'; // Colombia por defecto
@@ -64,6 +70,9 @@
     whatsapp = '';
     correoRegistro = '';
     contrasenaRegistro = '';
+    
+    // ✅ NUEVO: Mostrar chat widget cuando se cierra el modal
+    mostrarChatWidget();
   }
   function detenerPropagacion(e: Event) {
     e.stopPropagation();
@@ -460,14 +469,14 @@
             <div class="campo-formulario">
               <label for="nombre">Nombre</label>
               <div class="input-icono">
-                <input id="nombre" type="text" bind:value={nombre} placeholder="Tu nombre" required />
+                <input id="nombre" type="text" bind:value={nombre} placeholder="Ejem: Omar" required />
                 <span class="icono-input">👤</span>
               </div>
             </div>
             <div class="campo-formulario">
               <label for="apellido">Apellido</label>
               <div class="input-icono">
-                <input id="apellido" type="text" bind:value={apellido} placeholder="Tu apellido" required />
+                <input id="apellido" type="text" bind:value={apellido} placeholder="Ejem: Geles" required />
                 <span class="icono-input">👤</span>
               </div>
             </div>
@@ -475,13 +484,16 @@
           <div class="campo-formulario">
             <label for="whatsapp">WhatsApp</label>
             <div class="input-whatsapp">
-              <select class="selector-pais" bind:value={codigoPais}>
-                {#each paises as pais}
-                  <option value={pais.codigo}>
-                    {pais.bandera} {pais.codigo}
-                  </option>
-                {/each}
-              </select>
+              <div class="selector-pais-container">
+                <select class="selector-pais" bind:value={codigoPais}>
+                  {#each paises as pais}
+                    <option value={pais.codigo}>
+                      {pais.bandera} {pais.codigo}
+                    </option>
+                  {/each}
+                </select>
+                <span class="flecha-selector">▼</span>
+              </div>
               <div class="input-numero">
                 <input 
                   id="whatsapp" 
@@ -599,7 +611,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 32px 16px;
+    padding: 16px 24px 12px;
     border-bottom: 1px solid rgba(226, 232, 240, 0.3);
     background: linear-gradient(135deg, rgba(255, 102, 0, 0.03) 0%, rgba(255, 102, 0, 0.08) 100%);
   }
@@ -650,7 +662,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin: 24px 32px 8px;
+    margin: 16px 24px 6px;
     text-align: center;
     line-height: 1.2;
   }
@@ -658,7 +670,7 @@
   .login-desc {
     color: var(--text-secondary);
     font-size: 1rem;
-    margin: 0 32px 32px;
+    margin: 0 24px 20px;
     text-align: center;
     line-height: 1.5;
   }
@@ -667,27 +679,51 @@
   .formulario-inicio-sesion {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 0 32px 32px;
+    gap: 16px;
+    padding: 0 24px 20px;
   }
 
   .fila-nombre-apellido {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* ✅ NUEVO: Asegurar que los campos no se salgan */
+  .fila-nombre-apellido .campo-formulario {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .fila-nombre-apellido .input-icono {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .fila-nombre-apellido .input-icono input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .campo-formulario {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin: 0;
+    padding: 0;
   }
 
   .campo-formulario label {
     font-size: 0.875rem;
     color: var(--text-primary);
     font-weight: 600;
-    margin-left: 4px;
+    margin: 0;
+    padding: 0;
   }
 
   /* === INPUTS MEJORADOS === */
@@ -713,10 +749,11 @@
     flex: 1;
     border: none;
     background: transparent;
-    padding: 16px 16px;
+    padding: 12px 16px;
     font-size: 1rem;
     color: var(--text-primary);
     outline: none;
+    min-height: 48px;
   }
 
   .input-icono input::placeholder {
@@ -733,7 +770,7 @@
   .boton-mostrar-contrasena {
     background: none;
     border: none;
-    padding: 16px;
+    padding: 12px;
     cursor: pointer;
     font-size: 1.25rem;
     color: var(--text-secondary);
@@ -755,6 +792,8 @@
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
+    width: 100%;
+    gap: 0;
   }
 
   .input-whatsapp:focus-within {
@@ -763,16 +802,36 @@
     background: white;
   }
 
+  .selector-pais-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 90px;
+  }
+  
   .selector-pais {
     background: rgba(255, 102, 0, 0.05);
     border: none;
-    padding: 16px 12px;
+    padding: 6px 4px;
+    padding-right: 20px;
     font-size: 0.875rem;
     color: var(--text-primary);
     cursor: pointer;
     outline: none;
-    min-width: 110px;
+    width: 100%;
     border-right: 1px solid var(--input-border);
+    appearance: none;
+  }
+  
+  .flecha-selector {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 10px;
+    pointer-events: none;
+    z-index: 1;
   }
 
   .input-numero {
@@ -785,10 +844,12 @@
     flex: 1;
     border: none;
     background: transparent;
-    padding: 16px;
+    padding: 12px 8px;
     font-size: 1rem;
     color: var(--text-primary);
     outline: none;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* === BOTÓN PRINCIPAL === */
@@ -802,10 +863,11 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 8px;
+    margin-top: 4px;
     box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
     position: relative;
     overflow: hidden;
+    min-height: 52px;
   }
 
   .boton-enviar:hover {
@@ -867,7 +929,40 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    margin: 24px 32px 20px;
+    margin: 16px 24px 12px;
+  }
+  
+  /* ✅ NUEVO: SEPARADOR OPTIMIZADO PARA ESCRITORIO */
+  @media (min-width: 1024px) {
+    .separador-o {
+      margin: 20px 32px 16px;
+      gap: 20px;
+    }
+    
+    .botones-sociales {
+      padding: 0 32px 16px;
+    }
+    
+    .enlaces-extra {
+      padding: 0 32px 20px;
+      padding-top: 16px;
+    }
+  }
+  
+  @media (min-width: 1440px) {
+    .separador-o {
+      margin: 24px 40px 20px;
+      gap: 24px;
+    }
+    
+    .botones-sociales {
+      padding: 0 40px 20px;
+    }
+    
+    .enlaces-extra {
+      padding: 0 40px 24px;
+      padding-top: 20px;
+    }
   }
 
   .linea {
@@ -885,7 +980,7 @@
 
   /* === BOTONES SOCIALES === */
   .botones-sociales {
-    padding: 0 32px 16px;
+    padding: 0 24px 8px;
   }
 
   .boton-google {
@@ -938,14 +1033,14 @@
 
   /* === ENLACES EXTRA === */
   .enlaces-extra {
-    padding: 0 32px 32px;
+    padding: 0 24px 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
     border-top: 1px solid rgba(226, 232, 240, 0.3);
-    margin-top: 8px;
-    padding-top: 24px;
+    margin-top: 4px;
+    padding-top: 12px;
   }
 
   .enlace-olvido,
@@ -985,6 +1080,231 @@
     }
   }
 
+  /* ✅ NUEVO: CSS GLOBAL PARA ELIMINAR PADDING INTERNO */
+  .modal-inicio-sesion * {
+    box-sizing: border-box;
+  }
+  
+  /* ✅ NUEVO: PREVENIR DESBORDAMIENTO EN FORMULARIOS */
+  .modal-inicio-sesion .formulario-inicio-sesion {
+    overflow: hidden;
+    width: 100%;
+  }
+  
+  .modal-inicio-sesion .fila-nombre-apellido {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .modal-inicio-sesion .campo-formulario {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .modal-inicio-sesion .input-icono {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .modal-inicio-sesion .input-icono input {
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    text-overflow: clip;
+  }
+  
+  /* ✅ NUEVO: Asegurar que los placeholders se vean completos */
+  .modal-inicio-sesion .input-icono input::placeholder {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  /* ✅ NUEVO: FORZAR PADDING MÍNIMO EN SELECTOR DE PAÍS */
+  .modal-inicio-sesion .selector-pais {
+    padding: 6px 4px !important;
+    padding-right: 20px !important;
+    min-width: 90px !important;
+  }
+  
+  .modal-inicio-sesion .flecha-selector {
+    right: 4px !important;
+  }
+  
+  .modal-inicio-sesion .selector-pais-container {
+    min-width: 90px !important;
+  }
+  
+  .modal-inicio-sesion .campo-formulario,
+  .modal-inicio-sesion .input-icono,
+  .modal-inicio-sesion .input-whatsapp,
+  .modal-inicio-sesion .boton-enviar,
+  .modal-inicio-sesion .boton-google,
+  .modal-inicio-sesion .enlaces-extra {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .modal-inicio-sesion .campo-formulario {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .modal-inicio-sesion .input-icono input,
+  .modal-inicio-sesion .input-numero input,
+  .modal-inicio-sesion .selector-pais,
+  .modal-inicio-sesion .boton-mostrar-contrasena {
+    padding: 10px 12px !important;
+    margin: 0 !important;
+  }
+  
+  .modal-inicio-sesion .boton-enviar {
+    padding: 12px 20px !important;
+    margin: 2px 0 0 0 !important;
+  }
+  
+  .modal-inicio-sesion .separador-o {
+    margin: 8px 24px 6px !important;
+  }
+  
+  .modal-inicio-sesion .botones-sociales {
+    padding: 0 24px 4px !important;
+  }
+  
+  .modal-inicio-sesion .enlaces-extra {
+    padding: 0 24px 12px !important;
+    padding-top: 8px !important;
+  }
+
+  /* ✅ NUEVO: MEDIA QUERIES PARA ESCRITORIO */
+  @media (min-width: 1024px) {
+    .modal-inicio-sesion {
+      max-width: 500px;
+      min-height: auto;
+    }
+    
+    .formulario-inicio-sesion {
+      gap: 20px;
+      padding: 0 32px 24px;
+    }
+    
+    .fila-nombre-apellido {
+      gap: 24px;
+    }
+    
+    .campo-formulario {
+      gap: 10px;
+    }
+    
+    .input-icono input,
+    .input-numero input,
+    .selector-pais {
+      padding: 16px 20px;
+    }
+    
+    .boton-enviar {
+      padding: 18px 28px;
+      font-size: 1.1rem;
+    }
+    
+    .titulo-modal {
+      font-size: 2rem;
+      margin: 20px 32px 10px;
+    }
+    
+    .login-desc {
+      margin: 0 32px 24px;
+      font-size: 1.1rem;
+    }
+    
+    .modal-header {
+      padding: 20px 32px 16px;
+    }
+    
+    .logo-modal {
+      width: 64px;
+      height: 64px;
+    }
+  }
+  
+  @media (min-width: 1440px) {
+    .modal-inicio-sesion {
+      max-width: 550px;
+    }
+    
+    .formulario-inicio-sesion {
+      gap: 24px;
+      padding: 0 40px 28px;
+    }
+    
+    .fila-nombre-apellido {
+      gap: 28px;
+    }
+    
+    .campo-formulario {
+      gap: 12px;
+    }
+    
+    .input-icono input,
+    .input-numero input,
+    .selector-pais {
+      padding: 18px 24px;
+    }
+    
+    .boton-enviar {
+      padding: 20px 32px;
+      font-size: 1.2rem;
+    }
+    
+    .titulo-modal {
+      font-size: 2.25rem;
+      margin: 24px 40px 12px;
+    }
+    
+    .login-desc {
+      margin: 0 40px 28px;
+      font-size: 1.15rem;
+    }
+    
+    .modal-header {
+      padding: 24px 40px 20px;
+    }
+    
+    .logo-modal {
+      width: 72px;
+      height: 72px;
+    }
+  }
+
+  /* ✅ NUEVO: MEDIA QUERY PARA PANTALLAS MEDIANAS */
+  @media (max-width: 900px) and (min-width: 769px) {
+    .fila-nombre-apellido {
+      gap: 16px;
+    }
+    
+    .fila-nombre-apellido .campo-formulario {
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    .fila-nombre-apellido .input-icono {
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    .fila-nombre-apellido .input-icono input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+    }
+  }
+
   /* === RESPONSIVE === */
   @media (max-width: 768px) {
     .modal-inicio-sesion {
@@ -995,19 +1315,46 @@
     .modal-header,
     .formulario-inicio-sesion,
     .enlaces-extra {
-      padding-left: 20px;
-      padding-right: 20px;
+      padding-left: 16px;
+      padding-right: 16px;
     }
 
     .titulo-modal,
     .login-desc {
-      margin-left: 20px;
-      margin-right: 20px;
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+    
+    /* ✅ NUEVO: Reducir espaciado general en móviles */
+    .formulario-inicio-sesion {
+      gap: 12px;
+      padding-bottom: 16px;
+    }
+    
+    .campo-formulario {
+      gap: 4px;
+    }
+    
+    .enlaces-extra {
+      padding-top: 12px;
+      margin-top: 4px;
     }
 
     .fila-nombre-apellido {
-      grid-template-columns: 1fr;
-      gap: 16px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    /* ✅ NUEVO: Asegurar que en móviles se vean bien en 2 columnas */
+    .fila-nombre-apellido .campo-formulario {
+      width: 100%;
+      min-width: 0;
+    }
+    
+    /* ✅ NUEVO: Reducir padding de inputs en móviles para ahorrar espacio */
+    .fila-nombre-apellido .input-icono input {
+      padding: 10px 8px;
+      font-size: 0.85rem;
     }
 
     .titulo-modal {
@@ -1021,6 +1368,133 @@
     .selector-pais {
       min-width: 90px;
       font-size: 0.8rem;
+      padding-right: 30px;
+    }
+    
+    .flecha-selector {
+      font-size: 9px;
+      right: 8px;
+    }
+  }
+  
+  /* ✅ NUEVO: MEDIA QUERY PARA PANTALLAS MUY PEQUEÑAS */
+  @media (max-width: 480px) {
+    .fila-nombre-apellido {
+      gap: 8px;
+    }
+    
+    .fila-nombre-apellido .input-icono input {
+      padding: 8px 6px;
+      font-size: 0.8rem;
+    }
+    
+    /* ✅ NUEVO: Optimizar selector de país en móviles */
+    .selector-pais {
+      padding: 4px 3px;
+      padding-right: 16px;
+      min-width: 70px;
+    }
+    
+    .flecha-selector {
+      font-size: 8px;
+      right: 3px;
+    }
+    
+    .input-numero input {
+      padding: 8px 6px;
+    }
+    
+    .titulo-modal {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    
+    .login-desc {
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+    }
+    
+    /* ✅ NUEVO: Reducir espaciado general */
+    .formulario-inicio-sesion {
+      gap: 10px;
+      padding-bottom: 12px;
+    }
+    
+    .campo-formulario {
+      gap: 3px;
+    }
+    
+    .enlaces-extra {
+      padding-top: 8px;
+      margin-top: 2px;
+    }
+  }
+  
+  /* ✅ NUEVO: MEDIA QUERY PARA PANTALLAS ULTRA PEQUEÑAS */
+  @media (max-width: 360px) {
+    .fila-nombre-apellido {
+      gap: 6px;
+    }
+    
+    .fila-nombre-apellido .input-icono input {
+      padding: 6px 4px;
+      font-size: 0.75rem;
+    }
+    
+    /* ✅ NUEVO: Optimizar selector de país en pantallas ultra pequeñas */
+    .selector-pais {
+      padding: 3px 2px;
+      padding-right: 14px;
+      min-width: 60px;
+      font-size: 0.75rem;
+    }
+    
+    .flecha-selector {
+      font-size: 7px;
+      right: 2px;
+    }
+    
+    .input-numero input {
+      padding: 6px 4px;
+      font-size: 0.9rem;
+    }
+    
+    .titulo-modal {
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+    }
+    
+    .login-desc {
+      font-size: 0.75rem;
+      margin-bottom: 12px;
+    }
+    
+    /* ✅ NUEVO: Reducir espaciado general al máximo */
+    .formulario-inicio-sesion {
+      gap: 8px;
+      padding-bottom: 8px;
+    }
+    
+    .campo-formulario {
+      gap: 2px;
+    }
+    
+    .enlaces-extra {
+      padding-top: 6px;
+      margin-top: 1px;
+    }
+    
+    .modal-header,
+    .formulario-inicio-sesion,
+    .enlaces-extra {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    
+    .titulo-modal,
+    .login-desc {
+      margin-left: 12px;
+      margin-right: 12px;
     }
   }
 
@@ -1030,7 +1504,7 @@
     }
 
     .modal-header {
-      padding: 16px 16px 12px;
+      padding: 8px 12px 6px;
     }
 
     .logo-modal {
@@ -1040,32 +1514,63 @@
 
     .titulo-modal {
       font-size: 1.25rem;
-      margin: 16px 16px 8px;
+      margin: 8px 12px 4px;
     }
 
     .login-desc {
-      margin: 0 16px 24px;
+      margin: 0 12px 8px;
     }
 
     .formulario-inicio-sesion {
-      padding: 0 16px 24px;
-      gap: 16px;
+      padding: 0 12px 8px;
+      gap: 6px;
     }
 
     .enlaces-extra {
-      padding: 0 16px 24px;
-      padding-top: 16px;
+      padding: 0 12px 8px;
+      padding-top: 4px;
+      gap: 4px;
+    }
+
+    .separador-o {
+      margin: 4px 12px 2px;
+    }
+
+    .botones-sociales {
+      padding: 0 12px 2px;
     }
 
     .input-icono input,
     .boton-mostrar-contrasena,
     .selector-pais,
     .input-numero input {
-      padding: 14px 12px;
+      padding: 8px 8px;
     }
 
     .boton-enviar {
-      padding: 14px 20px;
+      padding: 8px 12px;
+      margin-top: 1px;
+      margin-bottom: 0;
+    }
+    
+    /* ✅ FORZAR COMPACTACIÓN ULTRA EN MÓVILES */
+    .campo-formulario {
+      gap: 2px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    .campo-formulario label {
+      margin: 0 !important;
+      padding: 0 !important;
+      font-size: 0.8rem;
+    }
+    
+    .input-icono {
+      margin: 0 !important;
+      padding: 0 !important;
     }
   }
+
+
 </style>
