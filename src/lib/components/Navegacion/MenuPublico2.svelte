@@ -191,7 +191,7 @@
     <!-- Redes sociales, idioma y login -->
     <div class="zona-derecha">
       <div class="redes-sociales">
-        <a href="https://www.facebook.com/academiavallenataonlineoficial" class="icono-red" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.facebook.com/academiavallenataonlineoficial" class="icono-red icono-facebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path fill="#fff" d="M17 2.05H15c-2.76 0-5 2.24-5 5v2H7a1 1 0 0 0-1 1v3c0 .55.45 1 1 1h3v7a1 1 0 0 0 1 1h3c.55 0 1-.45 1-1v-7h2.29a1 1 0 0 0 .99-1.14l-.38-3A1 1 0 0 0 18.23 9H16V7c0-.55.45-1 1-1h1a1 1 0 0 0 1-1V3.05a1 1 0 0 0-1-1z"/>
           </svg>
@@ -427,14 +427,21 @@
 /* Barra superior negra */
 .barra-superior-negra {
   background: #181818;
-  padding: 0px 10rem;
+  padding: 0px 2rem;
   z-index: 1000;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .contenedor-barra-superior {
   width: 100%;
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  align-items: center;
 }
 
 .zona-izquierda, .zona-derecha {
@@ -476,12 +483,18 @@
   align-items: center;
   gap: 1.2rem;
   margin-right: 1.2rem;
+  margin-left: 0;
+  flex-shrink: 0;
 }
 
 .icono-red {
   color: #fff;
   text-decoration: none;
   transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .icono-red:hover {
@@ -492,6 +505,9 @@
   display: flex;
   align-items: center;
   gap: 0;
+  margin-left: auto;
+  margin-right: 0;
+  flex-shrink: 0;
 }
 
 .selector-idioma {
@@ -558,10 +574,13 @@
   background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
   box-shadow: 0 4px 20px 0 rgba(0,0,0,0.08), 0 1px 3px 0 rgba(0,0,0,0.05);
   border-bottom: 3px solid #ff6600;
-  padding: 8px 10rem;
+  padding: 8px 2rem;
   position: relative;
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .barra-principal-navegacion.sticky {
@@ -574,8 +593,11 @@
   backdrop-filter: blur(20px);
   box-shadow: 0 8px 32px 0 rgba(0,0,0,0.12), 0 2px 6px 0 rgba(0,0,0,0.08);
   border-bottom: 2px solid #ff6600;
-  padding: 6px 10rem;
+  padding: 6px 2rem;
   animation: slideDown 0.3s ease-out;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes slideDown {
@@ -596,6 +618,10 @@
   align-items: center;
   justify-content: space-between;
   position: relative;
+  flex-wrap: wrap;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  gap: 1rem;
 }
 
 .logo-navegacion {
@@ -606,6 +632,9 @@
   padding: 4px;
   transition: all 0.3s ease;
   cursor: pointer;
+  margin-left: 0;
+  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .logo-navegacion:hover {
@@ -624,6 +653,8 @@
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
   transition: all 0.3s ease;
+  height: auto;
+  object-fit: contain;
 }
 
 .logo-navegacion:hover img {
@@ -703,6 +734,9 @@
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  margin-left: auto;
+  margin-right: 0;
+  flex-shrink: 0;
 }
 
 .boton-busqueda, .menu-hamburguesa {
@@ -714,6 +748,7 @@
   color: #fff;
   background: linear-gradient(135deg, #ff6600 0%, #ff8c42 100%);
   box-shadow: 0 4px 15px rgba(255,102,0,0.3), 0 2px 4px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 .boton-busqueda {
@@ -937,23 +972,23 @@
 /* Diseño responsivo */
 @media (max-width: 1600px) {
   .barra-superior-negra {
-    padding: 0px 50px;
+    padding: 0px 2rem;
   }
   .barra-principal-navegacion {
-    padding: 6px 50px;
+    padding: 6px 2rem;
   }
   .barra-principal-navegacion.sticky {
-    padding: 5px 50px;
+    padding: 5px 2rem;
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1600px) {
   .zona-izquierda {
     display: none !important;
   }
 
   .barra-superior-negra {
-    padding: 0px 15px;
+    padding: 0px 1rem;
   }
 
   .contenedor-barra-superior {
@@ -980,15 +1015,278 @@
   }
 
   .barra-principal-navegacion {
-    padding: 6px 15px;
+    padding: 6px 1rem;
   }
 
   .barra-principal-navegacion.sticky {
-    padding: 4px 15px;
+    padding: 4px 1rem;
   }
 
   .menu-enlaces {
     display: none !important;
+  }
+}
+
+/* ✅ NUEVO: Media queries específicos para móviles Android */
+@media (max-width: 768px) {
+  .barra-superior-negra {
+    padding: 0px 0.75rem;
+  }
+  
+  .barra-principal-navegacion {
+    padding: 6px 0.75rem;
+  }
+  
+  .barra-principal-navegacion.sticky {
+    padding: 4px 0.75rem;
+  }
+  
+  .contenedor-barra-principal {
+    gap: 0.5rem;
+  }
+  
+  .botones-accion {
+    gap: 0.2rem;
+  }
+  
+  /* ✅ FORZAR POSICIONAMIENTO EN ANDROID */
+  .redes-sociales {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+  
+  .contenedor-idioma-login {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+  
+  .logo-navegacion {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+  
+  .botones-accion {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .barra-superior-negra {
+    padding: 0px 0.5rem;
+  }
+  
+  .barra-principal-navegacion {
+    padding: 6px 0.5rem;
+  }
+  
+  .barra-principal-navegacion.sticky {
+    padding: 4px 0.5rem;
+  }
+  
+  .contenedor-barra-principal {
+    gap: 0.3rem;
+  }
+  
+  .botones-accion {
+    gap: 0.1rem;
+  }
+  
+  .logo-navegacion img {
+    max-width: 100px;
+  }
+  
+  /* ✅ FORZAR POSICIONAMIENTO EN ANDROID MÓVILES PEQUEÑOS */
+  .redes-sociales {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    gap: 0.8rem;
+  }
+  
+  .contenedor-idioma-login {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    gap: 0.3rem;
+  }
+  
+  .logo-navegacion {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+  
+  .botones-accion {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    gap: 0.1rem;
+  }
+}
+
+/* ✅ NUEVO: Media query específico para pantallas muy pequeñas */
+@media (max-width: 390px) {
+  .redes-sociales {
+    gap: 0.5rem !important;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .icono-red {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .contenedor-idioma-login {
+    gap: 0.2rem;
+  }
+  
+  .boton-idioma {
+    padding: 12px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .boton-login {
+    padding: 12px 12px;
+  }
+}
+
+/* ✅ NUEVO: Media query para pantallas extra pequeñas */
+@media (max-width: 360px) {
+  .redes-sociales {
+    gap: 0.3rem !important;
+  }
+  
+  .contenedor-idioma-login {
+    gap: 0.1rem;
+  }
+  
+  .boton-idioma {
+    padding: 10px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .boton-login {
+    padding: 10px 10px;
+  }
+  
+  .logo-navegacion img {
+    max-width: 80px;
+  }
+}
+
+/* ✅ NUEVO: Media query específico para pantallas < 340px */
+@media (max-width: 340px) {
+  /* Ocultar Facebook en pantallas muy pequeñas */
+  .icono-facebook {
+    display: none !important;
+  }
+  
+  .redes-sociales {
+    gap: 0.2rem !important;
+    margin-right: 0.8rem;
+  }
+  
+  .contenedor-idioma-login {
+    gap: 0.1rem;
+  }
+  
+  .boton-idioma {
+    padding: 8px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .boton-login {
+    padding: 8px 8px;
+  }
+  
+  .logo-navegacion img {
+    max-width: 70px;
+  }
+  
+  .barra-superior-negra {
+    padding: 0px 0.3rem;
+  }
+  
+  .barra-principal-navegacion {
+    padding: 4px 0.3rem;
+  }
+  
+  .barra-principal-navegacion.sticky {
+    padding: 3px 0.3rem;
+  }
+}
+
+/* ✅ NUEVO: Media query para pantallas extremadamente pequeñas */
+@media (max-width: 300px) {
+  .redes-sociales {
+    gap: 0.15rem !important;
+    margin-right: 0.5rem;
+  }
+  
+  .contenedor-idioma-login {
+    gap: 0.05rem;
+  }
+  
+  .boton-idioma {
+    padding: 6px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .boton-login {
+    padding: 6px 6px;
+  }
+  
+  .logo-navegacion img {
+    max-width: 60px;
+  }
+  
+  .barra-superior-negra {
+    padding: 0px 0.2rem;
+  }
+  
+  .barra-principal-navegacion {
+    padding: 3px 0.2rem;
+  }
+  
+  .barra-principal-navegacion.sticky {
+    padding: 2px 0.2rem;
+  }
+}
+
+/* ✅ NUEVO: Media query para pantallas ultra pequeñas */
+@media (max-width: 280px) {
+  .redes-sociales {
+    gap: 0.1rem !important;
+    margin-right: 0.3rem;
+  }
+  
+  .contenedor-idioma-login {
+    gap: 0.02rem;
+  }
+  
+  .boton-idioma {
+    padding: 5px 5px;
+    font-size: 0.7rem;
+  }
+  
+  .boton-login {
+    padding: 5px 5px;
+  }
+  
+  .logo-navegacion img {
+    max-width: 50px;
+  }
+  
+  .barra-superior-negra {
+    padding: 0px 0.15rem;
+  }
+  
+  .barra-principal-navegacion {
+    padding: 2px 0.15rem;
+  }
+  
+  .barra-principal-navegacion.sticky {
+    padding: 1px 0.15rem;
   }
 }
 </style>

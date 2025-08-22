@@ -232,19 +232,22 @@
     justify-content: center;
     align-items: center;
     margin-bottom: 2.5rem;
-    max-width: 500px;
+    max-width: 90vw;
     margin-left: auto;
     margin-right: auto;
+    padding: 0 1rem;
+    box-sizing: border-box;
   }
 
   .hero-btn-primary, .hero-btn-gaming {
-    padding: 1.5rem 2.5rem;
+    padding: 1.5rem 2rem;
     border-radius: 15px;
     border: none;
     cursor: pointer;
     font-weight: 800;
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 4vw, 1.2rem);
     width: 100%;
+    max-width: 100%;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -252,6 +255,8 @@
     gap: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .hero-btn-primary {
@@ -395,6 +400,26 @@
     }
   }
 
+  @media (max-width: 768px) {
+    .hero-buttons {
+      max-width: 95vw;
+      padding: 0 0.5rem;
+    }
+    
+    .hero-btn-primary, .hero-btn-gaming {
+      padding: 1.2rem 1.5rem;
+      font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+    }
+    
+    .hero-title {
+      padding: 0 1rem;
+    }
+    
+    .hero-description {
+      padding: 0 1rem;
+    }
+  }
+
   @media (max-width: 480px) {
     .credibilidad-badge {
       font-size: 0.8rem;
@@ -402,8 +427,21 @@
     }
 
     .hero-btn-primary, .hero-btn-gaming {
-      padding: 1.2rem 2rem;
-      font-size: 1rem;
+      padding: 1rem 1.5rem;
+      font-size: clamp(0.8rem, 3vw, 1rem);
+    }
+    
+    .hero-buttons {
+      max-width: 98vw;
+      padding: 0 0.25rem;
+    }
+    
+    .hero-title {
+      padding: 0 0.5rem;
+    }
+    
+    .hero-description {
+      padding: 0 0.5rem;
     }
   }
 </style> 

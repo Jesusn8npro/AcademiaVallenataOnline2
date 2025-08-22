@@ -27,13 +27,42 @@ html, body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
+/* ✅ NUEVO: Prevenir scroll horizontal globalmente */
+* {
+  box-sizing: border-box;
+}
+
+/* ✅ NUEVO: CSS específico para Android WebView */
+@supports (-webkit-appearance: none) {
+  /* Detectar WebKit (Android) */
+  .barra-superior-negra,
+  .barra-principal-navegacion {
+    /* Forzar posicionamiento en Android */
+    display: flex !important;
+    flex-direction: column;
+  }
+  
+  .contenedor-barra-superior,
+  .contenedor-barra-principal {
+    /* Forzar layout en Android */
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+}
+
+/* ✅ NUEVO: Contenedor principal sin overflow */
 #svelte {
   background: #fff;
   min-height: 100vh;
   margin: 0 !important;
   padding: 0 !important;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Layout principal */
