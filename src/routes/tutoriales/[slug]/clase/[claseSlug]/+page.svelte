@@ -63,7 +63,7 @@ function cambiarLeccion(event: any) {
       // Habilitar scroll nativo
       (contenedor as HTMLElement).style.overflowY = 'auto';
       (contenedor as HTMLElement).style.overflowX = 'hidden';
-      (contenedor as HTMLElement).style.webkitOverflowScrolling = 'touch';
+      (contenedor as HTMLElement).style.setProperty('-webkit-overflow-scrolling', 'touch');
       (contenedor as HTMLElement).style.scrollBehavior = 'smooth';
       
       // Variables para scroll táctil
@@ -72,14 +72,14 @@ function cambiarLeccion(event: any) {
       let isScrolling = false;
       
       // Touch start
-      contenedor.addEventListener('touchstart', (e: TouchEvent) => {
+      contenedor.addEventListener('touchstart', (e: any) => {
         startY = e.touches[0].clientY;
         startScrollTop = (contenedor as HTMLElement).scrollTop;
         isScrolling = false;
       }, { passive: true });
       
       // Touch move
-      contenedor.addEventListener('touchmove', (e: TouchEvent) => {
+      contenedor.addEventListener('touchmove', (e: any) => {
         if (!startY) return;
         
         const currentY = e.touches[0].clientY;
@@ -96,7 +96,7 @@ function cambiarLeccion(event: any) {
       }, { passive: false });
       
       // Touch end
-      contenedor.addEventListener('touchend', (e: TouchEvent) => {
+      contenedor.addEventListener('touchend', (e: any) => {
         if (isScrolling) {
           // Si fue scroll, no hacer nada más
           e.preventDefault();
@@ -129,15 +129,15 @@ function cambiarLeccion(event: any) {
       if (!leccion) return;
       
       // Agregar cursor pointer
-      leccion.style.cursor = 'pointer';
-      leccion.style.transition = 'all 0.2s ease';
+      (leccion as HTMLElement).style.cursor = 'pointer';
+      (leccion as HTMLElement).style.transition = 'all 0.2s ease';
       
       // Click event
-      leccion.addEventListener('click', (e) => {
+      leccion.addEventListener('click', (e: any) => {
         // Solo si no fue scroll
-        if (!e.target.closest('[class*="lista-lecciones"]') || 
-            !e.target.closest('[class*="cards-lecciones"]') || 
-            !e.target.closest('[class*="grid-lecciones"]')) {
+        if (!e.target?.closest('[class*="lista-lecciones"]') || 
+            !e.target?.closest('[class*="cards-lecciones"]') || 
+            !e.target?.closest('[class*="grid-lecciones"]')) {
           return;
         }
         
@@ -148,13 +148,13 @@ function cambiarLeccion(event: any) {
       
       // Hover effect
       leccion.addEventListener('mouseenter', () => {
-        leccion.style.transform = 'translateY(-2px)';
-        leccion.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+        (leccion as HTMLElement).style.transform = 'translateY(-2px)';
+        (leccion as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
       });
       
       leccion.addEventListener('mouseleave', () => {
-        leccion.style.transform = 'translateY(0)';
-        leccion.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        (leccion as HTMLElement).style.transform = 'translateY(0)';
+        (leccion as HTMLElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
       });
     });
   }
@@ -219,8 +219,8 @@ function cambiarLeccion(event: any) {
         completada = !!(data && data.completada);
       } else {
         try {
-          const { data } = await import('$lib/services/progresoTutorialService').then(m => m.obtenerProgresoTutorialDeParte(clase.id));
-          completada = !!(data && data.completada);
+        const { data } = await import('$lib/services/progresoTutorialService').then(m => m.obtenerProgresoTutorialDeParte(clase.id));
+        completada = !!(data && data.completada);
         } catch (error) {
           console.warn('[TUTORIAL] Error al obtener progreso de parte, usando valor por defecto:', error);
           completada = false; // Valor por defecto si falla
@@ -1157,7 +1157,7 @@ function cambiarLeccion(event: any) {
     font-size: 1.2rem !important; /* ✅ TEXTO MÁS GRANDE */
     min-height: 70px !important; /* ✅ ALTURA MÍNIMA MÁS GRANDE */
     margin: 24px 0 !important; /* ✅ MARGIN MÁS GRANDE */
-  }
+}
 
 </style>
 

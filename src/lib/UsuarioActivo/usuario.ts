@@ -123,7 +123,7 @@ export function setUsuario(nuevoUsuario: PerfilUsuario | null): void {
     }
     
     // ✅ SOLUCIÓN: Actualizar store
-    usuario.set(nuevoUsuario);
+  usuario.set(nuevoUsuario);
     
     // ✅ SOLUCIÓN: Persistir en localStorage si es cliente
     if (browser && nuevoUsuario) {

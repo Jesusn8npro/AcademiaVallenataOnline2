@@ -485,13 +485,13 @@
             <label for="whatsapp">WhatsApp</label>
             <div class="input-whatsapp">
               <div class="selector-pais-container">
-                <select class="selector-pais" bind:value={codigoPais}>
-                  {#each paises as pais}
-                    <option value={pais.codigo}>
-                      {pais.bandera} {pais.codigo}
-                    </option>
-                  {/each}
-                </select>
+              <select class="selector-pais" bind:value={codigoPais}>
+                {#each paises as pais}
+                  <option value={pais.codigo}>
+                    {pais.bandera} {pais.codigo}
+                  </option>
+                {/each}
+              </select>
                 <span class="flecha-selector">▼</span>
               </div>
               <div class="input-numero">
@@ -808,7 +808,7 @@
     align-items: center;
     min-width: 90px;
   }
-  
+
   .selector-pais {
     background: rgba(255, 102, 0, 0.05);
     border: none;

@@ -135,8 +135,8 @@
       ] = await Promise.all([
         // 1. Inscripciones del estudiante
         supabase
-          .from('inscripciones')
-          .select('*, cursos(titulo)')
+        .from('inscripciones')
+        .select('*, cursos(titulo)')
           .eq('usuario_id', $usuario.id),
           
         // 2. Progreso de lecciones (TODAS las lecciones, no solo últimos 30 días)
@@ -178,7 +178,7 @@
       const cursosActivos = inscripciones.filter((i: any) => !i.completado).length;
       const cursosCompletados = inscripciones.filter((i: any) => i.completado).length;
       const totalCursos = inscripciones.length;
-      
+
       // Lecciones completadas (TODAS las lecciones, no solo últimos 30 días)
       const leccionesCompletadas = progresoLecciones.filter((p: any) => 
         p.estado === 'completado' || p.porcentaje_completado === 100
@@ -224,7 +224,7 @@
       const porcentajeProgreso = totalCursos > 0 ? 
         Math.round((cursosCompletados / totalCursos) * 100) : 0;
 
-      progresoEstudiante = {
+        progresoEstudiante = {
         cursosCompletados,
         cursosEnProgreso: cursosActivos,
         porcentajeProgreso,
@@ -727,7 +727,7 @@
           </svg>
         </div>
         <div class="stats-title-student">⭐ Estadísticas Clave</div>
-      </div>
+          </div>
       <div class="stats-content-student">
         <div class="stat-item-student">
           <span class="stat-icon">💎</span>

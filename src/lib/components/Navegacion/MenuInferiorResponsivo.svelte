@@ -39,7 +39,7 @@
       id: 'dashboard',
       icono: 'dashboard',
       texto: 'Panel',
-      ruta: '/panel-administracion',
+      		ruta: '/panel-administracion',
       badge: '3'
     },
     {
@@ -121,7 +121,7 @@
     } catch (error) {
       console.warn('⚠️ [MENU] Error en navegación inteligente, usando fallback:', error);
       // ✅ SOLUCIÓN: Fallback a navegación estándar
-      goto(ruta);
+    goto(ruta);
     }
   }
   
@@ -250,10 +250,10 @@
     
     // Limpiar event listeners solo si estaban configurados
     if (esPaginaClase) {
-      const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-      eventos.forEach(evento => {
-        document.removeEventListener(evento, detectarActividad);
-      });
+    const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    eventos.forEach(evento => {
+      document.removeEventListener(evento, detectarActividad);
+    });
     }
   });
 </script>

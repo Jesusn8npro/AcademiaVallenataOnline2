@@ -807,9 +807,9 @@
           
           <!-- ✅ NUEVO: CONTENEDOR DE BOTONES LADO A LADO -->
           <div class="botones-container">
-            <button class="boton-continuar" on:click={continuarAprendizaje}>
-              <span class="icono-play">▶️</span>
-              <span>Continuar {ultimaActividad.tipo === 'curso' ? 'Lección' : 'Clase'}</span>
+          <button class="boton-continuar" on:click={continuarAprendizaje}>
+            <span class="icono-play">▶️</span>
+            <span>Continuar {ultimaActividad.tipo === 'curso' ? 'Lección' : 'Clase'}</span>
               <!-- ✅ NUEVO: FLECHA OCULTA -->
               <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0;">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -822,9 +822,9 @@
               <span>Ver Todos Mis Cursos</span>
               <!-- ✅ NUEVO: FLECHA OCULTA -->
               <svg class="icono-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0;">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </button>
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
           </div>
         </div>
         
@@ -1301,11 +1301,11 @@
       height: 18px;
     }
 
-      .contador-externo {
-    font-size: 0.9rem;
-    min-width: 40px;
-    gap: 6px;
-  }
+    .contador-externo {
+      font-size: 0.9rem;
+      min-width: 40px;
+      gap: 6px;
+    }
   
   /* ✅ NUEVO: OCULTAR CONTADOR EN PANTALLAS < 750px */
   @media (max-width: 750px) {
@@ -1823,8 +1823,8 @@
   .imagen-contenedor {
     width: 300px; /* ✅ NUEVO: Imagen más grande para pantallas estrechas */
     height: 225px;
+    }
   }
-}
 
   /* 📍 INDICADORES DEL SLIDER */
   .slider-indicators {

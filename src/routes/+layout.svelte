@@ -30,7 +30,11 @@
     esCliente,
     ejecutarEnCliente,
     logHidratacion,
-    obtenerEstadoHidratacion 
+    obtenerEstadoHidratacion,
+    prevenirPerdidaEstilos,
+    rehidratarEstilos,
+    verificarIntegridadEstilos,
+    iniciarMonitoreoEstilos
   } from '$lib/utils/hidratacionUtils';
   
   import { 
@@ -52,6 +56,13 @@
         // Verificar estado de hidratación
         const estado = obtenerEstadoHidratacion();
         console.log('🔧 [HIDRATACIÓN] Estado actual:', estado);
+        
+        // ✅ NUEVO: INICIAR MONITOREO CONTINUO DE ESTILOS
+        iniciarMonitoreoEstilos();
+        
+        // ✅ NUEVO: PREVENIR PÉRDIDA DE ESTILOS INMEDIATAMENTE
+        prevenirPerdidaEstilos();
+        
       }, 100);
       
       // 🚀 FASE 2: ROUTING INTELIGENTE
@@ -88,6 +99,16 @@
   // 🔧 RESETEAR STORE DE MODAL AL NAVEGAR
   $: if (browser && $page.url.pathname) {
     modalPagoAbierto.set(false);
+    
+    // ✅ NUEVO: PREVENIR PÉRDIDA DE ESTILOS EN CADA NAVEGACIÓN
+    setTimeout(() => {
+      if (verificarIntegridadEstilos()) {
+        console.log('✅ [HIDRATACIÓN] Estilos verificados correctamente en:', $page.url.pathname);
+      } else {
+        console.warn('⚠️ [HIDRATACIÓN] Estilos perdidos detectados en:', $page.url.pathname);
+        rehidratarEstilos();
+      }
+    }, 200);
   }
 
   // 🔧 SIN FUNCIONES PROBLEMÁTICAS
@@ -526,6 +547,74 @@
 
     // ✅ GEOLOCALIZACIÓN INTELIGENTE - solo cuando sea necesario
     verificarYEjecutarGeolocalizacion().catch(console.warn);
+
+    // ✅ NUEVO: LISTENER PARA NAVEGACIÓN ATRÁS/ADELANTE
+    if (browser) {
+      window.addEventListener('popstate', () => {
+        console.log('🔄 [HIDRATACIÓN] Navegación atrás/adelante detectada');
+        setTimeout(() => {
+          prevenirPerdidaEstilos();
+          if (!verificarIntegridadEstilos()) {
+            console.warn('⚠️ [HIDRATACIÓN] Estilos perdidos en navegación atrás/adelante');
+            rehidratarEstilos();
+          }
+        }, 100);
+      });
+      
+      // ✅ NUEVO: OBSERVER DEL DOM PARA DETECTAR CAMBIOS QUE AFECTEN ESTILOS
+      const observer = new MutationObserver((mutations) => {
+        let estilosAfectados = false;
+        
+        mutations.forEach(mutation => {
+          if (mutation.type === 'childList' || mutation.type === 'attributes') {
+            // Verificar si los cambios afectan elementos con estilos críticos
+            const elementosAfectados = document.querySelectorAll('.btn, .card, .header, .nav, [class*="btn"], [class*="card"], [class*="header"], [class*="nav"]');
+            if (elementosAfectados.length > 0) {
+              estilosAfectados = true;
+            }
+          }
+        });
+        
+        if (estilosAfectados) {
+          console.log('🔄 [HIDRATACIÓN] Cambios en DOM detectados, verificando estilos...');
+          setTimeout(() => {
+            if (!verificarIntegridadEstilos()) {
+              console.warn('⚠️ [HIDRATACIÓN] Estilos perdidos por cambios en DOM');
+              rehidratarEstilos();
+            }
+          }, 100);
+        }
+      });
+      
+      // Observar cambios en el body y sus hijos
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+      });
+      
+      console.log('✅ [HIDRATACIÓN] Observer del DOM iniciado para monitoreo de estilos');
+      
+      // ✅ NUEVO: LISTENER PARA SALIDA DE PÁGINA
+      window.addEventListener('beforeunload', () => {
+        console.log('🔄 [HIDRATACIÓN] Saliendo de página, limpiando recursos...');
+        // Limpiar observer
+        observer.disconnect();
+      });
+      
+      // ✅ NUEVO: LISTENER PARA FOCO DE PÁGINA
+      window.addEventListener('focus', () => {
+        console.log('🔄 [HIDRATACIÓN] Página recuperó foco, verificando estilos...');
+        setTimeout(() => {
+          prevenirPerdidaEstilos();
+          if (!verificarIntegridadEstilos()) {
+            console.warn('⚠️ [HIDRATACIÓN] Estilos perdidos al recuperar foco');
+            rehidratarEstilos();
+          }
+        }, 100);
+      });
+    }
 
     return () => {
       window.removeEventListener('scroll', manejarScroll);

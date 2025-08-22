@@ -168,10 +168,10 @@ export async function obtenerProgresoTutorial(tutorialId: string) {
     const porcentajeProgreso = totalPartes > 0 ? Math.round((partesCompletadas / totalPartes) * 100) : 0;
     
     const resultado = {
-      progreso: porcentajeProgreso,
-      partes_completadas: partesCompletadas,
-      total_partes: totalPartes,
-      detalle: progreso || []
+        progreso: porcentajeProgreso,
+        partes_completadas: partesCompletadas,
+        total_partes: totalPartes,
+        detalle: progreso || []
     };
     
     console.log('[PROGRESO] Resultado del progreso:', resultado);

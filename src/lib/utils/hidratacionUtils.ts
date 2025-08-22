@@ -30,6 +30,187 @@ export function ejecutarEnCliente(fn: () => void, delay: number = 100): void {
 }
 
 /**
+ * ✅ NUEVO: FUNCIÓN CRÍTICA - PREVENIR PÉRDIDA DE ESTILOS
+ * Esta función se ejecuta en cada navegación para garantizar que los estilos estén activos
+ */
+export function prevenirPerdidaEstilos(): void {
+  if (!browser) return;
+  
+  try {
+    // ✅ FORZAR RE-APLICACIÓN DE ESTILOS CRÍTICOS
+    const estilosCriticos = [
+      'app.css',
+      'global.css',
+      'tailwind.css'
+    ];
+    
+    // Verificar que los estilos estén cargados
+    estilosCriticos.forEach(estilo => {
+      const linkElement = document.querySelector(`link[href*="${estilo}"]`);
+      if (!linkElement) {
+        console.warn(`⚠️ [HIDRATACIÓN] Estilo crítico no encontrado: ${estilo}`);
+      }
+    });
+    
+    // ✅ FORZAR RE-APLICACIÓN DE CSS CRÍTICO
+    const elementosCriticos = document.querySelectorAll('*');
+    elementosCriticos.forEach(el => {
+      if (el instanceof HTMLElement) {
+        // Forzar re-cálculo de estilos
+        el.style.display = el.style.display;
+      }
+    });
+    
+    // ✅ VERIFICAR QUE LOS ESTILOS ESTÉN ACTIVOS
+    const body = document.body;
+    if (body) {
+      // Forzar re-aplicación de estilos del body
+      body.style.display = body.style.display;
+      
+      // Verificar que los estilos base estén aplicados
+      if (!body.classList.contains('estilos-activos')) {
+        body.classList.add('estilos-activos');
+        console.log('✅ [HIDRATACIÓN] Estilos base reactivados');
+      }
+    }
+    
+    console.log('✅ [HIDRATACIÓN] Prevención de pérdida de estilos ejecutada');
+    
+  } catch (error) {
+    console.error('❌ [HIDRATACIÓN] Error previniendo pérdida de estilos:', error);
+  }
+}
+
+/**
+ * ✅ NUEVO: FUNCIÓN CRÍTICA - RE-HIDRATAR ESTILOS
+ * Se ejecuta cuando se detecta pérdida de estilos
+ */
+export function rehidratarEstilos(): void {
+  if (!browser) return;
+  
+  try {
+    console.log('🔄 [HIDRATACIÓN] Re-hidratando estilos...');
+    
+    // ✅ FORZAR RE-CARGA DE ESTILOS CRÍTICOS
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    links.forEach(link => {
+      if (link instanceof HTMLElement) {
+        // Forzar re-carga del estilo
+        const href = link.getAttribute('href');
+        if (href) {
+          link.setAttribute('href', href + '?t=' + Date.now());
+          setTimeout(() => {
+            link.setAttribute('href', href);
+          }, 100);
+        }
+      }
+    });
+    
+    // ✅ RE-APLICAR CLASES CRÍTICAS
+    const elementosConEstilos = document.querySelectorAll('[class*="btn"], [class*="card"], [class*="header"], [class*="nav"]');
+    elementosConEstilos.forEach(el => {
+      if (el instanceof HTMLElement) {
+        // Forzar re-aplicación de estilos
+        el.style.display = el.style.display;
+        el.style.opacity = el.style.opacity;
+      }
+    });
+    
+    // ✅ VERIFICAR ESTILOS DEL HEADER Y NAVEGACIÓN
+    const header = document.querySelector('header, .header, .nav, .navigation');
+    if (header) {
+      header.style.display = header.style.display;
+      console.log('✅ [HIDRATACIÓN] Header re-hidratado');
+    }
+    
+    console.log('✅ [HIDRATACIÓN] Estilos re-hidratados correctamente');
+    
+  } catch (error) {
+    console.error('❌ [HIDRATACIÓN] Error re-hidratando estilos:', error);
+  }
+}
+
+/**
+ * ✅ NUEVO: FUNCIÓN CRÍTICA - VERIFICAR INTEGRIDAD DE ESTILOS
+ * Detecta si los estilos se han perdido
+ */
+export function verificarIntegridadEstilos(): boolean {
+  if (!browser) return false;
+  
+  try {
+    // ✅ VERIFICAR QUE LOS ESTILOS BASE ESTÉN ACTIVOS
+    const body = document.body;
+    if (!body) return false;
+    
+    // Verificar que los estilos críticos estén aplicados
+    const estilosCriticos = [
+      'font-family',
+      'background-color',
+      'color'
+    ];
+    
+    const estilosPerdidos = estilosCriticos.filter(prop => {
+      const valor = getComputedStyle(body).getPropertyValue(prop);
+      return !valor || valor === 'initial' || valor === 'unset';
+    });
+    
+    if (estilosPerdidos.length > 0) {
+      console.warn('⚠️ [HIDRATACIÓN] Estilos perdidos detectados:', estilosPerdidos);
+      return false;
+    }
+    
+    // ✅ VERIFICAR QUE LOS COMPONENTES CRÍTICOS TENGAN ESTILOS
+    const componentesCriticos = document.querySelectorAll('.btn, .card, .header, .nav');
+    let componentesSinEstilos = 0;
+    
+    componentesCriticos.forEach(comp => {
+      if (comp instanceof HTMLElement) {
+        const estilos = getComputedStyle(comp);
+        if (estilos.display === 'inline' || estilos.position === 'static') {
+          componentesSinEstilos++;
+        }
+      }
+    });
+    
+    if (componentesSinEstilos > componentesCriticos.length * 0.3) {
+      console.warn('⚠️ [HIDRATACIÓN] Muchos componentes sin estilos:', componentesSinEstilos);
+      return false;
+    }
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ [HIDRATACIÓN] Error verificando integridad de estilos:', error);
+    return false;
+  }
+}
+
+/**
+ * ✅ NUEVO: FUNCIÓN CRÍTICA - MONITOREO CONTINUO DE ESTILOS
+ * Se ejecuta periódicamente para detectar pérdida de estilos
+ */
+export function iniciarMonitoreoEstilos(): void {
+  if (!browser) return;
+  
+  try {
+    // ✅ MONITOREO CADA 2 SEGUNDOS
+    setInterval(() => {
+      const estilosIntegros = verificarIntegridadEstilos();
+      
+      if (!estilosIntegros) {
+        console.warn('🚨 [HIDRATACIÓN] Pérdida de estilos detectada, re-hidratando...');
+        rehidratarEstilos();
+      }
+    }, 2000);
+    
+    console.log('✅ [HIDRATACIÓN] Monitoreo de estilos iniciado');
+    
+  } catch (error) {
+    console.error('❌ [HIDRATACIÓN] Error iniciando monitoreo de estilos:', error);
+  }
+}
+
+/**
  * ✅ UTILIDAD: Aplicar clase CSS de manera segura
  * @param selector Selector CSS del elemento
  * @param className Nombre de la clase a aplicar

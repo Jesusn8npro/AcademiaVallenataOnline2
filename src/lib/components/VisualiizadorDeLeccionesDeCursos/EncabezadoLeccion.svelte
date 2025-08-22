@@ -35,12 +35,12 @@
     if (typeof document === 'undefined') return;
     
     try {
-      if (!isFullscreen) {
-        document.documentElement.requestFullscreen?.() || 
-        (document.documentElement as any).webkitRequestFullscreen?.();
-      } else {
-        document.exitFullscreen?.() || 
-        (document as any).webkitExitFullscreen?.();
+    if (!isFullscreen) {
+      document.documentElement.requestFullscreen?.() || 
+      (document.documentElement as any).webkitRequestFullscreen?.();
+    } else {
+      document.exitFullscreen?.() || 
+      (document as any).webkitExitFullscreen?.();
       }
     } catch (error) {
       console.warn('⚠️ [ENCABEZADO] Error en fullscreen:', error);
@@ -66,18 +66,18 @@
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
     
     try {
-      const wasFullscreen = isFullscreen;
-      const wasScrolled = isScrolled;
-      const wasDesktop = isDesktop;
-      
-      isFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-      isScrolled = window.scrollY > 10;
-      isDesktop = window.innerWidth > 1024;
-      
+    const wasFullscreen = isFullscreen;
+    const wasScrolled = isScrolled;
+    const wasDesktop = isDesktop;
+    
+    isFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    isScrolled = window.scrollY > 10;
+    isDesktop = window.innerWidth > 1024;
+    
       // ✅ SOLUCIÓN: Logging reducido para mejor rendimiento
       if (wasFullscreen !== isFullscreen || wasScrolled !== isScrolled || wasDesktop !== isDesktop) {
         console.log('🔍 [ENCABEZADO] Estado actualizado:', { isFullscreen, isScrolled, isDesktop });
-      }
+    }
     } catch (error) {
       console.warn('⚠️ [ENCABEZADO] Error actualizando estado:', error);
     }

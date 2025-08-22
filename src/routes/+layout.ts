@@ -11,7 +11,7 @@ export const ssr = true;
 export const csr = true;
 
 // ✅ SOLUCIÓN: Trailing slash para evitar problemas de navegación
-export const trailingSlash = 'always';
+export const trailingSlash = 'always'; 
 
 // ✅ NUEVO: Configuración avanzada de routing para FASE 2
 export const config = {
