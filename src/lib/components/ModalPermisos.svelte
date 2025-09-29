@@ -20,6 +20,10 @@
     // CORRECCIÓN: Proteger código browser-only para evitar hydration mismatch
     if (!browser) return;
     
+    // 🚫 TEMPORALMENTE DESHABILITADO - Modal muy intrusivo
+    console.log('🍪 [MODAL PERMISOS] Temporalmente deshabilitado por ser intrusivo');
+    return;
+    
     // Verificar si ya se configuraron las preferencias
     const preferenciasGuardadas = localStorage.getItem('preferencias-usuario');
     

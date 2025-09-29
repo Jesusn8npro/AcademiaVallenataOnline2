@@ -52,7 +52,14 @@
   }
 
   function manejarClickFuera(event: MouseEvent) {
-    if (!event.target || !(event.target as Element).closest('.menu-usuario')) {
+    // 🔧 MEJORADO: Verificación más robusta para evitar errores
+    if (!event.target) return;
+    
+    const target = event.target as Element;
+    const menuUsuario = target.closest('.menu-usuario');
+    
+    // Si el clic no fue dentro del menú de usuario, cerrarlo
+    if (!menuUsuario && mostrarMenu) {
       mostrarMenu = false;
     }
   }
@@ -640,6 +647,8 @@
 
 .menu-usuario {
   position: relative;
+  /* 🔧 ASEGURAR que el contenedor no interfiera con el layout */
+  isolation: isolate;
 }
 
 .boton-usuario {
@@ -691,7 +700,10 @@
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   border: 1px solid #e5e7eb;
-  z-index: 1000;
+  z-index: 9999; /* 🔧 AUMENTADO para estar por encima de todo */
+  transform: translateZ(0); /* 🔧 FORZAR nueva capa de stacking */
+  will-change: transform; /* 🔧 OPTIMIZAR para animaciones */
+  animation: fadeInDown 0.2s ease-out; /* 🔧 ANIMACIÓN SUAVE */
 }
 
 .header {
@@ -793,6 +805,18 @@
   100% { transform: scale(1); }
 }
 
+/* 🔧 NUEVA ANIMACIÓN para el menú desplegable */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
 /* Modo Oscuro */
 :global(.dark) .menu-superior {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -824,6 +848,7 @@
 :global(.dark) .desplegable {
   background: #334155;
   border-color: #475569;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); /* 🔧 SOMBRA más fuerte en modo oscuro */
 }
 
 :global(.dark) .nombre-completo {
