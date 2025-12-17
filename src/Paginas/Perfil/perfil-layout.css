@@ -1,0 +1,164 @@
+/* Layout Principal del Perfil */
+.layout-perfil-fijo {
+    max-width: 1500px;
+    margin: 2rem auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: transparent;
+}
+
+/* Contenedor del Encabezado (Portada + InfoUsuario) */
+.encabezado-fijo {
+    position: relative;
+    z-index: 10;
+    background: #ffffff;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Estilos para estado de carga del encabezado */
+.encabezado-cargando,
+.encabezado-error {
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    color: #64748b;
+    gap: 1rem;
+    border-radius: 16px;
+}
+
+/* Spinner genérico */
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(37, 99, 235, 0.1);
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pestañas (sticky debajo del encabezado) */
+.pestanas-fijas {
+    background: #ffffff;
+    position: sticky;
+    top: 80px;
+    z-index: 20;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.pestanas-fijas.ocultar-pestanas {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Contenido Dinámico (Las rutas hijas) */
+.contenido-dinamico {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 16px;
+    min-height: 500px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+/* Estado de carga del contenido */
+.contenido-cargando {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    color: #64748b;
+    gap: 1rem;
+}
+
+/* Fallback (cuando tarda mucho) */
+.contenido-fallback {
+    width: 100%;
+}
+
+.fallback-mensaje {
+    text-align: center;
+    padding: 2rem;
+    background: #f0f9ff;
+    border-radius: 12px;
+    margin: 2rem auto;
+    max-width: 600px;
+    border: 1px solid #bae6fd;
+}
+
+.fallback-mensaje h2 {
+    color: #0369a1;
+    margin-bottom: 0.5rem;
+}
+
+.fallback-mensaje p {
+    color: #0c4a6e;
+}
+
+/* Botón reintentar */
+.btn-reintentar {
+    padding: 8px 16px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-reintentar:hover {
+    background: #1d4ed8;
+}
+
+/* Ajustes Responsivos */
+@media (max-width: 900px) {
+    .layout-perfil-fijo {
+        margin: 0;
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .encabezado-fijo {
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+
+    .pestanas-fijas {
+        top: 60px;
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+
+    .contenido-dinamico {
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .pestanas-fijas {
+        top: 60px;
+    }
+}

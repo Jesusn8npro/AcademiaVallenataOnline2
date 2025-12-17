@@ -1,0 +1,238 @@
+/* Variables para Pestañas Perfil */
+:root {
+    --pp-color-activo: #2563eb;
+    --pp-color-hover: #f3f4f6;
+    --pp-texto-claro: #4b5563;
+    --pp-scroll-bg: #2563eb;
+    --pp-fondo-blanco: #ffffff;
+}
+
+.pp-contenedor-pestañas-wrapper {
+    position: relative;
+    width: 100%;
+    margin-top: -20px;
+    z-index: 20;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Ocultar suavemente cuando el modal está abierto */
+.pp-contenedor-pestañas-wrapper.pp-modal-abierto {
+    transform: translateY(-20px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pp-nav-container-interno {
+    position: relative;
+    margin-top: 25px;
+}
+
+.pp-navegacion-pestañas {
+    display: flex;
+    justify-content: center;
+    background: var(--pp-fondo-blanco);
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 6px 32px -4px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    margin: 0;
+}
+
+.pp-pestaña-item {
+    display: flex;
+    justify-content: center;
+    padding: 6px 8px;
+    color: var(--pp-texto-claro);
+    text-decoration: none;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1;
+    /* Distribución equitativa en escritorio */
+    min-width: 70px;
+    text-align: center;
+}
+
+.pp-contenido-pestaña {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 3px;
+    border-radius: 10px;
+    width: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    top: 0;
+}
+
+.pp-pestaña-item.pp-activo .pp-contenido-pestaña {
+    color: var(--pp-color-activo);
+    transform: translateY(-4px);
+}
+
+.pp-pestaña-item:hover:not(.pp-activo) .pp-contenido-pestaña {
+    background-color: var(--pp-color-hover);
+    transform: translateY(-2px);
+}
+
+.pp-icono {
+    width: 22px;
+    height: 22px;
+}
+
+.pp-etiqueta {
+    font-size: 0.65rem;
+    /* 10.4px */
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.pp-pestaña-item::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 25%;
+    width: 50%;
+    height: 3px;
+    background: var(--pp-color-activo);
+    border-radius: 6px;
+    transform: scaleX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+.pp-pestaña-item.pp-activo::after {
+    transform: scaleX(1);
+}
+
+/* === BOTONES DE SCROLL RESPONSIVOS === */
+.pp-boton-scroll {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--pp-scroll-bg);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: none;
+    /* Ocultos por defecto */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 25;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pp-boton-scroll.pp-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pp-boton-scroll:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.pp-boton-scroll.pp-izquierda {
+    left: -15px;
+}
+
+.pp-boton-scroll.pp-derecha {
+    right: -15px;
+}
+
+.pp-boton-scroll svg {
+    width: 16px;
+    height: 16px;
+    stroke: #ffffff;
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* === DISEÑO RESPONSIVO PARA MÓVILES === */
+@media (max-width: 768px) {
+    .pp-navegacion-pestañas {
+        justify-content: flex-start;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding: 0;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .pp-navegacion-pestañas::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pp-pestaña-item {
+        flex: 0 0 auto;
+        width: 32%;
+        scroll-snap-align: center;
+        padding: 4px 6px;
+    }
+
+    .pp-contenido-pestaña {
+        padding: 4px 2px;
+        gap: 2px;
+    }
+
+    .pp-icono {
+        width: 20px;
+        height: 20px;
+    }
+
+    .pp-etiqueta {
+        font-size: 0.6rem;
+    }
+
+    .pp-boton-scroll {
+        display: flex;
+    }
+
+    .pp-contenedor-pestañas-wrapper {
+        margin-top: -20px;
+        z-index: 10;
+        width: 100%;
+    }
+
+    .pp-nav-container-interno {
+        width: 100%;
+        padding: 0;
+        margin-top: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pp-pestaña-item {
+        width: 35%;
+        padding: 3px 4px;
+    }
+
+    .pp-contenido-pestaña {
+        padding: 10px 1px;
+    }
+
+    .pp-icono {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pp-etiqueta {
+        font-size: 0.8rem;
+        margin-top: 10px;
+    }
+
+    .pp-contenedor-pestañas-wrapper {
+        margin-top: -30px;
+    }
+
+    .pp-nav-container-interno {
+        margin-top: 10px;
+    }
+}
